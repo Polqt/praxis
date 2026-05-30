@@ -5,6 +5,7 @@ import { DatabaseModule } from './database/database.module'
 import { AuthModule } from './auth/auth.module'
 import { UsersModule } from './users/users.module'
 import { TasksModule } from './tasks/tasks.module'
+import { VerificationModule } from './verification/verification.module'
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { TasksModule } from './tasks/tasks.module'
     AuthModule,
     UsersModule,
     TasksModule,
+    VerificationModule,
   ],
 })
 export class AppModule {}

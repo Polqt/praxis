@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, integer, pgEnum, uniqueIndex } from 'drizzle-orm/pg-core'
 import { createId } from '@paralleldrive/cuid2'
 
 export const languageEnum = pgEnum('language', ['python'])
@@ -35,7 +35,7 @@ export const userTasks = pgTable('user_tasks', {
   feedback: text('feedback'),
   verifiedAt: timestamp('verified_at'),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-})
+}, (t) => [uniqueIndex('user_tasks_user_id_task_id_idx').on(t.userId, t.taskId)])
 
 export const skills = pgTable('skills', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
