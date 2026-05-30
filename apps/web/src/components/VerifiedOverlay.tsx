@@ -24,7 +24,6 @@ export function VerifiedOverlay({ skillTags, onDismiss }: VerifiedOverlayProps) 
       onClick={onDismiss}
     >
       <div className="text-center px-8" onClick={(e) => e.stopPropagation()}>
-        {/* Animated checkmark */}
         <svg viewBox="0 0 80 80" className="mx-auto mb-6" width={80} height={80}>
           <circle
             cx="40" cy="40" r="36"
