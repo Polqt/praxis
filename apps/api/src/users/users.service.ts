@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { eq } from 'drizzle-orm'
 import { DatabaseService } from '../database/database.service'
-import { users, userSkills, skills, userTasks, tasks } from '../database/schema'
+import { users, userSkills, skills } from '../database/schema'
 
 @Injectable()
 export class UsersService {
@@ -40,8 +40,15 @@ export class UsersService {
       .select({
         id: userSkills.id,
         userId: userSkills.userId,
-        skill: { id: skills.id, name: skills.name, category: skills.category },
-        verifiedAt: userSkills.verifiedAt,
+        skill: {
+          id: skills.id,
+          trackId: skills.trackId,
+          name: skills.name,
+          category: skills.category,
+          createdAt: skills.createdAt,
+        },
+        sourceType: userSkills.sourceType,
+        awardedAt: userSkills.awardedAt,
       })
       .from(userSkills)
       .innerJoin(skills, eq(userSkills.skillId, skills.id))
@@ -51,34 +58,11 @@ export class UsersService {
   async getDashboardStats(userId: string) {
     const verifiedSkills = await this.getUserSkills(userId)
 
-    const recentUserTasks = await this.db.db
-      .select({
-        id: userTasks.id,
-        userId: userTasks.userId,
-        taskId: userTasks.taskId,
-        status: userTasks.status,
-        latestCode: userTasks.latestCode,
-        attempts: userTasks.attempts,
-        feedback: userTasks.feedback,
-        verifiedAt: userTasks.verifiedAt,
-        updatedAt: userTasks.updatedAt,
-        title: tasks.title,
-        description: tasks.description,
-        language: tasks.language,
-        difficulty: tasks.difficulty,
-        starterCode: tasks.starterCode,
-        skillTags: tasks.skillTags,
-        createdAt: tasks.createdAt,
-      })
-      .from(userTasks)
-      .innerJoin(tasks, eq(userTasks.taskId, tasks.id))
-      .where(eq(userTasks.userId, userId))
-      .orderBy(userTasks.updatedAt)
-      .limit(10)
-
-    const totalVerified = recentUserTasks.filter(t => t.status === 'VERIFIED').length
-    const totalAttempts = recentUserTasks.reduce((sum, t) => sum + t.attempts, 0)
-
-    return { totalVerified, totalAttempts, verifiedSkills, recentTasks: recentUserTasks }
+    return {
+      totalVerified: verifiedSkills.length,
+      totalAttempts: 0,
+      verifiedSkills,
+      recentSubmissions: [],
+    }
   }
 }

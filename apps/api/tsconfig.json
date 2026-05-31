@@ -8,8 +8,10 @@
     "allowSyntheticDefaultImports": true,
     "target": "ES2021",
     "sourceMap": true,
+    "rootDir": "../..",
     "outDir": "./dist",
     "baseUrl": "./",
+    "ignoreDeprecations": "5.0",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
@@ -20,5 +22,6 @@
     "paths": {
       "@praxis/shared": ["../../packages/shared/src/index.ts"]
     }
-  }
+  },
+  "exclude": ["src/database/seed.ts"]
 }
