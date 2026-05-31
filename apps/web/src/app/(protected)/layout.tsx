@@ -41,6 +41,12 @@ export default async function ProtectedLayout({ children }: { children: React.Re
             >
               Challenges
             </Link>
+            <Link
+              href="/settings"
+              className="px-3 py-2 text-[13px] text-muted-foreground rounded-sm hover:bg-muted hover:text-foreground transition-colors"
+            >
+              Settings
+            </Link>
           </nav>
           <div className="px-3 py-3 border-t border-border flex flex-col gap-1">
             <p className="px-3 text-[11px] text-muted-foreground truncate">{localUser!.email}</p>
