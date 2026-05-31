@@ -1,4 +1,4 @@
-import type { TaskWithStatus } from './task.types'
+import type { ProjectSubmission } from './submission.types'
 
 export interface User {
   id: string
@@ -10,20 +10,23 @@ export interface User {
 
 export interface Skill {
   id: string
+  trackId: string
   name: string
   category: string
+  createdAt: string
 }
 
 export interface UserSkill {
   id: string
   userId: string
   skill: Skill
-  verifiedAt: string
+  sourceType: 'project' | 'task'
+  awardedAt: string
 }
 
 export interface DashboardStats {
   totalVerified: number
   totalAttempts: number
   verifiedSkills: UserSkill[]
-  recentTasks: TaskWithStatus[]
+  recentSubmissions: ProjectSubmission[]
 }
