@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { apiClient } from '@/lib/api'
 import type { DashboardStats } from '@praxis/shared'
-import { TaskCard, SkillChip } from '@/features/task'
+import { SkillChip } from '@/features/task'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -23,11 +23,6 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 gap-4 mb-8">
           <Skeleton className="h-24 rounded-xl" />
           <Skeleton className="h-24 rounded-xl" />
-        </div>
-        <div className="grid gap-3">
-          <Skeleton className="h-20 rounded-xl" />
-          <Skeleton className="h-20 rounded-xl" />
-          <Skeleton className="h-20 rounded-xl" />
         </div>
       </div>
     )
@@ -54,7 +49,7 @@ export default function DashboardPage() {
 
       {stats.verifiedSkills.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-3 text-foreground">Your Verified Skills</h2>
+          <h2 className="text-lg font-semibold mb-3 text-foreground">Verified Skills</h2>
           <div className="flex flex-wrap gap-2">
             {stats.verifiedSkills.map((us) => (
               <SkillChip key={us.id} name={us.skill.name} />
@@ -63,23 +58,17 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <h2 className="text-lg font-semibold mb-3 text-foreground">Tasks</h2>
-      {stats.recentTasks.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <p className="text-sm text-muted-foreground mb-4">No tasks started yet.</p>
-            <Button asChild>
-              <Link href="/tasks">Browse Tasks</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-3">
-          {stats.recentTasks.map((task) => (
-            <TaskCard key={task.id} task={task} />
-          ))}
-        </div>
-      )}
+      <h2 className="text-lg font-semibold mb-3 text-foreground">Submissions</h2>
+      <Card>
+        <CardContent className="p-6 text-center">
+          <p className="text-sm text-muted-foreground mb-4">
+            No submissions yet. Connect GitHub and verify a project to get started.
+          </p>
+          <Button asChild>
+            <Link href="/projects">Browse Challenges</Link>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   )
 }

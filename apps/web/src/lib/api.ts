@@ -1,5 +1,5 @@
 import { createClient } from './supabase'
-import type { VerifyRequest, VerifyResponse, TaskWithStatus, DashboardStats } from '@praxis/shared'
+import type { DashboardStats } from '@praxis/shared'
 
 async function getToken(): Promise<string> {
   const supabase = createClient()
@@ -27,12 +27,5 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const apiClient = {
-  getTasks: () => request<TaskWithStatus[]>('/tasks'),
-  getTask: (id: string) => request<TaskWithStatus>(`/tasks/${id}`),
   getDashboard: () => request<DashboardStats>('/users/me/dashboard'),
-  verify: (body: VerifyRequest) =>
-    request<VerifyResponse>('/verification/run', {
-      method: 'POST',
-      body: JSON.stringify(body),
-    }),
 }

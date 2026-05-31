@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge'
-import type { TaskStatus } from '@praxis/shared'
+
+type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'VERIFIED' | 'FAILED'
 
 const config: Record<TaskStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   PENDING:     { label: 'Pending',     variant: 'outline' },

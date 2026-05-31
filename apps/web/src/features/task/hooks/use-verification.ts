@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback } from 'react'
 import confetti from 'canvas-confetti'
-import { apiClient } from '@/lib/api'
 
 export type VerificationStatus = 'idle' | 'running' | 'verified' | 'failed'
 
@@ -43,19 +42,10 @@ export function useVerification(taskId: string): UseVerificationReturn {
     setAttempts((prev) => prev + 1)
 
     try {
-      const result = await apiClient.verify({ taskId, code })
-      setRawOutput(result.executionOutput)
-
-      if (result.verified) {
-        const message = result.message ?? 'All tests passed!'
-        typewrite(message, () => {
-          setStatus('verified')
-          confetti({ particleCount: 120, spread: 80, origin: { x: 0.5, y: 0 } })
-        })
-      } else {
-        const msg = result.feedback ?? 'Some tests failed. Try again.'
-        typewrite(msg, () => setStatus('failed'))
-      }
+      // Task-based verification is deprecated in v1.
+      // This hook is retained for future project-based verification flows.
+      void code
+      typewrite('Task verification is no longer available.', () => setStatus('failed'))
     } catch {
       setFeedback('Something went wrong. Try again.')
       setStatus('failed')

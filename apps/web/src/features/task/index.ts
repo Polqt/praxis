@@ -1,4 +1,3 @@
-export { TaskCard } from './components/task-card'
 export { StatusPill } from './components/status-pill'
 export { SkillChip } from './components/skill-chip'
 export { CodeEditor } from './components/code-editor'
