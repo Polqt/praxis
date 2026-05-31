@@ -1,8 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { eq } from 'drizzle-orm'
 import { DatabaseService } from '../database/database.service'
-import { githubAccounts } from '../database/schema'
+import { githubAccounts, users } from '../database/schema'
 import { GitHubApiService } from './github-api.service'
 import { GitHubTokenService } from './github-token.service'
 import { SyncedGitHubAccount } from './github.types'
@@ -23,11 +23,12 @@ export class GitHubService {
 
   async syncAccount(userId: string, accessToken: string) {
     const viewer = await this.githubApi.getViewer(accessToken)
-    const tokenScope = viewer.scopes.join(',') || 'unknown'
+    const scopes = viewer.scopes.length > 0 ? viewer.scopes : ['read:user', 'repo']
+    const tokenScope = scopes.join(',')
     const encryptedToken = this.tokenService.encrypt(accessToken)
     const now = new Date()
 
-    const rows = await this.db.db
+    await this.db.db
       .insert(githubAccounts)
       .values({
         userId,
@@ -51,34 +52,50 @@ export class GitHubService {
           lastSyncedAt: now,
         },
       })
-      .returning()
 
-    return this.toPublicAccount(rows[0])
+    const currentUser = await this.db.db
+      .select({ username: users.username })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1)
+
+    if (currentUser[0] && currentUser[0].username === null) {
+      await this.db.db
+        .update(users)
+        .set({ username: viewer.login })
+        .where(eq(users.id, userId))
+    }
   }
 
-  async getAccount(userId: string) {
+  async getAccount(userId: string): Promise<
+    | { connected: true; githubUsername: string; githubEmail: string | null; lastSyncedAt: Date | null; scopes: string[] }
+    | { connected: false }
+  > {
     const rows = await this.db.db
       .select()
       .from(githubAccounts)
       .where(eq(githubAccounts.userId, userId))
       .limit(1)
 
-    if (!rows[0] || !rows[0].isActive) {
-      throw new NotFoundException('GitHub account is not connected')
+    const account = rows[0]
+    if (!account || !account.isActive) {
+      return { connected: false }
     }
 
-    return this.toPublicAccount(rows[0])
+    return {
+      connected: true,
+      githubUsername: account.githubUsername,
+      githubEmail: account.githubEmail,
+      lastSyncedAt: account.lastSyncedAt,
+      scopes: account.tokenScope ? account.tokenScope.split(',') : [],
+    }
   }
 
   async disconnect(userId: string) {
-    const rows = await this.db.db
+    await this.db.db
       .update(githubAccounts)
       .set({ isActive: false, lastSyncedAt: new Date() })
       .where(eq(githubAccounts.userId, userId))
-      .returning()
-
-    if (!rows[0]) throw new NotFoundException('GitHub account is not connected')
-    return this.toPublicAccount(rows[0])
   }
 
   async getActiveToken(userId: string) {

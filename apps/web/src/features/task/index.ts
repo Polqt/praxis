@@ -1,7 +1,0 @@
-export { StatusPill } from './components/status-pill'
-export { SkillChip } from './components/skill-chip'
-export { CodeEditor } from './components/code-editor'
-export { CoachPanel } from './components/coach-panel'
-export { VerifiedOverlay } from './components/verified-overlay'
-export { useVerification } from './hooks/use-verification'
-export type { VerificationStatus, UseVerificationReturn } from './hooks/use-verification'

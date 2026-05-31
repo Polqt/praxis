@@ -21,8 +21,8 @@ export default async function ProtectedLayout({ children }: { children: React.Re
 
   return (
     <UserProvider user={localUser!}>
-      <div className="min-h-screen flex bg-background">
-        <aside className="w-52 shrink-0 border-r border-border flex flex-col bg-background">
+      <div className="h-screen flex bg-background overflow-hidden">
+        <aside className="w-52 shrink-0 border-r border-border flex flex-col bg-background h-screen sticky top-0">
           <div className="px-5 py-5 border-b border-border">
             <Link href="/studio" className="text-[15px] font-semibold tracking-tight text-foreground">
               Praxis
@@ -53,7 +53,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
             <SignOutButton />
           </div>
         </aside>
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
     </UserProvider>
   )

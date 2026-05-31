@@ -58,16 +58,11 @@ export const apiClient = {
       body: JSON.stringify(data),
     }),
   getDashboard: () => apiFetch<DashboardStats>('/users/me/dashboard'),
-  getGitHubAccount: () =>
-    apiFetch<GitHubAccount>('/github/account').catch((e: unknown) => {
-      if (e instanceof ApiError && e.status === 404) return null
-      throw e
-    }),
+  getGitHubAccount: () => apiFetch<GitHubAccount>('/github/account'),
   syncGitHub: (accessToken: string) =>
-    apiFetch<GitHubAccount>('/github/sync', {
+    apiFetch<void>('/github/sync', {
       method: 'POST',
       body: JSON.stringify({ accessToken }),
     }),
-  disconnectGitHub: () =>
-    apiFetch<GitHubAccount>('/github/account', { method: 'DELETE' }),
+  disconnectGitHub: () => apiFetch<void>('/github/account', { method: 'DELETE' }),
 }

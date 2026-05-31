@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, Post, UseGuards } from '@nestjs/common'
 import { User } from '@praxis/shared'
 import { SupabaseGuard } from '../auth/supabase.guard'
 import { GetUser } from '../auth/get-user.decorator'
@@ -16,12 +16,14 @@ export class GitHubController {
   }
 
   @Post('sync')
-  syncAccount(@GetUser() user: User, @Body() dto: SyncGitHubAccountDto) {
-    return this.githubService.syncAccount(user.id, dto.accessToken)
+  @HttpCode(204)
+  async syncAccount(@GetUser() user: User, @Body() dto: SyncGitHubAccountDto) {
+    await this.githubService.syncAccount(user.id, dto.accessToken)
   }
 
   @Delete('account')
-  disconnect(@GetUser() user: User) {
-    return this.githubService.disconnect(user.id)
+  @HttpCode(204)
+  async disconnect(@GetUser() user: User) {
+    await this.githubService.disconnect(user.id)
   }
 }

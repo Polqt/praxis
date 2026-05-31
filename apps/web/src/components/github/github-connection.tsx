@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import { GitBranch, Loader2 } from 'lucide-react'
-import { apiClient, ApiError } from '@/lib/api'
+import { apiClient } from '@/lib/api'
 import type { GitHubAccount } from '@praxis/shared'
+
+const REQUIRED_SCOPES = ['repo', 'read:user']
 
 function formatRelativeDate(dateStr: string | null): string {
   if (!dateStr) return 'Never'
@@ -18,16 +20,9 @@ function formatRelativeDate(dateStr: string | null): string {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-const REQUIRED_SCOPES = ['repo', 'read:user']
-
-function hasRequiredScopes(tokenScope: string): boolean {
-  const scopes = tokenScope.split(',').map((s) => s.trim())
-  return REQUIRED_SCOPES.every((s) => scopes.includes(s))
-}
-
-interface Props {
-  github: GitHubAccount | null
-  onRefresh: (account: GitHubAccount | null) => void
+type Props = {
+  github: GitHubAccount
+  onRefresh: (account: GitHubAccount) => void
 }
 
 export function GitHubConnection({ github, onRefresh }: Props) {
@@ -44,7 +39,7 @@ export function GitHubConnection({ github, onRefresh }: Props) {
     setError('')
     try {
       await apiClient.disconnectGitHub()
-      onRefresh(null)
+      onRefresh({ connected: false })
       setConfirmDisconnect(false)
     } catch {
       setError('Failed to disconnect. Please try again.')
@@ -53,12 +48,7 @@ export function GitHubConnection({ github, onRefresh }: Props) {
     }
   }
 
-  function handleConnectGitHub() {
-    window.location.href = '/studio/connect-github'
-  }
-
-  // State 1: Not connected
-  if (!github || !github.isActive) {
+  if (!github.connected) {
     return (
       <div className="border border-border p-6">
         <div className="flex items-start gap-3 mb-4">
@@ -74,7 +64,7 @@ export function GitHubConnection({ github, onRefresh }: Props) {
         </div>
         <button
           type="button"
-          onClick={handleConnectGitHub}
+          onClick={() => { window.location.href = '/studio/connect-github' }}
           className="h-9 px-5 bg-foreground text-background text-[11px] font-medium uppercase tracking-widest rounded-none hover:opacity-90 transition-opacity"
         >
           Connect GitHub for Verification
@@ -84,9 +74,8 @@ export function GitHubConnection({ github, onRefresh }: Props) {
     )
   }
 
-  const scopesValid = hasRequiredScopes(github.tokenScope)
+  const scopesValid = REQUIRED_SCOPES.every((s) => github.scopes.includes(s))
 
-  // State 2: Connected but scopes insufficient
   if (!scopesValid) {
     return (
       <div className="border border-border p-6">
@@ -100,7 +89,7 @@ export function GitHubConnection({ github, onRefresh }: Props) {
         </p>
         <button
           type="button"
-          onClick={handleConnectGitHub}
+          onClick={() => { window.location.href = '/studio/connect-github' }}
           className="h-9 px-5 bg-foreground text-background text-[11px] font-medium uppercase tracking-widest rounded-none hover:opacity-90 transition-opacity"
         >
           Reconnect GitHub
@@ -110,7 +99,6 @@ export function GitHubConnection({ github, onRefresh }: Props) {
     )
   }
 
-  // State 3: Connected and valid
   return (
     <div className="border border-border p-6">
       <div className="flex items-center gap-2 mb-3">

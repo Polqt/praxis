@@ -41,17 +41,40 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/sign-in?error=auth_failed`)
   }
 
-  // Force local user sync before the redirect lands on /studio.
+  const apiBase = process.env.NEXT_PUBLIC_API_URL
+  const bearer = { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }
+
   try {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
-    })
+    await fetch(`${apiBase}/users/me`, { headers: bearer })
   } catch {
-    // Non-fatal — the protected layout will retry and redirect to /sign-in if
-    // the user row still does not exist.
+    // Non-fatal — protected layout will retry.
+  }
+
+  const provider = session.user.app_metadata?.provider
+  const providerToken = session.provider_token
+
+  console.log('[callback] provider:', provider, '| provider_token present:', !!providerToken)
+
+  if (provider === 'github') {
+    if (!providerToken) {
+      console.error('[callback] GitHub provider but no provider_token — skipping sync')
+    } else {
+      try {
+        const syncRes = await fetch(`${apiBase}/github/sync`, {
+          method: 'POST',
+          headers: bearer,
+          body: JSON.stringify({ accessToken: providerToken }),
+        })
+        if (!syncRes.ok) {
+          const body = await syncRes.text()
+          console.error('[callback] GitHub sync returned', syncRes.status, body)
+        } else {
+          console.log('[callback] GitHub sync succeeded')
+        }
+      } catch (e) {
+        console.error('[callback] GitHub sync threw:', e)
+      }
+    }
   }
 
   return response
