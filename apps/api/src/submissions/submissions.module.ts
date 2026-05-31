@@ -2,13 +2,15 @@ import { Module } from '@nestjs/common'
 import { ChallengesModule } from '../challenges/challenges.module'
 import { DatabaseModule } from '../database/database.module'
 import { GitHubModule } from '../github/github.module'
+import { QueueModule } from '../queue/queue.module'
 import { SubmissionsController } from './submissions.controller'
+import { SubmissionStatusService } from './submission-status.service'
 import { SubmissionsService } from './submissions.service'
 
 @Module({
-  imports: [DatabaseModule, ChallengesModule, GitHubModule],
+  imports: [DatabaseModule, ChallengesModule, GitHubModule, QueueModule],
   controllers: [SubmissionsController],
-  providers: [SubmissionsService],
-  exports: [SubmissionsService],
+  providers: [SubmissionsService, SubmissionStatusService],
+  exports: [SubmissionsService, SubmissionStatusService],
 })
 export class SubmissionsModule {}

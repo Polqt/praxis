@@ -5,6 +5,8 @@ import { DatabaseService } from '../database/database.service'
 import { projectSubmissionEvents, projectSubmissions } from '../database/schema'
 import { GitHubApiService } from '../github/github-api.service'
 import { GitHubService } from '../github/github.service'
+import { VerificationQueueService } from '../queue/queue.service'
+import { SubmissionStatusService } from './submission-status.service'
 import { CreateSubmissionDto } from './submissions.dto'
 import { parseRepoFullName } from './submissions.util'
 
@@ -15,6 +17,8 @@ export class SubmissionsService {
     private readonly challengesService: ChallengesService,
     private readonly githubService: GitHubService,
     private readonly githubApi: GitHubApiService,
+    private readonly verificationQueue: VerificationQueueService,
+    private readonly statusService: SubmissionStatusService,
   ) {}
 
   async create(userId: string, dto: CreateSubmissionDto) {
@@ -53,18 +57,19 @@ export class SubmissionsService {
     if (!submission) throw new BadRequestException('Unable to create submission')
 
     if (inserted[0]) {
-      await this.db.db.insert(projectSubmissionEvents).values({
+      const queued = await this.statusService.transition({
         submissionId: submission.id,
-        fromStatus: null,
-        toStatus: 'created',
-        reason: 'submission_created',
+        toStatus: 'queued',
+        reason: 'submission_queued',
         metadata: {
           githubRepoFullName: repository.full_name,
           commitSha: commit.sha,
         },
       })
+      Object.assign(submission, queued)
     }
 
+    await this.verificationQueue.enqueueIngestRepo(submission.id)
     return submission
   }
 

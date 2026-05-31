@@ -61,6 +61,37 @@ export class GitHubApiService {
     return response.json() as Promise<{ sha: string; author: { id: number | null; login: string | null } | null }>
   }
 
+  async getTree(accessToken: string, owner: string, repo: string, commitSha: string) {
+    const response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/git/trees/${commitSha}?recursive=1`,
+      { headers: this.headers(accessToken) },
+    )
+
+    if (!response.ok) {
+      throw new Error(`GitHub tree lookup failed with status ${response.status}`)
+    }
+
+    return response.json() as Promise<{
+      tree: Array<{ path: string; type: 'blob' | 'tree'; size?: number; sha: string }>
+      truncated: boolean
+    }>
+  }
+
+  async getFileContent(accessToken: string, owner: string, repo: string, path: string, ref: string) {
+    const response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${ref}`,
+      { headers: this.headers(accessToken) },
+    )
+
+    if (!response.ok) {
+      throw new Error(`GitHub file lookup failed with status ${response.status}`)
+    }
+
+    const body = await response.json() as { encoding?: string; content?: string }
+    if (body.encoding !== 'base64' || !body.content) return ''
+    return Buffer.from(body.content, 'base64').toString('utf8')
+  }
+
   private headers(accessToken: string) {
     return {
       Accept: 'application/vnd.github+json',

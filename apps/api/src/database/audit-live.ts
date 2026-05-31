@@ -28,7 +28,9 @@ async function main() {
         'github_accounts',
         'project_submissions',
         'project_submission_events',
-        'project_verification_reports'
+        'project_verification_reports',
+        'repository_ingestions',
+        'repository_analyses'
       )
     order by relname
   `)

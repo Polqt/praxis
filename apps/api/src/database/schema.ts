@@ -145,6 +145,27 @@ export const projectSubmissionEvents = pgTable('project_submission_events', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
+export const repositoryIngestions = pgTable('repository_ingestions', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  githubRepoId: bigint('github_repo_id', { mode: 'number' }).notNull(),
+  commitSha: text('commit_sha').notNull(),
+  repoFullName: text('repo_full_name').notNull(),
+  ingestedData: jsonb('ingested_data').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex('repository_ingestions_repo_commit_idx').on(t.githubRepoId, t.commitSha),
+])
+
+export const repositoryAnalyses = pgTable('repository_analyses', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  repositoryIngestionId: text('repository_ingestion_id').notNull().references(() => repositoryIngestions.id),
+  analyzerVersion: text('analyzer_version').notNull(),
+  analysisData: jsonb('analysis_data').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex('repository_analyses_ingestion_version_idx').on(t.repositoryIngestionId, t.analyzerVersion),
+])
+
 export const projectVerificationReports = pgTable('project_verification_reports', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
   submissionId: text('submission_id').unique().notNull().references(() => projectSubmissions.id),

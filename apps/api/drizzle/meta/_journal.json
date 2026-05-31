@@ -29,6 +29,13 @@
       "when": 1748649603000,
       "tag": "0004_submission_events_and_users_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1748649604000,
+      "tag": "0005_repository_ingestions_and_analyses",
+      "breakpoints": true
     }
   ]
 }

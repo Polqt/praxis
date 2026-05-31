@@ -7,6 +7,8 @@ import { UsersModule } from './users/users.module'
 import { GitHubModule } from './github/github.module'
 import { ChallengesModule } from './challenges/challenges.module'
 import { SubmissionsModule } from './submissions/submissions.module'
+import { ReportsModule } from './reports/reports.module'
+import { HealthModule } from './health/health.module'
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { SubmissionsModule } from './submissions/submissions.module'
     GitHubModule,
     ChallengesModule,
     SubmissionsModule,
+    ReportsModule,
+    HealthModule,
   ],
 })
 export class AppModule {}
