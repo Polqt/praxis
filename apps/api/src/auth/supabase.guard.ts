@@ -6,14 +6,14 @@ import {
   Inject,
   forwardRef,
 } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import * as jwt from 'jsonwebtoken'
 import { UsersService } from '../users/users.service'
+import { JwksService } from './jwks.service'
 
 @Injectable()
 export class SupabaseGuard implements CanActivate {
   constructor(
-    private config: ConfigService,
+    private jwks: JwksService,
     @Inject(forwardRef(() => UsersService))
     private usersService: UsersService,
   ) {}
@@ -27,7 +27,17 @@ export class SupabaseGuard implements CanActivate {
     }
 
     const token = authHeader.split(' ')[1]
-    const publicKey = this.config.get<string>('supabase.jwtSecret')!.replace(/\\n/g, '\n')
+    const decoded = jwt.decode(token, { complete: true })
+    if (!decoded || typeof decoded === 'string' || !decoded.header.kid) {
+      throw new UnauthorizedException()
+    }
+
+    let publicKey: jwt.Secret
+    try {
+      publicKey = await this.jwks.getKey(decoded.header.kid) as any
+    } catch {
+      throw new UnauthorizedException()
+    }
 
     let payload: { sub: string; email: string }
     try {

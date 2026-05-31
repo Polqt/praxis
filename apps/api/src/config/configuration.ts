@@ -3,7 +3,7 @@ export default () => ({
     url: process.env.DATABASE_URL,
   },
   supabase: {
-    jwtSecret: process.env.SUPABASE_JWT_SECRET,
+    jwksUrl: process.env.SUPABASE_JWKS_URL,
   },
   e2b: {
     apiKey: process.env.E2B_API_KEY,
