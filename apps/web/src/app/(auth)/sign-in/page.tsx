@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { CheckCircle2, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -93,7 +94,10 @@ function HalftoneArt() {
 }
 
 
-export default function SignInPage() {
+function SignInPage() {
+  const searchParams = useSearchParams()
+  const sessionExpired = searchParams.get('error') === 'session_expired'
+
   const [email, setEmail] = useState('')
   const [emailLoading, setEmailLoading] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
@@ -254,6 +258,12 @@ export default function SignInPage() {
               Sign in to connect your GitHub and submit your first project for verification.
             </p>
 
+            {sessionExpired && (
+              <div className="mb-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-sm text-amber-800 text-[12px]">
+                Your session expired. Please sign in again.
+              </div>
+            )}
+
             <button
               type="button"
               onClick={handleGithub}
@@ -329,5 +339,13 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SignInPageWrapper() {
+  return (
+    <Suspense>
+      <SignInPage />
+    </Suspense>
   )
 }

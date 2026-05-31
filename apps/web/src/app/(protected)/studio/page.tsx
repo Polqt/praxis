@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, GitBranch, Clock, AlertCircle, ArrowRight, Loader2 } from 'lucide-react'
+import { CheckCircle2, Clock, AlertCircle, ArrowRight, Loader2 } from 'lucide-react'
 import { apiClient } from '@/lib/api'
 import { useUser } from '@/contexts/user-context'
 import { usePatchUsername } from '@/hooks/use-patch-username'
@@ -11,6 +11,7 @@ import type { DashboardStats, GitHubAccount } from '@praxis/shared'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { GitHubConnection } from '@/components/github/github-connection'
 
 function SectionLabel({ text }: { text: string }) {
   return (
@@ -95,7 +96,7 @@ function UsernameSetupCard() {
 export default function StudioPage() {
   const user = useUser()
   const [stats, setStats] = useState<DashboardStats | null>(null)
-  const [github, setGithub] = useState<GitHubAccount | null | undefined>(undefined)
+  const [github, setGithub] = useState<GitHubAccount | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -196,26 +197,10 @@ export default function StudioPage() {
 
       {/* GitHub CTA — only shown when not connected */}
       {!githubConnected && (
-        <div className="border border-border p-8 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div>
-            <SectionLabel text="Action required" />
-            <h2 className="text-xl font-bold text-foreground mb-2">
-              Connect GitHub to start verifying your projects.
-            </h2>
-            <p className="text-sm text-muted-foreground max-w-md">
-              Praxis reads your commit history, code structure, and architecture. You
-              choose which repository to submit. We request read-only access scoped to
-              that repository only.
-            </p>
-          </div>
-          <Link
-            href="/studio/connect-github"
-            className="inline-flex items-center gap-2 h-11 px-8 bg-foreground text-background text-[11px] font-medium uppercase tracking-widest rounded-none hover:opacity-90 transition-opacity shrink-0"
-          >
-            <GitBranch size={14} />
-            Connect GitHub
-          </Link>
-        </div>
+        <GitHubConnection
+          github={github}
+          onRefresh={(account) => setGithub(account)}
+        />
       )}
 
       {/* Primary CTAs — shown when GitHub is connected */}
