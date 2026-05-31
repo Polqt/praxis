@@ -4,8 +4,9 @@ import configuration from './config/configuration'
 import { DatabaseModule } from './database/database.module'
 import { AuthModule } from './auth/auth.module'
 import { UsersModule } from './users/users.module'
-import { TasksModule } from './tasks/tasks.module'
-import { VerificationModule } from './verification/verification.module'
+import { GitHubModule } from './github/github.module'
+import { ChallengesModule } from './challenges/challenges.module'
+import { SubmissionsModule } from './submissions/submissions.module'
 
 @Module({
   imports: [
@@ -17,8 +18,9 @@ import { VerificationModule } from './verification/verification.module'
     DatabaseModule,
     AuthModule,
     UsersModule,
-    TasksModule,
-    VerificationModule,
+    GitHubModule,
+    ChallengesModule,
+    SubmissionsModule,
   ],
 })
 export class AppModule {}
