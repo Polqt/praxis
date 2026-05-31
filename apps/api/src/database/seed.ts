@@ -42,18 +42,17 @@ async function seed() {
       trackId: backendTrack.id,
       title: 'Build a Production-Ready REST API',
       description: `## Build a Production-Ready REST API
+        Submit a backend project that demonstrates real-world engineering practices.
 
-Submit a backend project that demonstrates real-world engineering practices.
+        Your project should implement a REST API with authentication, database persistence, and meaningful test coverage. It should be deployable and demonstrate awareness of security and operational concerns.
 
-Your project should implement a REST API with authentication, database persistence, and meaningful test coverage. It should be deployable and demonstrate awareness of security and operational concerns.
-
-**What we look for:**
-- Clean API design with appropriate HTTP methods and status codes
-- Working authentication/authorization (JWT, sessions, or OAuth)
-- Database integration with migrations or schema management
-- Test coverage for core functionality
-- Evidence of deployment (CI/CD, Docker, cloud platform)
-- Basic security practices (env vars for secrets, input validation, dependency hygiene)`,
+        **What we look for:**
+        - Clean API design with appropriate HTTP methods and status codes
+        - Working authentication/authorization (JWT, sessions, or OAuth)
+        - Database integration with migrations or schema management
+        - Test coverage for core functionality
+        - Evidence of deployment (CI/CD, Docker, cloud platform)
+        - Basic security practices (env vars for secrets, input validation, dependency hygiene)`,
       projectType: 'backend' as const,
       rubric: {
         categories: [

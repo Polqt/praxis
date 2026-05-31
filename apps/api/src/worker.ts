@@ -1,7 +1,7 @@
 import 'reflect-metadata'
 import { NestFactory } from '@nestjs/core'
-import { WorkerModule } from './worker/worker.module'
-import { WorkerHealthService } from './worker/worker-health.service'
+import { WorkerModule } from './verification/worker/worker.module'
+import { WorkerHealthService } from './verification/worker/worker-health.service'
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(WorkerModule)

@@ -10,8 +10,8 @@ import {
 } from '../queue/queue.constants'
 import { redisConnectionOptions } from '../queue/redis-connection'
 import { VerificationQueueService } from '../queue/queue.service'
-import { ReportsService } from '../reports/reports.service'
-import { SubmissionStatusService } from '../submissions/submission-status.service'
+import { ReportsService } from '../../reports/reports.service'
+import { SubmissionStatusService } from '../../submissions/submission-status.service'
 
 @Injectable()
 export class VerificationWorker implements OnModuleInit, OnModuleDestroy {
