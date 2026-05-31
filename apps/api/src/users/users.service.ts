@@ -35,6 +35,27 @@ export class UsersService {
     return result[0]
   }
 
+  async findByUsername(username: string) {
+    const result = await this.db.db
+      .select()
+      .from(users)
+      .where(eq(users.username, username))
+      .limit(1)
+
+    return result[0] ?? null
+  }
+
+  async updateUser(userId: string, data: { username: string }) {
+    const updated = await this.db.db
+      .update(users)
+      .set({ username: data.username })
+      .where(eq(users.id, userId))
+      .returning()
+
+    if (!updated[0]) throw new NotFoundException()
+    return updated[0]
+  }
+
   async getUserSkills(userId: string) {
     return this.db.db
       .select({
