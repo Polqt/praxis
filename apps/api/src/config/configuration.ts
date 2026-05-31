@@ -11,5 +11,8 @@ export default () => ({
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY,
   },
+  github: {
+    tokenEncryptionKey: process.env.GITHUB_TOKEN_ENCRYPTION_KEY,
+  },
   port: parseInt(process.env.PORT ?? '4000', 10),
 })
