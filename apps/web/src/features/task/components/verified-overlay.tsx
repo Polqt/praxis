@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import confetti from 'canvas-confetti'
-import { SkillChip } from './SkillChip'
+import { SkillChip } from './skill-chip'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 

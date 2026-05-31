@@ -50,11 +50,7 @@ export function useVerification(taskId: string): UseVerificationReturn {
         const message = result.message ?? 'All tests passed!'
         typewrite(message, () => {
           setStatus('verified')
-          confetti({
-            particleCount: 120,
-            spread: 80,
-            origin: { x: 0.5, y: 0 },
-          })
+          confetti({ particleCount: 120, spread: 80, origin: { x: 0.5, y: 0 } })
         })
       } else {
         const msg = result.feedback ?? 'Some tests failed. Try again.'

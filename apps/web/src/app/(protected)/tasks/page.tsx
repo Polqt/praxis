@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { apiClient } from '@/lib/api'
 import type { TaskWithStatus } from '@praxis/shared'
-import { TaskCard } from '@/components/TaskCard'
+import { TaskCard } from '@/features/task'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function TasksPage() {

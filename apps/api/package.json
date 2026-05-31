@@ -6,7 +6,11 @@
     "dev": "nest start --watch",
     "build": "nest build",
     "start": "node dist/main",
-    "seed": "ts-node -r dotenv/config src/database/seed.ts"
+    "seed": "ts-node -r dotenv/config src/database/seed.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

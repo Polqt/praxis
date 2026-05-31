@@ -1,10 +1,10 @@
 'use client'
 
-import type { VerificationStatus } from '@/hooks/useVerification'
-import { SkillChip } from './SkillChip'
+import type { VerificationStatus } from '../hooks/use-verification'
+import { SkillChip } from './skill-chip'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { cn } from '@/lib/utils'
+import { cn } from '@/shared/utils/cn'
 
 interface CoachPanelProps {
   status: VerificationStatus
@@ -22,7 +22,6 @@ export function CoachPanel({ status, feedback, attempts, skillTags, onRetry, onN
       status === 'verified' && 'border-l-green-500',
       status === 'failed' && 'border-l-destructive',
     )}>
-      {/* Header */}
       <div className="flex items-center gap-2 mb-5 pb-5 border-b">
         <StatusDot status={status} />
         <span className="text-sm font-semibold text-foreground">
@@ -33,13 +32,12 @@ export function CoachPanel({ status, feedback, attempts, skillTags, onRetry, onN
         </span>
       </div>
 
-      {/* Body */}
       <div className="flex-1 overflow-auto">
         {status === 'idle' && (
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Write your solution and click <strong className="text-foreground">"Run & Verify"</strong> when ready.
+            Write your solution and click <strong className="text-foreground">&quot;Run & Verify&quot;</strong> when ready.
             <br /><br />
-            I'll execute your code in a live sandbox and tell you exactly what passes or fails.
+            I&apos;ll execute your code in a live sandbox and tell you exactly what passes or fails.
           </p>
         )}
 
@@ -73,7 +71,6 @@ export function CoachPanel({ status, feedback, attempts, skillTags, onRetry, onN
         )}
       </div>
 
-      {/* Footer */}
       <div className="mt-6 pt-4 border-t space-y-2">
         {status === 'failed' && (
           <>

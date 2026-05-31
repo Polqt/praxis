@@ -5,14 +5,16 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { apiClient } from '@/lib/api'
 import type { TaskWithStatus } from '@praxis/shared'
-import { CodeEditor } from '@/components/CodeEditor'
-import { CoachPanel } from '@/components/CoachPanel'
-import { VerifiedOverlay } from '@/components/VerifiedOverlay'
-import { StatusPill } from '@/components/StatusPill'
-import { useVerification } from '@/hooks/useVerification'
+import {
+  CodeEditor,
+  CoachPanel,
+  VerifiedOverlay,
+  StatusPill,
+  useVerification,
+} from '@/features/task'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { cn } from '@/shared/utils/cn'
 
 export default function TaskPage({ params }: { params: Promise<{ taskId: string }> }) {
   const { taskId } = use(params)
@@ -55,7 +57,6 @@ export default function TaskPage({ params }: { params: Promise<{ taskId: string 
         />
       )}
 
-      {/* Top bar */}
       <div className="flex items-center gap-4 px-6 py-3 border-b bg-card shrink-0">
         <Link href="/tasks" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
           ← Tasks
@@ -67,11 +68,8 @@ export default function TaskPage({ params }: { params: Promise<{ taskId: string 
         </div>
       </div>
 
-      {/* Main panels */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left panel */}
         <div className="flex flex-col" style={{ width: '55%' }}>
-          {/* Tabs */}
           <div className="flex border-b bg-card shrink-0">
             {(['description', 'editor'] as const).map((tab) => (
               <button
@@ -89,7 +87,6 @@ export default function TaskPage({ params }: { params: Promise<{ taskId: string 
             ))}
           </div>
 
-          {/* Tab content */}
           <div className="flex-1 overflow-auto">
             {activeTab === 'description' ? (
               <div className="p-6">
@@ -104,7 +101,6 @@ export default function TaskPage({ params }: { params: Promise<{ taskId: string 
             )}
           </div>
 
-          {/* Bottom action bar */}
           <div className="border-t bg-card shrink-0">
             <div className="flex items-center gap-3 px-4 py-3">
               <Button
@@ -121,7 +117,6 @@ export default function TaskPage({ params }: { params: Promise<{ taskId: string 
               </Button>
             </div>
 
-            {/* Terminal toggle */}
             <div className="border-t">
               <button
                 onClick={() => setTerminalOpen((o) => !o)}
@@ -138,7 +133,6 @@ export default function TaskPage({ params }: { params: Promise<{ taskId: string 
           </div>
         </div>
 
-        {/* Right panel */}
         <div className="flex-1 overflow-hidden">
           <CoachPanel
             status={status}

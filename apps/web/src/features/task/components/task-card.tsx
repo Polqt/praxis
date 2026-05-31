@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { TaskWithStatus } from '@praxis/shared'
-import { StatusPill } from './StatusPill'
+import { StatusPill } from './status-pill'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 
