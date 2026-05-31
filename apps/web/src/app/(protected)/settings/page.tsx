@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { serverApiFetch } from '@/lib/api.server'
-import { SettingsClient } from './settings-client'
+import { SettingsClient } from '@/features/settings/components/settings-client'
 import type { GitHubAccount, User } from '@praxis/shared'
 
 export const metadata: Metadata = { title: 'Settings — Praxis' }

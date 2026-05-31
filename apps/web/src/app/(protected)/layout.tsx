@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { UserProvider } from '@/contexts/user-context'
-import { SignOutButton } from '@/components/auth/sign-out-button'
+import { UserProvider } from '@/features/user/hooks/use-user-context'
+import { SignOutButton } from '@/features/auth/components/sign-out-button'
 import { serverApiFetch } from '@/lib/api.server'
 import type { User } from '@praxis/shared'
 

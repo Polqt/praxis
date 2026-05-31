@@ -1,5 +1,5 @@
 import { serverApiFetch } from '@/lib/api.server'
-import { StudioClient } from './studio-client'
+import { StudioClient } from '@/features/studio/components/studio-client'
 import type { GitHubAccount, User } from '@praxis/shared'
 
 export default async function StudioPage() {
