@@ -1,9 +1,3 @@
--- v1 schema: enums, tables, indexes, RLS policies
-
--- =====================
--- ENUMS
--- =====================
-
 CREATE TYPE "public"."submission_status" AS ENUM(
   'created',
   'queued',
@@ -129,6 +123,16 @@ CREATE TABLE "project_verification_reports" (
   CONSTRAINT "project_verification_reports_public_token_unique" UNIQUE("public_token")
 );
 
+CREATE TABLE "project_submission_events" (
+  "id" text PRIMARY KEY NOT NULL,
+  "submission_id" text NOT NULL,
+  "from_status" "submission_status",
+  "to_status" "submission_status" NOT NULL,
+  "reason" text,
+  "metadata" jsonb,
+  "created_at" timestamp DEFAULT now() NOT NULL
+);
+
 -- =====================
 -- FOREIGN KEYS
 -- =====================
@@ -173,6 +177,11 @@ ALTER TABLE "project_verification_reports"
   FOREIGN KEY ("submission_id") REFERENCES "public"."project_submissions"("id")
   ON DELETE no action ON UPDATE no action;
 
+ALTER TABLE "project_submission_events"
+  ADD CONSTRAINT "project_submission_events_submission_id_fk"
+  FOREIGN KEY ("submission_id") REFERENCES "public"."project_submissions"("id")
+  ON DELETE no action ON UPDATE no action;
+
 -- =====================
 -- INDEXES
 -- =====================
@@ -188,11 +197,13 @@ CREATE UNIQUE INDEX "project_submissions_user_challenge_commit_idx"
 -- =====================
 
 ALTER TABLE "tracks" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "users" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "skills" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "user_skills" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "project_challenges" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "github_accounts" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "project_submissions" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "project_submission_events" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "project_verification_reports" ENABLE ROW LEVEL SECURITY;
 
 -- =====================
@@ -213,6 +224,11 @@ CREATE POLICY "project_challenges_public_read"
   ON "project_challenges" FOR SELECT
   TO anon, authenticated
   USING (true);
+
+CREATE POLICY "users_select_own"
+  ON "users" FOR SELECT
+  TO authenticated
+  USING (auth.uid()::text = supabase_uid);
 
 -- =====================
 -- RLS: USER-OWNED TABLES (select own rows only)
@@ -239,6 +255,18 @@ CREATE POLICY "project_submissions_select_own"
     auth.uid()::text = (SELECT supabase_uid FROM users WHERE id = user_id)
   );
 
+CREATE POLICY "project_submission_events_select_own"
+  ON "project_submission_events" FOR SELECT
+  TO authenticated
+  USING (
+    auth.uid()::text = (
+      SELECT u.supabase_uid
+      FROM users u
+      INNER JOIN project_submissions ps ON ps.user_id = u.id
+      WHERE ps.id = submission_id
+    )
+  );
+
 CREATE POLICY "project_verification_reports_select"
   ON "project_verification_reports" FOR SELECT
   TO anon, authenticated
@@ -263,6 +291,12 @@ CREATE POLICY "user_skills_no_write"
   USING (false)
   WITH CHECK (false);
 
+CREATE POLICY "users_no_write"
+  ON "users" FOR ALL
+  TO anon, authenticated
+  USING (false)
+  WITH CHECK (false);
+
 CREATE POLICY "github_accounts_no_write"
   ON "github_accounts" FOR ALL
   TO anon, authenticated
@@ -271,6 +305,12 @@ CREATE POLICY "github_accounts_no_write"
 
 CREATE POLICY "project_submissions_no_write"
   ON "project_submissions" FOR ALL
+  TO anon, authenticated
+  USING (false)
+  WITH CHECK (false);
+
+CREATE POLICY "project_submission_events_no_write"
+  ON "project_submission_events" FOR ALL
   TO anon, authenticated
   USING (false)
   WITH CHECK (false);

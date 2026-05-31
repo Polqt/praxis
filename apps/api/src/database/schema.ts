@@ -135,6 +135,16 @@ export const projectSubmissions = pgTable('project_submissions', {
   ),
 ])
 
+export const projectSubmissionEvents = pgTable('project_submission_events', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  submissionId: text('submission_id').notNull().references(() => projectSubmissions.id),
+  fromStatus: submissionStatusEnum('from_status'),
+  toStatus: submissionStatusEnum('to_status').notNull(),
+  reason: text('reason'),
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
 export const projectVerificationReports = pgTable('project_verification_reports', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
   submissionId: text('submission_id').unique().notNull().references(() => projectSubmissions.id),

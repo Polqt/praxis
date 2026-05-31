@@ -67,6 +67,16 @@ export interface ProjectSubmission {
   // ingestedData is intentionally omitted — never exposed to the frontend
 }
 
+export interface ProjectSubmissionEvent {
+  id: string
+  submissionId: string
+  fromStatus: SubmissionStatus | null
+  toStatus: SubmissionStatus
+  reason: string | null
+  metadata: Record<string, unknown> | null
+  createdAt: string
+}
+
 export interface VerificationReport {
   id: string
   submissionId: string
