@@ -1,4 +1,3 @@
 dist/
 *.tsbuildinfo
 .env
-drizzle/
