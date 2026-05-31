@@ -1,14 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { randomBytes } from 'node:crypto'
 import { eq } from 'drizzle-orm'
-import { ANALYZER_VERSION, RepositoryAnalysisData } from '../verification/analysis/repository-analysis.types'
-import { DatabaseService } from '../database/database.service'
+import { ANALYZER_VERSION, RepositoryAnalysisData } from '../analysis/repository-analysis.types'
+import { DatabaseService } from '../../database/database.service'
 import {
   projectChallenges,
   projectSubmissions,
   projectVerificationReports,
   repositoryAnalyses,
-} from '../database/schema'
+} from '../../database/schema'
 import { scoreReport } from './report-scoring'
 
 @Injectable()

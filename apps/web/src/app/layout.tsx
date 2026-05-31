@@ -6,19 +6,19 @@ import './globals.css'
 const syne = Syne({
   subsets: ['latin'],
   weight: ['700', '800'],
-  variable: '--font-display',
+  variable: '--font-heading',
 })
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
   weight: ['400', '500'],
-  variable: '--font-body',
+  variable: '--font-sans',
 })
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   weight: ['400', '500'],
-  variable: '--font-mono',
+  variable: '--font-geist-mono',
 })
 
 export const metadata: Metadata = {

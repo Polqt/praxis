@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { and, eq } from 'drizzle-orm'
-import { DatabaseService } from '../database/database.service'
-import { projectSubmissions, repositoryAnalyses, repositoryIngestions } from '../database/schema'
+import { DatabaseService } from '../../database/database.service'
+import { projectSubmissions, repositoryAnalyses, repositoryIngestions } from '../../database/schema'
 import { RepositoryIngestionData } from '../ingestion/repository-ingestion.types'
 import { ANALYZER_VERSION, RepositoryAnalysisData } from './repository-analysis.types'
 

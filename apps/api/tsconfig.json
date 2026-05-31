@@ -11,7 +11,6 @@
     "rootDir": "../..",
     "outDir": "./dist",
     "baseUrl": "./",
-    "ignoreDeprecations": "5.0",
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
@@ -23,5 +22,5 @@
       "@praxis/shared": ["../../packages/shared/src/index.ts"]
     }
   },
-  "exclude": ["src/database/seed.ts"]
+  "exclude": ["src/database/seed.ts", "drizzle.config.ts", "dist", "**/dist"]
 }

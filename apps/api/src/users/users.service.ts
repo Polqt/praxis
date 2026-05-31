@@ -1,15 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { eq } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 import { DatabaseService } from '../database/database.service'
-import { users, userSkills, skills } from '../database/schema'
-import { SubmissionsService } from '../submissions/submissions.service'
+import { users, userSkills, skills, projectSubmissions } from '../database/schema'
 
 @Injectable()
 export class UsersService {
-  constructor(
-    private db: DatabaseService,
-    private submissionsService: SubmissionsService,
-  ) {}
+  constructor(private db: DatabaseService) {}
 
   async getOrCreateUser(supabaseUid: string, email: string) {
     const existing = await this.db.db
@@ -61,6 +57,16 @@ export class UsersService {
 
   async getDashboardStats(userId: string) {
     const verifiedSkills = await this.getUserSkills(userId)
-    return this.submissionsService.getDashboardStats(userId, verifiedSkills)
+    const submissions = await this.db.db
+      .select()
+      .from(projectSubmissions)
+      .where(eq(projectSubmissions.userId, userId))
+      .orderBy(desc(projectSubmissions.submittedAt))
+    return {
+      totalVerified: verifiedSkills.length,
+      totalAttempts: submissions.length,
+      verifiedSkills,
+      recentSubmissions: submissions.slice(0, 5),
+    }
   }
 }

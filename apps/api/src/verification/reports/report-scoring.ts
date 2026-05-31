@@ -1,5 +1,5 @@
 import type { Verdict } from '@praxis/shared'
-import { RepositoryAnalysisData } from '../verification/analysis/repository-analysis.types'
+import { RepositoryAnalysisData } from '../analysis/repository-analysis.types'
 
 interface Rubric {
   categories: { name: string; weight: number; floor: number }[]

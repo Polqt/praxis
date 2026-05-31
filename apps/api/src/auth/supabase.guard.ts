@@ -3,6 +3,8 @@ import {
   ExecutionContext,
   Injectable,
   UnauthorizedException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as jwt from 'jsonwebtoken'
@@ -12,6 +14,7 @@ import { UsersService } from '../users/users.service'
 export class SupabaseGuard implements CanActivate {
   constructor(
     private config: ConfigService,
+    @Inject(forwardRef(() => UsersService))
     private usersService: UsersService,
   ) {}
 
@@ -24,11 +27,11 @@ export class SupabaseGuard implements CanActivate {
     }
 
     const token = authHeader.split(' ')[1]
-    const secret = this.config.get<string>('supabase.jwtSecret')!
+    const publicKey = this.config.get<string>('supabase.jwtSecret')!.replace(/\\n/g, '\n')
 
     let payload: { sub: string; email: string }
     try {
-      payload = jwt.verify(token, secret) as { sub: string; email: string }
+      payload = jwt.verify(token, publicKey, { algorithms: ['ES256'] }) as { sub: string; email: string }
     } catch {
       throw new UnauthorizedException()
     }

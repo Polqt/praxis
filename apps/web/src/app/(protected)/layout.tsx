@@ -1,51 +1,54 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import { UserProvider } from '@/contexts/user-context'
+import { SignOutButton } from '@/components/auth/sign-out-button'
+import { serverApiFetch } from '@/lib/api.server'
+import type { User } from '@praxis/shared'
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies()
+  const supabase = await createClient()
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {}
-        },
-      },
-    },
-  )
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) redirect('/sign-in')
 
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/sign-in')
+  let localUser: User
+  try {
+    localUser = await serverApiFetch<User>('/users/me')
+  } catch {
+    redirect('/sign-in')
+  }
 
   return (
-    <div className="min-h-screen flex bg-background">
-      <nav className="w-56 shrink-0 border-r flex flex-col p-4 gap-1 bg-card">
-        <span className="text-xl font-bold mb-6 px-2 text-foreground">
-          Praxis
-        </span>
-        <Link
-          href="/dashboard"
-          className="px-3 py-2 rounded-lg text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-        >
-          Dashboard
-        </Link>
-        <Link
-          href="/tasks"
-          className="px-3 py-2 rounded-lg text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-        >
-          Tasks
-        </Link>
-      </nav>
-      <main className="flex-1 overflow-auto">{children}</main>
-    </div>
+    <UserProvider user={localUser!}>
+      <div className="min-h-screen flex bg-background">
+        <aside className="w-52 shrink-0 border-r border-border flex flex-col bg-background">
+          <div className="px-5 py-5 border-b border-border">
+            <Link href="/studio" className="text-[15px] font-semibold tracking-tight text-foreground">
+              Praxis
+            </Link>
+          </div>
+          <nav className="flex flex-col gap-0.5 p-3 flex-1">
+            <Link
+              href="/studio"
+              className="px-3 py-2 text-[13px] text-muted-foreground rounded-sm hover:bg-muted hover:text-foreground transition-colors"
+            >
+              Studio
+            </Link>
+            <Link
+              href="/challenges"
+              className="px-3 py-2 text-[13px] text-muted-foreground rounded-sm hover:bg-muted hover:text-foreground transition-colors"
+            >
+              Challenges
+            </Link>
+          </nav>
+          <div className="px-3 py-3 border-t border-border flex flex-col gap-1">
+            <p className="px-3 text-[11px] text-muted-foreground truncate">{localUser!.email}</p>
+            <SignOutButton />
+          </div>
+        </aside>
+        <main className="flex-1 overflow-auto">{children}</main>
+      </div>
+    </UserProvider>
   )
 }

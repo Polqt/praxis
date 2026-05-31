@@ -1,9 +1,9 @@
-import { Module } from '@nestjs/common'
+import { Module, forwardRef } from '@nestjs/common'
 import { SupabaseGuard } from './supabase.guard'
 import { UsersModule } from '../users/users.module'
 
 @Module({
-  imports: [UsersModule],
+  imports: [forwardRef(() => UsersModule)],
   providers: [SupabaseGuard],
   exports: [SupabaseGuard],
 })

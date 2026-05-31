@@ -1,11 +1,11 @@
-import { createClient } from '@/lib/supabase/client'
-import type { DashboardStats, GitHubAccount, User } from '@praxis/shared'
+import { createClient } from '@/lib/supabase/server'
+import type { User } from '@praxis/shared'
 
-export async function apiFetch<T>(
+export async function serverApiFetch<T>(
   path: string,
   options?: RequestInit
 ): Promise<T> {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
   const token = session?.access_token
 
@@ -26,8 +26,6 @@ export async function apiFetch<T>(
   return response.json() as Promise<T>
 }
 
-export const apiClient = {
-  getMe: () => apiFetch<User>('/users/me'),
-  getDashboard: () => apiFetch<DashboardStats>('/users/me/dashboard'),
-  getGitHubAccount: () => apiFetch<GitHubAccount | null>('/github/account'),
+export async function getLocalUser(): Promise<User> {
+  return serverApiFetch<User>('/users/me')
 }
