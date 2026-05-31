@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, GitBranch, Clock, AlertCircle, ArrowRight } from 'lucide-react'
+import { CheckCircle2, GitBranch, Clock, AlertCircle, ArrowRight, Loader2 } from 'lucide-react'
 import { apiClient } from '@/lib/api'
 import { useUser } from '@/contexts/user-context'
+import { usePatchUsername } from '@/hooks/use-patch-username'
+import { useSetUsername } from '@/contexts/user-context'
 import type { DashboardStats, GitHubAccount } from '@praxis/shared'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 
 function SectionLabel({ text }: { text: string }) {
   return (
@@ -33,6 +36,59 @@ function StatusBadge({ status }: { status: string }) {
     <span className={`text-[10px] uppercase tracking-widest font-medium px-2 py-0.5 border ${s.color}`}>
       {s.label}
     </span>
+  )
+}
+
+function UsernameSetupCard() {
+  const setUsername = useSetUsername()
+  const { value, setValue, loading, error, inlineError, isValid, submit } =
+    usePatchUsername((username) => setUsername(username))
+
+  return (
+    <div className="border border-border p-8 mb-8">
+      <div className="inline-flex items-center gap-2 mb-3">
+        <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--primary)' }} />
+        <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
+          One more step
+        </span>
+      </div>
+      <h2 className="text-xl font-bold text-foreground mb-2">Choose your username</h2>
+      <p className="text-sm text-muted-foreground mb-6 max-w-md">
+        Your proof page will live at{' '}
+        <span className="font-mono text-foreground">
+          praxis.dev/p/{value || 'username'}
+        </span>
+        . This is how employers and collaborators will find your verified work.
+      </p>
+      <div className="flex flex-col sm:flex-row gap-3 max-w-sm">
+        <div className="flex-1">
+          <Input
+            value={value}
+            onChange={(e) => setValue(e.target.value.toLowerCase())}
+            placeholder="your-username"
+            className="h-11 rounded-none border-border font-mono focus-visible:ring-primary"
+            onKeyDown={(e) => e.key === 'Enter' && submit()}
+          />
+          {inlineError && (
+            <p className="text-[11px] text-destructive mt-1">{inlineError}</p>
+          )}
+          {!inlineError && value.length >= 3 && (
+            <p className="text-[11px] text-green-600 mt-1">Looks good</p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={submit}
+          disabled={!isValid || loading}
+          className="h-11 px-6 bg-foreground text-background text-[11px] font-medium uppercase tracking-widest rounded-none hover:opacity-90 transition-opacity disabled:opacity-50 shrink-0"
+        >
+          {loading ? <Loader2 size={14} className="animate-spin" /> : 'Confirm'}
+        </button>
+      </div>
+      {error && (
+        <p className="text-[12px] text-destructive mt-3">{error}</p>
+      )}
+    </div>
   )
 }
 
@@ -123,7 +179,20 @@ export default function StudioPage() {
             </div>
           )}
         </div>
+        {user.username && (
+          <div className="border border-border p-5">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mb-2">
+              Proof Page
+            </p>
+            <p className="text-[12px] font-mono text-foreground truncate">
+              praxis.dev/p/{user.username}
+            </p>
+          </div>
+        )}
       </div>
+
+      {/* Username setup — shown when username is not set */}
+      {!user.username && <UsernameSetupCard />}
 
       {/* GitHub CTA — only shown when not connected */}
       {!githubConnected && (
