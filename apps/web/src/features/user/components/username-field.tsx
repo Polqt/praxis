@@ -35,7 +35,7 @@ export function UsernameField({ initialValue, onSaveSuccess }: Props) {
         className="font-mono w-full"
       />
       <div className="flex items-center justify-between">
-        <span className="text-[13px] min-h-[1.25rem]">
+        <span className="text-[13px] min-h-5">
           {validationError && status.type !== 'idle' ? (
             <span className="text-amber-600">{validationError}</span>
           ) : statusText}
