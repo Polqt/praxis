@@ -5,12 +5,16 @@ import { DocumentationScorer } from '../scoring/categories/documentation.scorer'
 import { DeploymentScorer } from '../scoring/categories/deployment.scorer'
 import { SecurityScorer } from '../scoring/categories/security.scorer'
 import { ArchitectureScorer } from '../scoring/categories/architecture.scorer'
+import { AuthenticationScorer } from '../scoring/categories/authentication.scorer'
+import { DatabaseScorer } from '../scoring/categories/database.scorer'
 import {
   extractTestingSignals,
   extractDocumentationSignals,
   extractDeploymentSignals,
   extractSecuritySignals,
   extractArchitectureSignals,
+  extractAuthenticationSignals,
+  extractDatabaseSignals,
 } from '../scoring/signals/signal-extractor'
 
 interface RubricCategory {
@@ -28,6 +32,8 @@ const documentationScorer = new DocumentationScorer()
 const deploymentScorer = new DeploymentScorer()
 const securityScorer = new SecurityScorer()
 const architectureScorer = new ArchitectureScorer()
+const authenticationScorer = new AuthenticationScorer()
+const databaseScorer = new DatabaseScorer()
 
 function scoreCategoryByName(categoryName: string, ingestionData: RepositoryIngestionData) {
   const name = categoryName.toLowerCase()
@@ -38,20 +44,25 @@ function scoreCategoryByName(categoryName: string, ingestionData: RepositoryInge
   if (name.includes('documentation')) {
     return documentationScorer.score(extractDocumentationSignals(ingestionData))
   }
-  if (name.includes('deployment') || name.includes('ci')) {
+  if (name.includes('deployment') || name.includes('ci/cd')) {
     return deploymentScorer.score(extractDeploymentSignals(ingestionData))
   }
   if (name.includes('api design')) {
     return securityScorer.score(extractSecuritySignals(ingestionData), 'api-design')
   }
-  if (name.includes('security') || name.includes('authentication')) {
+  if (name.includes('authentication')) {
+    return authenticationScorer.score(extractAuthenticationSignals(ingestionData))
+  }
+  if (name.includes('database design') || name.includes('database')) {
+    return databaseScorer.score(extractDatabaseSignals(ingestionData))
+  }
+  if (name.includes('security')) {
     return securityScorer.score(extractSecuritySignals(ingestionData))
   }
-  if (name.includes('architecture') || name.includes('database design')) {
+  if (name.includes('architecture')) {
     return architectureScorer.score(extractArchitectureSignals(ingestionData))
   }
 
-  // Fallback: security signals for unrecognized categories
   return securityScorer.score(extractSecuritySignals(ingestionData))
 }
 

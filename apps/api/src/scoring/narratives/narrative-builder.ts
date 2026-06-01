@@ -3,6 +3,8 @@ import type { DocumentationSignals } from '../signals/documentation.signals'
 import type { DeploymentSignals } from '../signals/deployment.signals'
 import type { SecuritySignals } from '../signals/security.signals'
 import type { ArchitectureSignals } from '../signals/architecture.signals'
+import type { AuthenticationSignals } from '../signals/authentication.signals'
+import type { DatabaseSignals } from '../signals/database.signals'
 
 export function buildTestingNarrative(s: TestingSignals): string {
   if (s.testFileCount === 0) {
@@ -144,6 +146,67 @@ export function buildApiDesignNarrative(s: SecuritySignals): string {
   } else {
     parts.push('No environment variable configuration was detected.')
   }
+
+  return parts.join(' ')
+}
+
+export function buildAuthenticationNarrative(s: AuthenticationSignals): string {
+  if (!s.hasAuthFiles && !s.hasJwtLibrary && !s.hasSessionOrTokenPattern) {
+    return 'No authentication implementation was detected. Auth files, JWT libraries, and token patterns are all absent.'
+  }
+
+  const parts: string[] = []
+
+  if (s.hasAuthFiles) {
+    const examples = s.authFilePaths.slice(0, 2).join(', ')
+    parts.push(`Authentication files detected${examples ? ` (${examples})` : ''}.`)
+  } else {
+    parts.push('No dedicated auth files were detected.')
+  }
+
+  if (s.detectedAuthLibraries.length > 0) {
+    parts.push(`Auth libraries in use: ${s.detectedAuthLibraries.join(', ')}.`)
+  } else {
+    parts.push('No JWT or password-hashing library was detected in package dependencies.')
+  }
+
+  if (s.hasGuardOrMiddleware) {
+    parts.push('Guard or middleware patterns detected for route protection.')
+  } else {
+    parts.push('No guard or middleware pattern detected for route protection.')
+  }
+
+  if (s.hasSessionOrTokenPattern) {
+    parts.push('Token signing or session management code found in source files.')
+  }
+
+  return parts.join(' ')
+}
+
+export function buildDatabaseNarrative(s: DatabaseSignals): string {
+  if (!s.hasOrmLibrary && !s.hasMigrationFiles && !s.hasSchemaDefinitions) {
+    return 'No database design evidence detected. No ORM, migration files, or schema definitions were found.'
+  }
+
+  const parts: string[] = []
+
+  if (s.hasOrmLibrary && s.detectedOrmLibrary) {
+    parts.push(`ORM detected: ${s.detectedOrmLibrary}.`)
+  } else {
+    parts.push('No ORM library found in package dependencies.')
+  }
+
+  if (s.hasMigrationFiles) {
+    const examples = s.detectedMigrationPaths.slice(0, 2).join(', ')
+    parts.push(`${s.migrationFileCount} migration file${s.migrationFileCount === 1 ? '' : 's'} found${examples ? ` (${examples})` : ''}.`)
+  } else {
+    parts.push('No migration files detected.')
+  }
+
+  if (s.hasSchemaDefinitions) parts.push('Schema or entity definitions present.')
+  if (s.hasRelationPatterns) parts.push('Relational patterns (foreign keys, associations) detected.')
+  if (s.hasTransactionPatterns) parts.push('Transaction usage detected in service layer.')
+  if (s.hasSeedData) parts.push('Seed data files present.')
 
   return parts.join(' ')
 }

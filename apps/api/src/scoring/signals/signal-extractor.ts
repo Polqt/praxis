@@ -4,8 +4,20 @@ import type { DocumentationSignals } from './documentation.signals'
 import type { DeploymentSignals } from './deployment.signals'
 import type { SecuritySignals } from './security.signals'
 import type { ArchitectureSignals } from './architecture.signals'
+import type { AuthenticationSignals } from './authentication.signals'
+import type { DatabaseSignals } from './database.signals'
 
 const VALIDATION_LIBRARIES = ['class-validator', 'joi', 'zod', 'yup', 'ajv', 'superstruct']
+const JWT_LIBRARIES = ['jsonwebtoken', 'jose', '@nestjs/jwt', 'passport-jwt', 'express-jwt', 'jwt-simple']
+const PASSWORD_LIBRARIES = ['bcrypt', 'bcryptjs', 'argon2', 'scrypt', 'crypto-js']
+const ORM_LIBRARIES = ['prisma', 'typeorm', 'drizzle-orm', 'knex', 'sequelize', 'mongoose', 'mikro-orm', '@mikro-orm']
+const GUARD_MIDDLEWARE_PATTERN = /\.(guard|middleware|interceptor)\.(ts|js)$|guards\/|middlewares\/|Guard|Middleware/
+const SESSION_TOKEN_PATTERN = /jwt\.sign|jwt\.verify|createToken|verifyToken|Bearer |passport\.use|session\(/i
+const MIGRATION_PATH_PATTERN = /migrations?\/|migration\.|\.migration\.(ts|js)|schema\.prisma|_migration\.ts/i
+const SCHEMA_FILE_PATTERN = /schema\.(ts|js|prisma)|entity\.(ts|js)|model\.(ts|js)|\.model\.ts|\.entity\.ts/i
+const RELATION_PATTERN = /@ManyToOne|@OneToMany|@OneToOne|@ManyToMany|@Relation|@Column|references\(\)|belongsTo|hasMany|hasOne|belongsToMany/i
+const TRANSACTION_PATTERN = /\.transaction\(|BEGIN|COMMIT|ROLLBACK|withTransaction|@Transaction/i
+const SEED_PATTERN = /seed\.(ts|js|sql)|seeds\/|seeders\/|fixtures\//i
 
 const SETUP_KEYWORDS = /install|setup|getting started|prerequisites/i
 const API_DOC_PATHS = /openapi\.ya?ml|swagger\.ya?ml|api\.md|docs\/(api|swagger)/i
@@ -187,5 +199,70 @@ export function extractArchitectureSignals(data: RepositoryIngestionData): Archi
     hasConfigOrganization,
     topLevelDirectories,
     featureModulePaths: top(featureModulePaths, 10),
+  }
+}
+
+export function extractAuthenticationSignals(data: RepositoryIngestionData): AuthenticationSignals {
+  const authFiles = byKind(data.files, 'auth')
+  const manifestFiles = byKind(data.files, 'manifest')
+  const manifestContent = manifestFiles.map((f) => f.content ?? '').join('\n')
+  const allPaths = data.files.map((f) => f.path).join('\n')
+  const allContent = data.files.map((f) => `${f.path}\n${f.content ?? ''}`).join('\n')
+
+  const detectedJwtLibs = JWT_LIBRARIES.filter((lib) => manifestContent.includes(`"${lib}"`))
+  const detectedPasswordLibs = PASSWORD_LIBRARIES.filter((lib) => manifestContent.includes(`"${lib}"`))
+
+  const guardFiles = data.files.filter((f) => GUARD_MIDDLEWARE_PATTERN.test(f.path))
+  const hasGuardOrMiddleware = guardFiles.length > 0
+
+  const sourceAndAuthContent = [
+    ...byKind(data.files, 'source'),
+    ...authFiles,
+  ].map((f) => f.content ?? '').join('\n')
+
+  const authFilePaths = top([
+    ...authFiles.map((f) => f.path),
+    ...guardFiles.map((f) => f.path),
+  ], 5)
+
+  return {
+    hasAuthFiles: authFiles.length > 0,
+    hasJwtLibrary: detectedJwtLibs.length > 0,
+    hasPasswordHashingLibrary: detectedPasswordLibs.length > 0,
+    hasGuardOrMiddleware,
+    hasSessionOrTokenPattern: SESSION_TOKEN_PATTERN.test(allContent) || SESSION_TOKEN_PATTERN.test(allPaths),
+    authFilePaths,
+    detectedAuthLibraries: [...detectedJwtLibs, ...detectedPasswordLibs],
+  }
+}
+
+export function extractDatabaseSignals(data: RepositoryIngestionData): DatabaseSignals {
+  const allPaths = data.files.map((f) => f.path)
+  const manifestFiles = byKind(data.files, 'manifest')
+  const manifestContent = manifestFiles.map((f) => f.content ?? '').join('\n')
+  const migrationFiles = byKind(data.files, 'migration')
+  const allContent = data.files.map((f) => `${f.path}\n${f.content ?? ''}`).join('\n')
+
+  const migrationPaths = [
+    ...migrationFiles.map((f) => f.path),
+    ...allPaths.filter((p) => MIGRATION_PATH_PATTERN.test(p) && !migrationFiles.find((m) => m.path === p)),
+  ]
+
+  const detectedOrm = ORM_LIBRARIES.find((lib) => manifestContent.includes(`"${lib}"`) || manifestContent.includes(`'${lib}'`)) ?? null
+
+  const schemaFiles = data.files.filter((f) => SCHEMA_FILE_PATTERN.test(f.path))
+  const sourceFiles = byKind(data.files, 'source')
+  const sourceContent = sourceFiles.map((f) => f.content ?? '').join('\n')
+
+  return {
+    hasMigrationFiles: migrationPaths.length > 0,
+    migrationFileCount: migrationPaths.length,
+    hasOrmLibrary: !!detectedOrm,
+    hasSchemaDefinitions: schemaFiles.length > 0,
+    hasRelationPatterns: RELATION_PATTERN.test(sourceContent) || RELATION_PATTERN.test(allContent),
+    hasTransactionPatterns: TRANSACTION_PATTERN.test(sourceContent),
+    hasSeedData: SEED_PATTERN.test(allPaths.join('\n')),
+    detectedOrmLibrary: detectedOrm,
+    detectedMigrationPaths: top(migrationPaths, 5),
   }
 }
