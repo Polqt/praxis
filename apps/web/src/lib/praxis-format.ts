@@ -1,3 +1,4 @@
+import { TERMINAL_STATUSES } from '@/features/submissions/constants'
 import type { ProjectSubmission, ProjectSubmissionEvent, SubmissionStatus } from '@praxis/shared'
 
 export function statusLabel(status: SubmissionStatus) {
@@ -30,5 +31,5 @@ export function eventLabel(event: ProjectSubmissionEvent) {
 }
 
 export function isTerminalSubmission(submission: ProjectSubmission) {
-  return ['verified', 'insufficient', 'failed', 'expired'].includes(submission.status)
+  return TERMINAL_STATUSES.includes(submission.status)
 }

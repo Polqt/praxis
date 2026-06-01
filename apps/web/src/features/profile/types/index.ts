@@ -6,6 +6,8 @@ export interface ProfileReport {
   challengeCategory: string
   verdict: string
   verifiedAt: string
+  publicToken: string | null
+  compositeScore: number | null
 }
 
 export interface PublicProfile {

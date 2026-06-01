@@ -6,12 +6,14 @@ import { VerifiedProjectsSection } from '@/features/profile/components/verified-
 import { ProofStatisticsSection } from '@/features/profile/components/proof-statistics-section'
 import { ProfileFooter } from '@/features/profile/components/profile-footer'
 import type { PublicProfile } from '@/features/profile/types'
+import type { User } from '@praxis/shared'
 
 type Props = {
   profile: PublicProfile
+  viewingUser: User | null
 }
 
-export function ProfileClient({ profile }: Props) {
+export function ProfileClient({ profile, viewingUser }: Props) {
   return (
     <div className="flex flex-col gap-10">
       <ProfileHero
@@ -25,7 +27,11 @@ export function ProfileClient({ profile }: Props) {
 
       <VerifiedSkillsSection skills={profile.verifiedSkills} />
 
-      <VerifiedProjectsSection reports={profile.latestReports} />
+      <VerifiedProjectsSection
+        reports={profile.latestReports}
+        profileUsername={profile.username}
+        viewingUser={viewingUser}
+      />
 
       <ProofStatisticsSection
         reportsCount={profile.reportsCount}

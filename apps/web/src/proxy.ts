@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { safeInternalPath } from '@/lib/redirects'
 
-const PROTECTED_PREFIXES = ['/studio', '/submit', '/submissions', '/reports', '/settings']
+const PROTECTED_PREFIXES = ['/studio', '/submit', '/submissions', '/reports', '/settings', '/onboarding']
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })

@@ -1,36 +1,29 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { serverApiFetch } from '@/lib/api.server'
 import { ProfileClient } from '@/features/profile/components/profile-client'
-import type { PublicProfile, ProfileReport } from '@/features/profile/types'
+import type { PublicProfile } from '@/features/profile/types'
+import type { User } from '@praxis/shared'
 
 type Props = {
   params: Promise<{ username: string }>
 }
 
-type RawProfileReport = Omit<ProfileReport, 'submissionId'> & { submissionId?: string }
-type RawPublicProfile = Omit<PublicProfile, 'latestReports'> & { latestReports: RawProfileReport[] }
-
-async function fetchPublicProfile(username: string): Promise<PublicProfile | null> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/users/${encodeURIComponent(username)}/profile`,
-    { cache: 'no-store' },
-  )
-  if (res.status === 404) return null
-  if (!res.ok) throw new Error('Failed to fetch profile')
-  const raw = await res.json() as RawPublicProfile
-  return {
-    ...raw,
-    latestReports: raw.latestReports.map((r) => ({
-      ...r,
-      // Known gap: submissionId will be '' if backend profile endpoint does not yet return it.
-      submissionId: r.submissionId ?? '',
-    })),
-  }
-}
-
 export default async function PublicProfilePage({ params }: Props) {
   const { username } = await params
-  const profile = await fetchPublicProfile(username)
+
+  const [profile, viewingUser] = await Promise.all([
+    fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/users/${encodeURIComponent(username)}/profile`,
+      { cache: 'no-store' },
+    ).then(async (res) => {
+      if (res.status === 404) return null
+      if (!res.ok) throw new Error('Failed to fetch profile')
+      return res.json() as Promise<PublicProfile>
+    }),
+    serverApiFetch<User>('/users/me').catch(() => null),
+  ])
+
   if (!profile) notFound()
 
   return (
@@ -41,7 +34,7 @@ export default async function PublicProfilePage({ params }: Props) {
             Praxis
           </Link>
         </div>
-        <ProfileClient profile={profile} />
+        <ProfileClient profile={profile} viewingUser={viewingUser} />
       </div>
     </div>
   )

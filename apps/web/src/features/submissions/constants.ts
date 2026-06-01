@@ -1,5 +1,14 @@
 import type { SubmissionStatus } from '@praxis/shared'
 
+export const IN_PROGRESS_STATUSES: SubmissionStatus[] = [
+  'created', 'queued', 'ingesting', 'analyzing', 'generating_report',
+]
+
+export const CATEGORY_LABEL: Record<string, string> = {
+  frontend: 'Frontend Engineering',
+  backend: 'Backend Engineering',
+}
+
 export interface PipelineStage {
   key: string
   label: string

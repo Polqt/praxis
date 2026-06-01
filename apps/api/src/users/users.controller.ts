@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   ConflictException,
   Controller,
@@ -6,6 +7,7 @@ import {
   NotFoundException,
   Param,
   Patch,
+  Query,
   UseGuards,
 } from '@nestjs/common'
 import { SupabaseGuard } from '../auth/supabase.guard'
@@ -18,6 +20,14 @@ import { User } from '@praxis/shared'
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
+
+  @Get('check-username')
+  async checkUsername(@Query('username') username: string) {
+    if (!username) throw new BadRequestException('username query param is required')
+    const normalized = username.trim().toLowerCase()
+    const existing = await this.usersService.findByUsername(normalized)
+    return { available: !existing }
+  }
 
   @Get(':username/profile')
   async getPublicProfile(@Param('username') username: string): Promise<PublicProfileDto> {
@@ -35,11 +45,12 @@ export class UsersController {
   @UseGuards(SupabaseGuard)
   @Patch('me')
   async updateMe(@GetUser() user: User, @Body() dto: UpdateUserDto) {
-    const existing = await this.usersService.findByUsername(dto.username)
+    const normalized = dto.username.trim().toLowerCase()
+    const existing = await this.usersService.findByUsername(normalized)
     if (existing && existing.id !== user.id) {
-      throw new ConflictException('Username is already taken')
+      throw new ConflictException('This username is already taken.')
     }
-    return this.usersService.updateUser(user.id, { username: dto.username })
+    return this.usersService.updateUser(user.id, { username: normalized })
   }
 
   @UseGuards(SupabaseGuard)

@@ -136,8 +136,11 @@ export class UsersService {
           this.db.db
             .select({
               id: projectVerificationReports.id,
+              submissionId: projectVerificationReports.submissionId,
+              compositeScore: projectVerificationReports.compositeScore,
               verdict: projectVerificationReports.verdict,
               generatedAt: projectVerificationReports.generatedAt,
+              publicToken: projectVerificationReports.publicToken,
             })
             .from(projectVerificationReports)
             .where(eq(projectVerificationReports.submissionId, sub.submissionId))
@@ -158,11 +161,14 @@ export class UsersService {
 
         return {
           id: report.id,
+          submissionId: report.submissionId,
           repositoryName: sub.githubRepoFullName,
           challengeTitle: challenge.title,
           challengeCategory: challenge.projectType,
           verdict: report.verdict,
           verifiedAt: (sub.completedAt ?? report.generatedAt).toISOString(),
+          publicToken: report.publicToken ?? null,
+          compositeScore: report.compositeScore ?? null,
         }
       }),
     )

@@ -9,16 +9,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ConnectGitHubButton } from '@/features/github/components/connect-github-button'
 import { useSubmitForm } from '@/features/submissions/hooks/use-submit-form'
+import { CATEGORY_LABEL } from '@/features/submissions/constants'
 import type { ProjectChallenge } from '@praxis/shared'
 
 type Props = {
   challenge: ProjectChallenge
   githubReady: boolean
-}
-
-const CATEGORY_LABEL: Record<string, string> = {
-  frontend: 'Frontend Engineering',
-  backend: 'Backend Engineering',
 }
 
 export function SubmitClient({ challenge, githubReady }: Props) {

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { IconUser, IconBrandGithub, IconAlertTriangle, IconLogout } from '@tabler/icons-react'
+import { useState, useRef } from 'react'
+import { IconUser, IconBrandGithub, IconAlertTriangle, IconLogout, IconCopy, IconCheck, IconExternalLink } from '@tabler/icons-react'
 import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/input'
@@ -50,6 +50,16 @@ export function SettingsClient({ initialGithub }: Props) {
   const [github, setGithub] = useState<GitHubAccount>(initialGithub)
   const [signOutLoading, setSignOutLoading] = useState(false)
   const [signOutError, setSignOutError] = useState('')
+  const [profileUrlCopied, setProfileUrlCopied] = useState(false)
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function handleCopyProfileUrl() {
+    if (!user.username) return
+    void navigator.clipboard.writeText(`https://praxis.dev/p/${user.username}`)
+    setProfileUrlCopied(true)
+    if (copyTimer.current) clearTimeout(copyTimer.current)
+    copyTimer.current = setTimeout(() => setProfileUrlCopied(false), 1500)
+  }
 
   async function handleSignOut() {
     if (signOutLoading) return
@@ -112,6 +122,24 @@ export function SettingsClient({ initialGithub }: Props) {
                 initialValue={user.username ?? (initialGithub.connected ? initialGithub.githubUsername : '')}
                 onSaveSuccess={setContextUsername}
               />
+              {user.username && (
+                <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="text-[12px] text-muted-foreground">Public profile</p>
+                    <p className="text-[13px] font-mono truncate">praxis.dev/p/{user.username}</p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopyProfileUrl} title="Copy link">
+                      {profileUrlCopied ? <IconCheck size={13} /> : <IconCopy size={13} />}
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" asChild title="Open profile">
+                      <a href={`https://praxis.dev/p/${user.username}`} target="_blank" rel="noreferrer">
+                        <IconExternalLink size={13} />
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {activeSection === 'github' && (

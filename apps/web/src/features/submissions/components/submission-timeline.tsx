@@ -1,5 +1,6 @@
 import { IconCircleCheck, IconCircle } from '@tabler/icons-react'
 import { PIPELINE_STAGES, TERMINAL_STAGE_LABELS, TERMINAL_STATUSES } from '@/features/submissions/constants'
+import { formatDate } from '@/lib/praxis-format'
 import type { ProjectSubmission, ProjectSubmissionEvent, SubmissionStatus } from '@praxis/shared'
 
 type Props = {
@@ -14,12 +15,6 @@ function getTimestamp(stageIndex: number, events: ProjectSubmissionEvent[]): str
   if (!stage) return null
   if (stage.toStatus === null) return events[0]?.createdAt ?? null
   return events.find((e) => e.toStatus === stage.toStatus)?.createdAt ?? null
-}
-
-function formatTs(iso: string): string {
-  return new Date(iso).toLocaleString('en-US', {
-    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-  })
 }
 
 export function SubmissionTimeline({ submission, events }: Props) {
@@ -60,7 +55,7 @@ export function SubmissionTimeline({ submission, events }: Props) {
         return (
           <div key={stage.key} className="flex items-center gap-3">
             <span className="font-mono text-xs text-muted-foreground w-28 shrink-0 text-right">
-              {ts ? formatTs(ts) : ''}
+              {ts ? formatDate(ts) : ''}
             </span>
 
             <div className="shrink-0">

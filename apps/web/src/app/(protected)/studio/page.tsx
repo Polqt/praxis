@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { serverApiFetch } from '@/lib/api.server'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -13,6 +14,7 @@ import type {
   VerificationReport,
 } from '@praxis/shared'
 import { formatDate, isTerminalSubmission, repoName, statusLabel } from '@/lib/praxis-format'
+import { ProofProfileSection } from '@/features/studio/components/proof-profile-section'
 
 type SubmissionStats = {
   totalSubmissions: number
@@ -28,8 +30,10 @@ function getGreeting(name: string) {
 }
 
 export default async function StudioPage() {
-  const [user, githubAccount, challenges, submissions, submissionStats, dashboard] = await Promise.all([
-    serverApiFetch<User>('/users/me'),
+  const user = await serverApiFetch<User>('/users/me')
+  if (!user.username) redirect('/onboarding/username')
+
+  const [githubAccount, challenges, submissions, submissionStats, dashboard] = await Promise.all([
     serverApiFetch<GitHubAccount>('/github/account').catch(() => null),
     serverApiFetch<ProjectChallenge[]>('/challenges').catch(() => []),
     serverApiFetch<ProjectSubmission[]>('/submissions').catch(() => []),
@@ -58,7 +62,6 @@ export default async function StudioPage() {
     ? Math.min(100, Math.round((submissionStats.verifiedCount / challenges.length) * 100))
     : 0
   const proofReady = Boolean(user.username && dashboard.verifiedSkills.length > 0)
-  const proofHref = user.username ? `/p/${user.username}` : null
 
   return (
     <div className="px-10 py-8 max-w-6xl">
@@ -176,36 +179,12 @@ export default async function StudioPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Proof Profile</p>
-            <div className="mt-4 space-y-3 text-sm">
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">Username</span>
-                <span>{user.username ? `@${user.username}` : 'Not set'}</span>
-              </div>
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">Reports</span>
-                <span>{submissionStats.reportsGenerated}</span>
-              </div>
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">Skills</span>
-                <span>{dashboard.verifiedSkills.length}</span>
-              </div>
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">Status</span>
-                <span>{proofReady ? 'Ready' : 'Incomplete'}</span>
-              </div>
-            </div>
-            <Button className="mt-5 w-full" variant="outline" asChild>
-              {proofHref ? (
-                <Link href={proofHref}>View Proof Page</Link>
-              ) : (
-                <Link href="/settings">Set Username</Link>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
+        <ProofProfileSection
+          username={user.username ?? null}
+          skillsCount={dashboard.verifiedSkills.length}
+          reportsCount={submissionStats.reportsGenerated}
+          proofReady={proofReady}
+        />
       </section>
       </div>
   )

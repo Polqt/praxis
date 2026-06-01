@@ -89,4 +89,6 @@ export const apiClient = {
       body: JSON.stringify({ accessToken }),
     }),
   disconnectGitHub: () => apiFetch<void>('/github/account', { method: 'DELETE' }),
+  checkUsernameAvailability: (username: string) =>
+    apiFetch<{ available: boolean }>(`/users/check-username?username=${encodeURIComponent(username)}`),
 }

@@ -1,13 +1,12 @@
 import Link from 'next/link'
 import { IconAlertCircle, IconClock } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
+import { IN_PROGRESS_STATUSES } from '@/features/submissions/constants'
 import type { ProjectSubmission } from '@praxis/shared'
 
 type Props = {
   submission: ProjectSubmission
 }
-
-const IN_PROGRESS_STATUSES = ['created', 'queued', 'ingesting', 'analyzing', 'generating_report']
 
 export function SubmissionStatusMessage({ submission }: Props) {
   if (IN_PROGRESS_STATUSES.includes(submission.status)) {
