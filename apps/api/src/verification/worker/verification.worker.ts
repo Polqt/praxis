@@ -12,6 +12,7 @@ import { redisConnectionOptions } from '../queue/redis-connection'
 import { VerificationQueueService } from '../queue/queue.service'
 import { ReportsService } from '../../reports/reports.service'
 import { SubmissionStatusService } from '../../submissions/submission-status.service'
+import { StaleSubmissionService } from '../../submissions/stale-submission.service'
 
 @Injectable()
 export class VerificationWorker implements OnModuleInit, OnModuleDestroy {
@@ -24,6 +25,7 @@ export class VerificationWorker implements OnModuleInit, OnModuleDestroy {
     private readonly analysis: RepositoryAnalysisService,
     private readonly reports: ReportsService,
     private readonly statuses: SubmissionStatusService,
+    private readonly staleSubmissions: StaleSubmissionService,
   ) {}
 
   onModuleInit() {
@@ -57,6 +59,12 @@ export class VerificationWorker implements OnModuleInit, OnModuleDestroy {
   }
 
   private async process(job: Job<VerificationJobPayload>) {
+    // expireStaleSubmission operates on all stale submissions — it does not need a submissionId
+    if (job.name === VERIFICATION_JOB_NAMES.expireStaleSubmission) {
+      await this.staleSubmissions.expireStale()
+      return
+    }
+
     const { submissionId } = job.data
     if (!submissionId || Object.keys(job.data).length !== 1) {
       throw new Error('Verification jobs must contain only submissionId')
@@ -89,8 +97,7 @@ export class VerificationWorker implements OnModuleInit, OnModuleDestroy {
       case VERIFICATION_JOB_NAMES.awardSkills:
         await this.reports.awardSkillsForSubmission(submissionId)
         return
-      case VERIFICATION_JOB_NAMES.expireStaleSubmission:
-        return
+
       default:
         throw new Error(`Unknown verification job: ${job.name}`)
     }

@@ -51,7 +51,7 @@ export default async function StudioPage() {
   const activeSubmission = submissions.find((submission) => !isTerminalSubmission(submission)) ?? submissions[0] ?? null
   const latestTerminalSubmission = submissions.find(isTerminalSubmission) ?? null
   const latestReport = latestTerminalSubmission
-    ? await serverApiFetch<VerificationReport>(`/submissions/${latestTerminalSubmission.id}/report`).catch(() => null)
+    ? await serverApiFetch<VerificationReport>(`/reports/submissions/${latestTerminalSubmission.id}`).catch(() => null)
     : null
   const displayName = user.username ?? user.email.split('@')[0]
   const progress = challenges.length > 0

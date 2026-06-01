@@ -73,7 +73,7 @@ export default async function PrivateReportPage({ params }: Props) {
   const { submissionId } = await params
 
   const [raw, submission] = await Promise.all([
-    serverApiFetch<VerificationReport>(`/submissions/${submissionId}/report`).catch(() => null),
+    serverApiFetch<VerificationReport>(`/reports/submissions/${submissionId}`).catch(() => null),
     serverApiFetch<ProjectSubmission>(`/submissions/${submissionId}`).catch(() => null),
   ])
 

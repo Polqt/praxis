@@ -24,6 +24,10 @@ export default () => ({
     maxTotalBytes: parseInt(process.env.INGESTION_MAX_TOTAL_BYTES ?? '1048576', 10),
     workerHeartbeatKey: process.env.WORKER_HEARTBEAT_KEY ?? 'praxis:worker:heartbeat',
     workerHeartbeatTtlSeconds: parseInt(process.env.WORKER_HEARTBEAT_TTL_SECONDS ?? '30', 10),
+    submissionExpiryHours: parseInt(process.env.SUBMISSION_EXPIRY_HOURS ?? '6', 10),
+  },
+  submissions: {
+    rateLimitPerHour: parseInt(process.env.SUBMISSION_RATE_LIMIT_PER_HOUR ?? '5', 10),
   },
   port: parseInt(process.env.PORT ?? '4000', 10),
 })

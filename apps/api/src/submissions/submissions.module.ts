@@ -3,17 +3,17 @@ import { AuthModule } from '../auth/auth.module'
 import { ChallengesModule } from '../challenges/challenges.module'
 import { DatabaseModule } from '../database/database.module'
 import { GitHubModule } from '../github/github.module'
-import { ReportsModule } from '../reports/reports.module'
 import { UsersModule } from '../users/users.module'
 import { QueueModule } from '../verification/queue/queue.module'
 import { SubmissionsController } from './submissions.controller'
 import { SubmissionStatusService } from './submission-status.service'
 import { SubmissionsService } from './submissions.service'
+import { StaleSubmissionService } from './stale-submission.service'
 
 @Module({
-  imports: [DatabaseModule, AuthModule, UsersModule, ChallengesModule, GitHubModule, QueueModule, ReportsModule],
+  imports: [DatabaseModule, AuthModule, UsersModule, ChallengesModule, GitHubModule, QueueModule],
   controllers: [SubmissionsController],
-  providers: [SubmissionsService, SubmissionStatusService],
-  exports: [SubmissionsService, SubmissionStatusService],
+  providers: [SubmissionsService, SubmissionStatusService, StaleSubmissionService],
+  exports: [SubmissionsService, SubmissionStatusService, StaleSubmissionService],
 })
 export class SubmissionsModule {}

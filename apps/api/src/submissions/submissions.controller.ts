@@ -4,15 +4,11 @@ import { SupabaseGuard } from '../auth/supabase.guard'
 import { GetUser } from '../auth/get-user.decorator'
 import { CreateSubmissionDto } from './dto/create-submission.dto'
 import { SubmissionsService } from './submissions.service'
-import { ReportsService } from '../reports/reports.service'
 
 @Controller('submissions')
 @UseGuards(SupabaseGuard)
 export class SubmissionsController {
-  constructor(
-    private readonly submissionsService: SubmissionsService,
-    private readonly reportsService: ReportsService,
-  ) {}
+  constructor(private readonly submissionsService: SubmissionsService) {}
 
   @Get()
   listForUser(@GetUser() user: User) {
@@ -37,10 +33,5 @@ export class SubmissionsController {
   @Get(':id/events')
   listEventsForUser(@GetUser() user: User, @Param('id') id: string) {
     return this.submissionsService.listEventsForUser(user.id, id)
-  }
-
-  @Get(':id/report')
-  getReportForSubmission(@GetUser() user: User, @Param('id') id: string) {
-    return this.reportsService.getPrivateReport(user.id, id)
   }
 }

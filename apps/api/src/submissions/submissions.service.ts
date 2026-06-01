@@ -1,5 +1,6 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common'
-import { and, desc, eq } from 'drizzle-orm'
+import { BadRequestException, ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { and, count, desc, eq, gte } from 'drizzle-orm'
 import { ChallengesService } from '../challenges/challenges.service'
 import { DatabaseService } from '../database/database.service'
 import { projectSubmissionEvents, projectSubmissions } from '../database/schema'
@@ -19,9 +20,28 @@ export class SubmissionsService {
     private readonly githubApi: GitHubApiService,
     private readonly verificationQueue: VerificationQueueService,
     private readonly statusService: SubmissionStatusService,
+    private readonly config: ConfigService,
   ) {}
 
   async create(userId: string, dto: CreateSubmissionDto) {
+    // Rolling one-hour rate limit checked against the submissions table per user
+    const rateLimitPerHour = this.config.get<number>('submissions.rateLimitPerHour') ?? 5
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+    const recentCountRows = await this.db.db
+      .select({ value: count() })
+      .from(projectSubmissions)
+      .where(and(
+        eq(projectSubmissions.userId, userId),
+        gte(projectSubmissions.submittedAt, oneHourAgo),
+      ))
+    const recentCount = recentCountRows[0]?.value ?? 0
+    if (recentCount >= rateLimitPerHour) {
+      throw new HttpException(
+        { message: 'You have reached the submission limit. Please wait before submitting again.' },
+        HttpStatus.TOO_MANY_REQUESTS,
+      )
+    }
+
     const challenge = await this.challengesService.getActive(dto.challengeId)
     const { account, accessToken } = await this.githubService.getActiveToken(userId)
     const { owner, repo } = parseRepoFullName(dto.githubRepoFullName)
@@ -73,7 +93,7 @@ export class SubmissionsService {
     return submission
   }
 
-  listForUser(userId: string) {
+  listForUser(userId: string): Promise<(typeof projectSubmissions.$inferSelect)[]> {
     return this.db.db
       .select()
       .from(projectSubmissions)
