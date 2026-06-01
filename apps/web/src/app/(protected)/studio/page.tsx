@@ -64,9 +64,6 @@ export default async function StudioPage() {
     <div className="px-10 py-8 max-w-6xl">
       <section className="flex items-start justify-between gap-6">
         <div className="max-w-2xl">
-          <Badge variant={githubAccount?.connected ? 'default' : 'outline'}>
-            {githubAccount?.connected ? 'GitHub connected' : 'GitHub not connected'}
-          </Badge>
           <h1 className="mt-4 text-3xl font-semibold tracking-tight">{getGreeting(displayName)}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {githubAccount?.connected

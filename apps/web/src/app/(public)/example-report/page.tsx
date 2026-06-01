@@ -1,8 +1,19 @@
+import { exampleReport } from '@/features/reports/constants'
+import { ReportClient } from '@/features/reports/components/report-client'
+
 export default function ExampleReportPage() {
   return (
-    <main className="container mx-auto py-16 px-4">
-      <h1 className="text-3xl font-bold mb-4">Example Verification Report</h1>
-      <p className="text-muted-foreground">Coming soon.</p>
-    </main>
+    <div>
+      <div className="w-full bg-muted/60 border-b border-border py-2.5">
+        <p className="text-center text-xs text-muted-foreground">
+          This is an example verification report. It does not represent a real submission.
+        </p>
+      </div>
+      <ReportClient
+        report={exampleReport}
+        backHref="/challenges"
+        backLabel="Back to challenges"
+      />
+    </div>
   )
 }
