@@ -1,14 +1,9 @@
 import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common'
-import { IsBoolean } from 'class-validator'
 import { User } from '@praxis/shared'
 import { GetUser } from '../auth/get-user.decorator'
 import { SupabaseGuard } from '../auth/supabase.guard'
+import { ReportVisibilityDto } from './dto/report-visibility.dto'
 import { ReportsService } from './reports.service'
-
-class ReportVisibilityDto {
-  @IsBoolean()
-  isPublic: boolean
-}
 
 @Controller('reports')
 @UseGuards(SupabaseGuard)

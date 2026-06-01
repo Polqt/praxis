@@ -9,7 +9,7 @@ import {
 import { SupabaseGuard } from '../auth/supabase.guard'
 import { GetUser } from '../auth/get-user.decorator'
 import { UsersService } from './users.service'
-import { UpdateUserDto } from './users.dto'
+import { UpdateUserDto } from './dto/update-user.dto'
 import { User } from '@praxis/shared'
 
 @Controller('users')

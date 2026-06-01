@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, HttpCode, Post, UseGuards } from '@nestj
 import { User } from '@praxis/shared'
 import { SupabaseGuard } from '../auth/supabase.guard'
 import { GetUser } from '../auth/get-user.decorator'
-import { SyncGitHubAccountDto } from './github.dto'
+import { SyncGitHubAccountDto } from './dto/sync-github-account.dto'
 import { GitHubService } from './github.service'
 
 @Controller('github')

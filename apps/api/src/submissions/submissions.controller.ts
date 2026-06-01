@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common'
 import { User } from '@praxis/shared'
 import { SupabaseGuard } from '../auth/supabase.guard'
 import { GetUser } from '../auth/get-user.decorator'
-import { CreateSubmissionDto } from './submissions.dto'
+import { CreateSubmissionDto } from './dto/create-submission.dto'
 import { SubmissionsService } from './submissions.service'
 import { ReportsService } from '../reports/reports.service'
 

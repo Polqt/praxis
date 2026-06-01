@@ -7,7 +7,7 @@ import { GitHubApiService } from '../github/github-api.service'
 import { GitHubService } from '../github/github.service'
 import { VerificationQueueService } from '../verification/queue/queue.service'
 import { SubmissionStatusService } from './submission-status.service'
-import { CreateSubmissionDto } from './submissions.dto'
+import { CreateSubmissionDto } from './dto/create-submission.dto'
 import { parseRepoFullName } from './submissions.util'
 
 @Injectable()

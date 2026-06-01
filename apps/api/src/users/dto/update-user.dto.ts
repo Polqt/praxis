@@ -1,4 +1,4 @@
-import { IsString, Matches, MinLength, MaxLength } from 'class-validator'
+import { IsString, Matches, MaxLength, MinLength } from 'class-validator'
 
 export class UpdateUserDto {
   @IsString()
