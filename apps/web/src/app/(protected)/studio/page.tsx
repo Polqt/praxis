@@ -15,6 +15,7 @@ import type {
 } from '@praxis/shared'
 import { formatDate, isTerminalSubmission, repoName, statusLabel } from '@/lib/praxis-format'
 import { ProofProfileSection } from '@/features/studio/components/proof-profile-section'
+import { ONBOARDING_GUIDANCE_GITHUB_CONNECTED, ONBOARDING_GUIDANCE_GITHUB_DISCONNECTED } from '@/features/studio/constants'
 
 type SubmissionStats = {
   totalSubmissions: number
@@ -138,8 +139,20 @@ export default async function StudioPage() {
                   <Link href={`/submissions/${activeSubmission.id}`}>View Submission</Link>
                 </Button>
               </div>
+            ) : githubAccount?.connected ? (
+              <div className="mt-4">
+                <p className="text-sm font-medium">{ONBOARDING_GUIDANCE_GITHUB_CONNECTED.heading}</p>
+                <p className="mt-1.5 text-sm text-muted-foreground">{ONBOARDING_GUIDANCE_GITHUB_CONNECTED.body}</p>
+                <p className="mt-3 text-xs text-muted-foreground">{ONBOARDING_GUIDANCE_GITHUB_CONNECTED.note}</p>
+              </div>
             ) : (
-              <p className="mt-4 text-sm text-muted-foreground">No repository submitted yet.</p>
+              <div className="mt-4">
+                <p className="text-sm font-medium">{ONBOARDING_GUIDANCE_GITHUB_DISCONNECTED.heading}</p>
+                <p className="mt-1.5 text-sm text-muted-foreground">{ONBOARDING_GUIDANCE_GITHUB_DISCONNECTED.body}</p>
+                <Button className="mt-4" variant="outline" size="sm" asChild>
+                  <Link href="/settings">Go to Settings</Link>
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>

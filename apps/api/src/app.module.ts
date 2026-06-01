@@ -9,6 +9,7 @@ import { ChallengesModule } from './challenges/challenges.module'
 import { SubmissionsModule } from './submissions/submissions.module'
 import { ReportsModule } from './reports/reports.module'
 import { HealthModule } from './health/health.module'
+import { AuditModule } from './audit/audit.module'
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { HealthModule } from './health/health.module'
       envFilePath: '.env',
     }),
     DatabaseModule,
+    AuditModule,
     AuthModule,
     UsersModule,
     GitHubModule,

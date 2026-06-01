@@ -31,7 +31,7 @@ export function ReportFooter({ repositoryName, commitSha, challengeTitle, genera
         <p className="text-[11px]">{formatDate(generatedAt)}</p>
       </div>
       <div>
-        <p className="text-[11px] text-muted-foreground mb-0.5">Model</p>
+        <p className="text-[11px] text-muted-foreground mb-0.5">Analyzer</p>
         <p className="text-[11px] font-mono">{modelVersion}</p>
       </div>
     </div>

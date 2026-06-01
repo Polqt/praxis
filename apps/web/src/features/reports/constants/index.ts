@@ -1,5 +1,13 @@
 import type { ReportStatus, Report } from '@/features/reports/types'
 
+export const REPORT_DISCLAIMER_TEXT =
+  'Praxis uses deterministic repository signals. Reports are evidence-based, not a replacement for human review.'
+
+export const REPORT_DISCLAIMER_LINK_LABEL = 'Learn about our methodology'
+
+export const REPORT_DISCLAIMER_LINK_HREF =
+  'https://github.com/Polqt/praxis/blob/main/docs/LIMITATIONS.md'
+
 export const SCORE_HIGH_THRESHOLD = 8
 export const SCORE_MID_THRESHOLD = 6
 

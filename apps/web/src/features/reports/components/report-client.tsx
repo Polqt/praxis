@@ -1,13 +1,14 @@
 'use client'
 
 import Link from 'next/link'
-import { IconArrowLeft } from '@tabler/icons-react'
+import { IconArrowLeft, IconInfoCircle } from '@tabler/icons-react'
 import { ReportHero } from '@/features/reports/components/report-hero'
 import { ReportSummary } from '@/features/reports/components/report-summary'
 import { ScoreOverview } from '@/features/reports/components/score-overview'
 import { VerifiedSkillsSection } from '@/features/reports/components/verified-skills-section'
 import { StrengthsImprovementsSection } from '@/features/reports/components/strengths-improvements-section'
 import { ReportFooter } from '@/features/reports/components/report-footer'
+import { REPORT_DISCLAIMER_TEXT, REPORT_DISCLAIMER_LINK_LABEL, REPORT_DISCLAIMER_LINK_HREF } from '@/features/reports/constants'
 import type { Report } from '@/features/reports/types'
 
 type Props = {
@@ -60,6 +61,16 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
         </div>
 
         <hr className="border-border mt-12 mb-8" />
+
+        <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground text-center mb-6">
+          <IconInfoCircle size={12} className="shrink-0" />
+          {REPORT_DISCLAIMER_TEXT}{' '}
+          <Link href={REPORT_DISCLAIMER_LINK_HREF} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+            {REPORT_DISCLAIMER_LINK_LABEL}
+          </Link>
+        </p>
+
+        <hr className="border-border mb-8" />
 
         <ReportFooter
           repositoryName={report.repositoryName}

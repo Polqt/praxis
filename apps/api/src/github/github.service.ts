@@ -6,6 +6,7 @@ import { githubAccounts, users } from '../database/schema'
 import { GitHubApiService } from './github-api.service'
 import { GitHubTokenService } from './github-token.service'
 import { SyncedGitHubAccount } from './github.types'
+import { AuditService } from '../audit/audit.service'
 
 @Injectable()
 export class GitHubService {
@@ -15,6 +16,7 @@ export class GitHubService {
     private readonly db: DatabaseService,
     private readonly githubApi: GitHubApiService,
     config: ConfigService,
+    private readonly audit: AuditService,
   ) {
     const key = config.get<string>('github.tokenEncryptionKey')
     if (!key) throw new Error('GITHUB_TOKEN_ENCRYPTION_KEY is required')
@@ -27,6 +29,13 @@ export class GitHubService {
     const tokenScope = scopes.join(',')
     const encryptedToken = this.tokenService.encrypt(accessToken)
     const now = new Date()
+
+    const existing = await this.db.db
+      .select({ id: githubAccounts.id })
+      .from(githubAccounts)
+      .where(eq(githubAccounts.userId, userId))
+      .limit(1)
+    const isUpdate = existing.length > 0
 
     await this.db.db
       .insert(githubAccounts)
@@ -52,6 +61,11 @@ export class GitHubService {
           lastSyncedAt: now,
         },
       })
+
+    this.audit.log(userId, 'github_sync_completed', {
+      githubUsername: viewer.login,
+      action: isUpdate ? 'update' : 'create',
+    })
 
     const currentUser = await this.db.db
       .select({ username: users.username })
@@ -92,10 +106,22 @@ export class GitHubService {
   }
 
   async disconnect(userId: string) {
+    const rows = await this.db.db
+      .select({ githubUsername: githubAccounts.githubUsername })
+      .from(githubAccounts)
+      .where(eq(githubAccounts.userId, userId))
+      .limit(1)
+
     await this.db.db
       .update(githubAccounts)
       .set({ isActive: false, lastSyncedAt: new Date() })
       .where(eq(githubAccounts.userId, userId))
+
+    if (rows[0]) {
+      this.audit.log(userId, 'github_account_disconnected', {
+        githubUsername: rows[0].githubUsername,
+      })
+    }
   }
 
   async getActiveToken(userId: string) {

@@ -1,26 +1,81 @@
 import type { Verdict } from '@praxis/shared'
-import { RepositoryAnalysisData } from '../verification/analysis/repository-analysis.types'
+import type { RepositoryIngestionData } from '../verification/ingestion/repository-ingestion.types'
+import { TestingScorer } from '../scoring/categories/testing.scorer'
+import { DocumentationScorer } from '../scoring/categories/documentation.scorer'
+import { DeploymentScorer } from '../scoring/categories/deployment.scorer'
+import { SecurityScorer } from '../scoring/categories/security.scorer'
+import { ArchitectureScorer } from '../scoring/categories/architecture.scorer'
+import {
+  extractTestingSignals,
+  extractDocumentationSignals,
+  extractDeploymentSignals,
+  extractSecuritySignals,
+  extractArchitectureSignals,
+} from '../scoring/signals/signal-extractor'
 
-interface Rubric {
-  categories: { name: string; weight: number; floor: number }[]
+interface RubricCategory {
+  name: string
+  weight: number
+  floor: number
 }
 
-export function scoreReport(rubric: Rubric, analysisData: RepositoryAnalysisData, passingThreshold: number) {
-  const categoryScores: Record<string, { score: number; narrative: string; citations: string[] }> = {}
+interface Rubric {
+  categories: RubricCategory[]
+}
+
+const testingScorer = new TestingScorer()
+const documentationScorer = new DocumentationScorer()
+const deploymentScorer = new DeploymentScorer()
+const securityScorer = new SecurityScorer()
+const architectureScorer = new ArchitectureScorer()
+
+function scoreCategoryByName(categoryName: string, ingestionData: RepositoryIngestionData) {
+  const name = categoryName.toLowerCase()
+
+  if (name.includes('testing')) {
+    return testingScorer.score(extractTestingSignals(ingestionData))
+  }
+  if (name.includes('documentation')) {
+    return documentationScorer.score(extractDocumentationSignals(ingestionData))
+  }
+  if (name.includes('deployment') || name.includes('ci')) {
+    return deploymentScorer.score(extractDeploymentSignals(ingestionData))
+  }
+  if (name.includes('api design')) {
+    return securityScorer.score(extractSecuritySignals(ingestionData), 'api-design')
+  }
+  if (name.includes('security') || name.includes('authentication')) {
+    return securityScorer.score(extractSecuritySignals(ingestionData))
+  }
+  if (name.includes('architecture') || name.includes('database design')) {
+    return architectureScorer.score(extractArchitectureSignals(ingestionData))
+  }
+
+  // Fallback: security signals for unrecognized categories
+  return securityScorer.score(extractSecuritySignals(ingestionData))
+}
+
+export function scoreReport(
+  rubric: Rubric,
+  ingestionData: RepositoryIngestionData,
+  passingThreshold: number,
+) {
+  const categoryScores: Record<string, { score: number; narrative: string; citations: string[]; signals: Record<string, unknown> }> = {}
   let weighted = 0
   let floorFailed = false
 
   for (const category of rubric.categories) {
-    const signal = signalForCategory(category.name, analysisData)
-    const score = signal.present ? 10 : 0
-    if (score < category.floor) floorFailed = true
-    weighted += score * category.weight
+    const result = scoreCategoryByName(category.name, ingestionData)
+
+    const isFloor = result.status === 'floor'
+    if (isFloor || result.score < category.floor) floorFailed = true
+
+    weighted += result.score * category.weight
     categoryScores[category.name] = {
-      score,
-      narrative: signal.present
-        ? `${category.name} evidence found.`
-        : `${category.name} evidence was not found.`,
-      citations: signal.citations,
+      score: result.score,
+      narrative: result.narrative,
+      citations: result.citations,
+      signals: result.signals,
     }
   }
 
@@ -34,25 +89,5 @@ export function scoreReport(rubric: Rubric, analysisData: RepositoryAnalysisData
     publicSummary: verdict === 'verified'
       ? 'This project meets the deterministic Praxis verification threshold.'
       : 'This project does not yet meet the deterministic Praxis verification threshold.',
-    analysisData,
   }
-}
-
-function signalForCategory(categoryName: string, analysisData: RepositoryAnalysisData) {
-  const name = categoryName.toLowerCase()
-  if (name.includes('api design')) {
-    return analysisData.hardSignals.ci.present
-      ? analysisData.hardSignals.ci
-      : analysisData.hardSignals.envUsage
-  }
-  if (name.includes('authentication')) return analysisData.hardSignals.auth
-  if (name.includes('database design')) return analysisData.hardSignals.migrations
-  if (name.includes('testing')) return analysisData.hardSignals.tests
-  if (name.includes('documentation')) {
-    return analysisData.hardSignals.documentation
-  }
-  if (name.includes('deployment')) return analysisData.hardSignals.deployment
-  return analysisData.hardSignals.ci.present
-    ? analysisData.hardSignals.ci
-    : analysisData.hardSignals.envUsage
 }

@@ -7,17 +7,16 @@ export type SubmissionStatus =
   | 'analysis_failed'
   | 'generating_report'
   | 'report_generation_failed'
-  | 'awaiting_human_review'
   | 'verified'
   | 'insufficient'
   | 'failed'
   | 'expired'
 
-export type ProjectType = 'frontend' | 'backend' | 'fullstack'
+export type ProjectType = 'backend'
 
-export type Verdict = 'verified' | 'conditional' | 'insufficient' | 'failed'
+export type Verdict = 'verified' | 'insufficient' | 'failed'
 
-export type SourceType = 'project' | 'task'
+export type SourceType = 'project'
 
 export interface Track {
   id: string
@@ -64,7 +63,6 @@ export interface ProjectSubmission {
   attempts: number
   failureReason: string | null
   rubricVersion: number
-  // ingestedData is intentionally omitted — never exposed to the frontend
 }
 
 export interface ProjectSubmissionEvent {
@@ -84,7 +82,9 @@ export interface VerificationReport {
   verdict: Verdict
   categoryScores: Record<string, { score: number; narrative: string; citations: string[] }>
   publicSummary: string | null
-  aiModelVersion: string
+  analyzerVersion: string
+  scoringVersion: string
+  rubricVersion: number | null
   generatedAt: string
   isPublic: boolean
   publicToken: string | null

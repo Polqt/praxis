@@ -8,6 +8,7 @@ import {
   bigint,
   jsonb,
   uniqueIndex,
+  uuid,
 } from 'drizzle-orm/pg-core'
 import { createId } from '@paralleldrive/cuid2'
 
@@ -57,7 +58,7 @@ export const users = pgTable('users', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
   supabaseUid: text('supabase_uid').unique().notNull(),
   email: text('email').notNull(),
-  username: text('username'),
+  username: text('username').unique(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
@@ -174,7 +175,20 @@ export const projectVerificationReports = pgTable('project_verification_reports'
   categoryScores: jsonb('category_scores').notNull(),
   publicSummary: text('public_summary'),
   aiModelVersion: text('ai_model_version').notNull(),
+  analyzerVersion: text('analyzer_version').notNull().default('deterministic-v2'),
+  scoringVersion: text('scoring_version').notNull().default('scoring-v2'),
+  rubricVersion: integer('rubric_version'),
   generatedAt: timestamp('generated_at').defaultNow().notNull(),
   isPublic: boolean('is_public').notNull().default(false),
   publicToken: text('public_token').unique(),
+})
+
+export const auditLogs = pgTable('audit_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+  eventType: text('event_type').notNull(),
+  metadata: jsonb('metadata'),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })

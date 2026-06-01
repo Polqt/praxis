@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import { and, desc, eq } from 'drizzle-orm'
 import { DatabaseService } from '../database/database.service'
 import {
@@ -53,14 +53,22 @@ export class UsersService {
   }
 
   async updateUser(userId: string, data: { username: string }) {
-    const updated = await this.db.db
-      .update(users)
-      .set({ username: data.username })
-      .where(eq(users.id, userId))
-      .returning()
+    try {
+      const updated = await this.db.db
+        .update(users)
+        .set({ username: data.username })
+        .where(eq(users.id, userId))
+        .returning()
 
-    if (!updated[0]) throw new NotFoundException()
-    return updated[0]
+      if (!updated[0]) throw new NotFoundException()
+      return updated[0]
+    } catch (err) {
+      // PostgreSQL unique violation error code 23505 — belt-and-suspenders after the app-level check
+      if (err instanceof Error && 'code' in err && (err as { code: string }).code === '23505') {
+        throw new ConflictException('This username is already taken.')
+      }
+      throw err
+    }
   }
 
   async getUserSkills(userId: string) {

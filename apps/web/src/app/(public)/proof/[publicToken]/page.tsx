@@ -1,6 +1,9 @@
+import Link from 'next/link'
+import { IconInfoCircle } from '@tabler/icons-react'
 import { serverApiFetch } from '@/lib/api.server'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { REPORT_DISCLAIMER_TEXT, REPORT_DISCLAIMER_LINK_LABEL, REPORT_DISCLAIMER_LINK_HREF } from '@/features/reports/constants'
 import type { VerificationReport } from '@praxis/shared'
 
 type PublicProofPageProps = {
@@ -35,6 +38,15 @@ export default async function PublicProofPage(props: PublicProofPageProps) {
             </div>
           </CardContent>
         </Card>
+        <hr className="border-border mt-10 mb-6" />
+
+        <p className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground text-center">
+          <IconInfoCircle size={12} className="shrink-0" />
+          {REPORT_DISCLAIMER_TEXT}{' '}
+          <Link href={REPORT_DISCLAIMER_LINK_HREF} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+            {REPORT_DISCLAIMER_LINK_LABEL}
+          </Link>
+        </p>
       </div>
     </main>
   )

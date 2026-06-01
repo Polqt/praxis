@@ -1,4 +1,4 @@
-import type { ProjectSubmission } from './submission.types'
+import type { ProjectSubmission, SourceType } from './submission.types'
 
 export interface User {
   id: string
@@ -20,7 +20,7 @@ export interface UserSkill {
   id: string
   userId: string
   skill: Skill
-  sourceType: 'project' | 'task'
+  sourceType: SourceType
   awardedAt: string
 }
 

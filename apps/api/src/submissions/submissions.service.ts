@@ -10,6 +10,7 @@ import { VerificationQueueService } from '../verification/queue/queue.service'
 import { SubmissionStatusService } from './submission-status.service'
 import { CreateSubmissionDto } from './dto/create-submission.dto'
 import { parseRepoFullName } from './submissions.util'
+import { AuditService } from '../audit/audit.service'
 
 @Injectable()
 export class SubmissionsService {
@@ -21,10 +22,10 @@ export class SubmissionsService {
     private readonly verificationQueue: VerificationQueueService,
     private readonly statusService: SubmissionStatusService,
     private readonly config: ConfigService,
+    private readonly audit: AuditService,
   ) {}
 
   async create(userId: string, dto: CreateSubmissionDto) {
-    // Rolling one-hour rate limit checked against the submissions table per user
     const rateLimitPerHour = this.config.get<number>('submissions.rateLimitPerHour') ?? 5
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
     const recentCountRows = await this.db.db
@@ -77,6 +78,12 @@ export class SubmissionsService {
     if (!submission) throw new BadRequestException('Unable to create submission')
 
     if (inserted[0]) {
+      this.audit.log(userId, 'submission_created', {
+        submissionId: submission.id,
+        challengeId: challenge.id,
+        repositoryUrl: `https://github.com/${repository.full_name}`,
+      })
+
       const queued = await this.statusService.transition({
         submissionId: submission.id,
         toStatus: 'queued',

@@ -1,13 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { randomBytes } from 'node:crypto'
 import { eq } from 'drizzle-orm'
-import { ANALYZER_VERSION, RepositoryAnalysisData } from '../verification/analysis/repository-analysis.types'
+import { ANALYZER_VERSION, SCORING_VERSION } from '../scoring/versions'
+import { RepositoryIngestionData } from '../verification/ingestion/repository-ingestion.types'
 import { DatabaseService } from '../database/database.service'
 import {
   projectChallenges,
   projectSubmissions,
   projectVerificationReports,
   repositoryAnalyses,
+  repositoryIngestions,
   skills,
   userSkills,
 } from '../database/schema'
@@ -21,9 +23,10 @@ export class ReportsService {
     const submission = await this.getSubmission(submissionId)
     const challenge = await this.getChallenge(submission.challengeId)
     const analysis = await this.getAnalysis(repositoryAnalysisId)
+    const ingestion = await this.getIngestion(analysis.repositoryIngestionId)
     const scored = scoreReport(
       challenge.rubric as { categories: { name: string; weight: number; floor: number }[] },
-      analysis.analysisData as RepositoryAnalysisData,
+      ingestion.ingestedData as RepositoryIngestionData,
       challenge.passingThreshold,
     )
 
@@ -34,6 +37,9 @@ export class ReportsService {
       categoryScores: scored.categoryScores,
       publicSummary: scored.publicSummary,
       aiModelVersion: ANALYZER_VERSION,
+      analyzerVersion: ANALYZER_VERSION,
+      scoringVersion: SCORING_VERSION,
+      rubricVersion: submission.rubricVersion,
       isPublic: false,
     }).onConflictDoUpdate({
       target: projectVerificationReports.submissionId,
@@ -43,6 +49,9 @@ export class ReportsService {
         categoryScores: scored.categoryScores,
         publicSummary: scored.publicSummary,
         aiModelVersion: ANALYZER_VERSION,
+        analyzerVersion: ANALYZER_VERSION,
+        scoringVersion: SCORING_VERSION,
+        rubricVersion: submission.rubricVersion,
       },
     }).returning()
 
@@ -133,6 +142,12 @@ export class ReportsService {
     return rows[0]
   }
 
+  private async getIngestion(repositoryIngestionId: string) {
+    const rows = await this.db.db.select().from(repositoryIngestions).where(eq(repositoryIngestions.id, repositoryIngestionId)).limit(1)
+    if (!rows[0]) throw new NotFoundException('Repository ingestion not found')
+    return rows[0]
+  }
+
   private async getReportBySubmission(submissionId: string) {
     const rows = await this.db.db.select().from(projectVerificationReports).where(eq(projectVerificationReports.submissionId, submissionId)).limit(1)
     if (!rows[0]) throw new NotFoundException('Report not found')
@@ -150,6 +165,9 @@ export class ReportsService {
       categoryScores: report.categoryScores,
       publicSummary: report.publicSummary,
       aiModelVersion: report.aiModelVersion,
+      analyzerVersion: report.analyzerVersion,
+      scoringVersion: report.scoringVersion,
+      rubricVersion: report.rubricVersion,
       generatedAt: report.generatedAt,
       isPublic: report.isPublic,
       publicToken: report.publicToken,

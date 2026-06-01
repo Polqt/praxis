@@ -2,8 +2,7 @@ import Link from 'next/link'
 import { serverApiFetch } from '@/lib/api.server'
 import type { GitHubAccount, ProjectChallenge } from '@praxis/shared'
 import { SubmitClient } from '@/features/submissions/components/submit-client'
-
-const REQUIRED_SCOPES = ['read:user']
+import { REQUIRED_SCOPES } from '@/features/github/constants/github.constants'
 
 type Props = {
   searchParams: Promise<{ challengeId?: string | string[] }>

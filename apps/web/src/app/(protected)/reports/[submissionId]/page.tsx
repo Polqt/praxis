@@ -63,7 +63,7 @@ function toReport(raw: VerificationReport, submission: ProjectSubmission): Repor
     derivedStrengthsAndImprovements,
     allCitedFiles,
     generatedAt: raw.generatedAt,
-    modelVersion: raw.aiModelVersion,
+    modelVersion: raw.analyzerVersion,
     isPublic: raw.isPublic,
     publicToken: raw.publicToken,
   }
@@ -85,7 +85,7 @@ export default async function PrivateReportPage({ params }: Props) {
     <ReportClient
       report={report}
       actions={
-        <ReportVisibilityButton submissionId={raw.submissionId} isPublic={raw.isPublic} />
+        <ReportVisibilityButton submissionId={raw.submissionId} isPublic={raw.isPublic} initialPublicToken={raw.publicToken} />
       }
     />
   )

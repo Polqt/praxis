@@ -31,7 +31,7 @@ export default async function ChallengeDetailPage(props: Props) {
 
   if (!challenge) notFound()
 
-  const categoryLabel = challenge.projectType === 'frontend' ? 'Frontend Engineering' : 'Backend Engineering'
+  const categoryLabel = 'Backend Engineering'
   const submitHref = user
     ? `/submit?challengeId=${challenge.id}`
     : buildAuthRedirect(`/submit?challengeId=${challenge.id}`)
