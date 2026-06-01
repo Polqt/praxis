@@ -1,10 +1,9 @@
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { UserProvider } from '@/features/user/hooks/use-user-context'
-import { SignOutButton } from '@/features/auth/components/sign-out-button'
+import { Sidebar } from '@/shared/components/sidebar'
 import { serverApiFetch } from '@/lib/api.server'
-import type { User } from '@praxis/shared'
+import type { GitHubAccount, User } from '@praxis/shared'
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -19,40 +18,14 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     redirect('/sign-in')
   }
 
+  const githubAccount = await serverApiFetch<GitHubAccount>('/github/account').catch(
+    () => ({ connected: false } as GitHubAccount),
+  )
+
   return (
     <UserProvider user={localUser!}>
       <div className="h-screen flex bg-background overflow-hidden">
-        <aside className="w-52 shrink-0 border-r border-border flex flex-col bg-background h-screen sticky top-0">
-          <div className="px-5 py-5 border-b border-border">
-            <Link href="/studio" className="text-[15px] font-semibold tracking-tight text-foreground">
-              Praxis
-            </Link>
-          </div>
-          <nav className="flex flex-col gap-0.5 p-3 flex-1">
-            <Link
-              href="/studio"
-              className="px-3 py-2 text-[13px] text-muted-foreground rounded-sm hover:bg-muted hover:text-foreground transition-colors"
-            >
-              Studio
-            </Link>
-            <Link
-              href="/challenges"
-              className="px-3 py-2 text-[13px] text-muted-foreground rounded-sm hover:bg-muted hover:text-foreground transition-colors"
-            >
-              Challenges
-            </Link>
-            <Link
-              href="/settings"
-              className="px-3 py-2 text-[13px] text-muted-foreground rounded-sm hover:bg-muted hover:text-foreground transition-colors"
-            >
-              Settings
-            </Link>
-          </nav>
-          <div className="px-3 py-3 border-t border-border flex flex-col gap-1">
-            <p className="px-3 text-[11px] text-muted-foreground truncate">{localUser!.email}</p>
-            <SignOutButton />
-          </div>
-        </aside>
+        <Sidebar user={localUser!} githubAccount={githubAccount} />
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
     </UserProvider>
