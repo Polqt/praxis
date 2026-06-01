@@ -58,9 +58,7 @@ export default async function StudioPage() {
     ? Math.min(100, Math.round((submissionStats.verifiedCount / challenges.length) * 100))
     : 0
   const proofReady = Boolean(user.username && dashboard.verifiedSkills.length > 0)
-  const proofHref = latestReport?.isPublic && latestReport.publicToken
-    ? `/proof/${latestReport.publicToken}`
-    : null
+  const proofHref = user.username ? `/p/${user.username}` : null
 
   return (
     <div className="px-10 py-8 max-w-6xl">

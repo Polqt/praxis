@@ -3,6 +3,8 @@ import {
   ConflictException,
   Controller,
   Get,
+  NotFoundException,
+  Param,
   Patch,
   UseGuards,
 } from '@nestjs/common'
@@ -10,18 +12,27 @@ import { SupabaseGuard } from '../auth/supabase.guard'
 import { GetUser } from '../auth/get-user.decorator'
 import { UsersService } from './users.service'
 import { UpdateUserDto } from './dto/update-user.dto'
+import { PublicProfileDto } from './dto/public-profile.dto'
 import { User } from '@praxis/shared'
 
 @Controller('users')
-@UseGuards(SupabaseGuard)
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
+  @Get(':username/profile')
+  async getPublicProfile(@Param('username') username: string): Promise<PublicProfileDto> {
+    const profile = await this.usersService.findPublicProfile(username)
+    if (!profile) throw new NotFoundException('User not found')
+    return profile
+  }
+
+  @UseGuards(SupabaseGuard)
   @Get('me')
   getMe(@GetUser() user: User) {
     return this.usersService.getMe(user.id)
   }
 
+  @UseGuards(SupabaseGuard)
   @Patch('me')
   async updateMe(@GetUser() user: User, @Body() dto: UpdateUserDto) {
     const existing = await this.usersService.findByUsername(dto.username)
@@ -31,11 +42,13 @@ export class UsersController {
     return this.usersService.updateUser(user.id, { username: dto.username })
   }
 
+  @UseGuards(SupabaseGuard)
   @Get('me/skills')
   getMySkills(@GetUser() user: User) {
     return this.usersService.getUserSkills(user.id)
   }
 
+  @UseGuards(SupabaseGuard)
   @Get('me/dashboard')
   getDashboard(@GetUser() user: User) {
     return this.usersService.getDashboardStats(user.id)
