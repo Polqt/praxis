@@ -3,8 +3,6 @@
 import { scoreBarColor, CATEGORY_STATUS_CLASS } from '@/features/reports/constants'
 import type { ScoreItem } from '@/features/reports/types'
 
-const SECTION_LABEL = 'text-xs font-medium uppercase tracking-widest text-muted-foreground'
-
 type Props = {
   scores: ScoreItem[]
 }
@@ -12,7 +10,7 @@ type Props = {
 export function ScoreOverview({ scores }: Props) {
   return (
     <div>
-      <p className={`${SECTION_LABEL} mb-5`}>Rubric results</p>
+      <p className={`text-xs font-medium uppercase tracking-widest text-muted-foreground mb-5`}>Rubric results</p>
       <div className="flex flex-col">
         {scores.map((item, i) => (
           <div key={item.category}>
@@ -30,7 +28,7 @@ export function ScoreOverview({ scores }: Props) {
                 {item.score}/10
               </span>
             </div>
-            <div className="h-[3px] rounded-full bg-muted overflow-hidden mb-3">
+            <div className="h-0.75 rounded-full bg-muted overflow-hidden mb-3">
               <div
                 className={`h-full rounded-full ${scoreBarColor(item.score)}`}
                 style={{ width: `${(item.score / 10) * 100}%` }}

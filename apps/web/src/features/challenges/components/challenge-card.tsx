@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DIFFICULTY_CLASS, DIFFICULTY_LABEL } from '@/features/challenges/constants'
+import { buildAuthRedirect } from '@/shared/utils/build-auth-redirect'
 import type { Challenge } from '@/features/challenges/types'
 
 type Props = {
@@ -12,9 +13,10 @@ type Props = {
 }
 
 export function ChallengeCard({ challenge, isAuthenticated }: Props) {
-  const href = isAuthenticated
-    ? `/challenges/${challenge.slug}`
-    : `/sign-in?redirect=/challenges/${challenge.slug}`
+  const ctaHref = isAuthenticated
+    ? `/submit?challengeId=${challenge.id}`
+    : buildAuthRedirect(`/submit?challengeId=${challenge.id}`)
+  const ctaLabel = isAuthenticated ? 'Submit repository' : 'Start verification'
 
   return (
     <div className="rounded-lg border bg-card">
@@ -36,7 +38,7 @@ export function ChallengeCard({ challenge, isAuthenticated }: Props) {
           {DIFFICULTY_LABEL[challenge.difficulty]}
         </span>
         <Button variant="outline" size="sm" asChild className="shrink-0">
-          <Link href={href}>View challenge</Link>
+          <Link href={ctaHref}>{ctaLabel}</Link>
         </Button>
       </div>
     </div>

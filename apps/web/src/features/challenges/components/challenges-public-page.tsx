@@ -5,19 +5,12 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { buildAuthRedirect } from '@/shared/utils/build-auth-redirect'
 import { MarqueeTicker } from '@/features/challenges/components/marquee-ticker'
 import { VerificationReportMockup } from '@/features/challenges/components/verification-report-mockup'
 import { DIFFICULTY_CLASS, DIFFICULTY_LABEL } from '@/features/challenges/constants'
 import type { Challenge, ChallengeCategory } from '@/features/challenges/types'
-
-function stripMarkdown(text: string): string {
-  return text
-    .replace(/#{1,6}\s*/g, '')
-    .replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1')
-    .replace(/_{1,2}([^_]+)_{1,2}/g, '$1')
-    .replace(/`[^`]+`/g, (m) => m.slice(1, -1))
-    .trim()
-}
+import { stripMarkdown } from '../utils'
 
 type Props = {
   challenges: Challenge[]
@@ -126,7 +119,7 @@ function ChallengeList({ challenges }: { challenges: Challenge[] }) {
 }
 
 function PublicChallengeCard({ challenge }: { challenge: Challenge }) {
-  const href = `/sign-in?redirect=/challenges/${challenge.slug}`
+  const href = buildAuthRedirect(`/submit?challengeId=${challenge.id}`)
 
   return (
     <div className="rounded-lg border bg-card">
@@ -147,12 +140,9 @@ function PublicChallengeCard({ challenge }: { challenge: Challenge }) {
         >
           {DIFFICULTY_LABEL[challenge.difficulty]}
         </span>
-        <div className="shrink-0 flex flex-col items-end gap-1">
-          <Button variant="outline" size="sm" asChild>
-            <Link href={href}>View challenge</Link>
-          </Button>
-          <span className="text-[11px] text-muted-foreground">Sign in required to submit</span>
-        </div>
+        <Button variant="outline" size="sm" asChild className="shrink-0">
+          <Link href={href}>Start verification</Link>
+        </Button>
       </div>
     </div>
   )

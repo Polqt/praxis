@@ -2,7 +2,6 @@
 
 import { IconArrowUpRight, IconArrowRight } from '@tabler/icons-react'
 
-const SECTION_LABEL = 'text-xs font-medium uppercase tracking-widest text-muted-foreground'
 
 type Props = {
   strengths: string[]
@@ -14,7 +13,7 @@ export function StrengthsImprovementsSection({ strengths, improvements, derived 
   return (
     <div className="grid grid-cols-2 gap-6">
       <div>
-        <p className={`${SECTION_LABEL} mb-1`}>Strengths</p>
+        <p className={`text-xs font-medium uppercase tracking-widest text-muted-foreground mb-1`}>Strengths</p>
         {derived && (
           <p className="text-[11px] text-muted-foreground mb-3">Derived from rubric results</p>
         )}
@@ -33,7 +32,7 @@ export function StrengthsImprovementsSection({ strengths, improvements, derived 
         )}
       </div>
       <div>
-        <p className={`${SECTION_LABEL} mb-1`}>Improvements</p>
+        <p className={`text-xs font-medium uppercase tracking-widest text-muted-foreground mb-1`}>Improvements</p>
         {derived && (
           <p className="text-[11px] text-muted-foreground mb-3">Derived from rubric results</p>
         )}

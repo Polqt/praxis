@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import type { ProjectSubmission } from '@praxis/shared'
-import { formatDate, repoName, statusLabel } from '@/lib/praxis-format'
+import { formatDate, isTerminalSubmission, repoName, statusLabel } from '@/lib/praxis-format'
 
 export default async function StudioSubmissionsPage() {
   const submissions = await serverApiFetch<ProjectSubmission[]>('/submissions').catch(() => [])
@@ -38,6 +38,11 @@ export default async function StudioSubmissionsPage() {
                 <Button variant="outline" asChild>
                   <Link href={`/submissions/${submission.id}`}>View Submission</Link>
                 </Button>
+                {isTerminalSubmission(submission) && (
+                  <Button variant="outline" asChild>
+                    <Link href={`/reports/${submission.id}`}>View report</Link>
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

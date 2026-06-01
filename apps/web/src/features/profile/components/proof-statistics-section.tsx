@@ -1,7 +1,5 @@
 'use client'
 
-const SECTION_LABEL = 'text-xs font-medium uppercase tracking-widest text-muted-foreground'
-
 type Props = {
   reportsCount: number
   skillsCount: number
@@ -11,7 +9,7 @@ type Props = {
 export function ProofStatisticsSection({ reportsCount, skillsCount, challengesCompleted }: Props) {
   return (
     <div>
-      <p className={`${SECTION_LABEL} mb-4`}>Statistics</p>
+      <p className={`text-xs font-medium uppercase tracking-widest text-muted-foreground mb-4`}>Statistics</p>
       <div className="flex items-start divide-x divide-border">
         <div className="pr-8">
           <p className="text-2xl font-semibold tabular-nums">{reportsCount}</p>

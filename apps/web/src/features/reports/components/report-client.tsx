@@ -20,7 +20,7 @@ type Props = {
 export function ReportClient({ report, backHref = '/submissions', backLabel = 'Back to submissions', actions }: Props) {
   return (
     <div className="px-12 py-10">
-      <div className="max-w-[800px] mx-auto">
+      <div className="max-w-200 mx-auto">
         <div className="flex items-center justify-between mb-8">
           <Link
             href={backHref}

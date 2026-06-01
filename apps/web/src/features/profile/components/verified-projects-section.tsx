@@ -3,22 +3,8 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import type { ProfileReport } from '@/features/profile/types'
-
-const SECTION_LABEL = 'text-xs font-medium uppercase tracking-widest text-muted-foreground'
-
-const VERDICT_CLASS: Record<string, string> = {
-  verified: 'text-green-700 bg-green-50 border-green-200',
-  insufficient: 'text-amber-700 bg-amber-50 border-amber-200',
-  failed: 'text-red-700 bg-red-50 border-red-200',
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-}
+import { formatDate } from '@/lib/praxis-format'
+import { VERDICT_CLASS } from '../constants'
 
 type Props = {
   reports: ProfileReport[]
@@ -27,7 +13,7 @@ type Props = {
 export function VerifiedProjectsSection({ reports }: Props) {
   return (
     <div>
-      <p className={`${SECTION_LABEL} mb-3`}>Verified projects</p>
+      <p className={`text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3`}>Verified projects</p>
       {reports.length === 0 ? (
         <p className="text-sm text-muted-foreground">No verified projects yet.</p>
       ) : (
@@ -52,7 +38,7 @@ export function VerifiedProjectsSection({ reports }: Props) {
                   <span className="text-xs text-muted-foreground">{formatDate(report.verifiedAt)}</span>
                 </div>
                 <Button variant="ghost" size="sm" className="h-7 text-xs px-2 shrink-0" asChild>
-                  <Link href={`/reports/${report.id}`}>View report</Link>
+                  <Link href={`/reports/${report.submissionId}`}>View report</Link>
                 </Button>
               </div>
             </div>

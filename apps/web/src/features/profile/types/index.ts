@@ -1,5 +1,6 @@
 export interface ProfileReport {
   id: string
+  submissionId: string
   repositoryName: string
   challengeTitle: string
   challengeCategory: string

@@ -1,11 +1,14 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ProfileClient } from '@/features/profile/components/profile-client'
-import type { PublicProfile } from '@/features/profile/types'
+import type { PublicProfile, ProfileReport } from '@/features/profile/types'
 
 type Props = {
   params: Promise<{ username: string }>
 }
+
+type RawProfileReport = Omit<ProfileReport, 'submissionId'> & { submissionId?: string }
+type RawPublicProfile = Omit<PublicProfile, 'latestReports'> & { latestReports: RawProfileReport[] }
 
 async function fetchPublicProfile(username: string): Promise<PublicProfile | null> {
   const res = await fetch(
@@ -14,7 +17,15 @@ async function fetchPublicProfile(username: string): Promise<PublicProfile | nul
   )
   if (res.status === 404) return null
   if (!res.ok) throw new Error('Failed to fetch profile')
-  return res.json() as Promise<PublicProfile>
+  const raw = await res.json() as RawPublicProfile
+  return {
+    ...raw,
+    latestReports: raw.latestReports.map((r) => ({
+      ...r,
+      // Known gap: submissionId will be '' if backend profile endpoint does not yet return it.
+      submissionId: r.submissionId ?? '',
+    })),
+  }
 }
 
 export default async function PublicProfilePage({ params }: Props) {
@@ -24,7 +35,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-[680px] mx-auto px-6 pt-12 pb-20">
+      <div className="max-w-170 mx-auto px-6 pt-12 pb-20">
         <div className="mb-10">
           <Link href="/" className="text-sm font-semibold tracking-tight text-foreground hover:opacity-80 transition-opacity">
             Praxis

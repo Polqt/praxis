@@ -2,8 +2,6 @@
 
 import { IconCircleCheckFilled } from '@tabler/icons-react'
 
-const SECTION_LABEL = 'text-xs font-medium uppercase tracking-widest text-muted-foreground'
-
 type Props = {
   skills: string[]
 }
@@ -11,7 +9,7 @@ type Props = {
 export function VerifiedSkillsSection({ skills }: Props) {
   return (
     <div>
-      <p className={`${SECTION_LABEL} mb-3`}>Verified skills</p>
+      <p className={`text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3`}>Verified skills</p>
       {skills.length === 0 ? (
         <p className="text-sm text-muted-foreground">No verified skills yet.</p>
       ) : (
