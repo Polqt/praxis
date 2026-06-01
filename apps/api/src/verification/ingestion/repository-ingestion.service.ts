@@ -63,12 +63,7 @@ export class RepositoryIngestionService {
       ingestedData,
     }).onConflictDoNothing().returning()
 
-    const ingestion = inserted[0] ?? await this.findCached(submission.githubRepoId, submission.commitSha)
-    await this.db.db.update(projectSubmissions)
-      .set({ ingestedData })
-      .where(eq(projectSubmissions.id, submissionId))
-
-    return ingestion
+    return inserted[0] ?? await this.findCached(submission.githubRepoId, submission.commitSha)
   }
 
   private async getSubmission(submissionId: string) {

@@ -7,6 +7,7 @@ export type AuditEventType =
   | 'github_account_disconnected'
   | 'submission_created'
   | 'submission_status_changed'
+  | 'report_generated'
   | 'report_published'
   | 'report_unpublished'
 

@@ -3,6 +3,7 @@ import type { SubmissionStatus } from '@praxis/shared'
 import { eq } from 'drizzle-orm'
 import { DatabaseService } from '../database/database.service'
 import { projectSubmissionEvents, projectSubmissions } from '../database/schema'
+import { AuditService } from '../audit/audit.service'
 import { canTransition } from './submission-status.rules'
 
 interface TransitionInput {
@@ -15,7 +16,10 @@ interface TransitionInput {
 
 @Injectable()
 export class SubmissionStatusService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly audit: AuditService,
+  ) {}
 
   async transition(input: TransitionInput) {
     const rows = await this.db.db
@@ -56,6 +60,12 @@ export class SubmissionStatusService {
       toStatus: input.toStatus,
       reason: input.reason,
       metadata: input.metadata ?? null,
+    })
+
+    this.audit.log(submission.userId, 'submission_status_changed', {
+      submissionId: input.submissionId,
+      fromStatus,
+      toStatus: input.toStatus,
     })
 
     return updated[0]

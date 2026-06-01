@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { randomBytes } from 'node:crypto'
 import { eq } from 'drizzle-orm'
-import { ANALYZER_VERSION, SCORING_VERSION } from '../scoring/versions'
+import { ANALYZER_VERSION, REPORT_GENERATOR_VERSION, SCORING_VERSION } from '../scoring/versions'
 import { RepositoryIngestionData } from '../verification/ingestion/repository-ingestion.types'
 import { DatabaseService } from '../database/database.service'
 import {
@@ -13,11 +13,15 @@ import {
   skills,
   userSkills,
 } from '../database/schema'
+import { AuditService } from '../audit/audit.service'
 import { scoreReport } from './report-scoring'
 
 @Injectable()
 export class ReportsService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly audit: AuditService,
+  ) {}
 
   async generateForSubmission(submissionId: string, repositoryAnalysisId: string) {
     const submission = await this.getSubmission(submissionId)
@@ -36,9 +40,9 @@ export class ReportsService {
       verdict: scored.verdict,
       categoryScores: scored.categoryScores,
       publicSummary: scored.publicSummary,
-      aiModelVersion: ANALYZER_VERSION,
       analyzerVersion: ANALYZER_VERSION,
       scoringVersion: SCORING_VERSION,
+      reportGeneratorVersion: REPORT_GENERATOR_VERSION,
       rubricVersion: submission.rubricVersion,
       isPublic: false,
     }).onConflictDoUpdate({
@@ -48,14 +52,21 @@ export class ReportsService {
         verdict: scored.verdict,
         categoryScores: scored.categoryScores,
         publicSummary: scored.publicSummary,
-        aiModelVersion: ANALYZER_VERSION,
         analyzerVersion: ANALYZER_VERSION,
         scoringVersion: SCORING_VERSION,
+        reportGeneratorVersion: REPORT_GENERATOR_VERSION,
         rubricVersion: submission.rubricVersion,
       },
     }).returning()
 
-    return inserted[0]
+    const result = inserted[0]
+    if (result) {
+      this.audit.log(null, 'report_generated', {
+        reportId: result.id,
+        submissionId,
+      })
+    }
+    return result
   }
 
   async getPrivateReport(userId: string, submissionId: string) {
@@ -74,6 +85,9 @@ export class ReportsService {
       .where(eq(projectVerificationReports.submissionId, submissionId))
       .returning()
     if (!rows[0]) throw new NotFoundException('Report not found')
+    this.audit.log(userId, isPublic ? 'report_published' : 'report_unpublished', {
+      reportId: rows[0].id,
+    })
     return this.toSafeReport(rows[0], submission)
   }
 
@@ -158,15 +172,16 @@ export class ReportsService {
     return {
       id: report.id,
       submissionId: report.submissionId,
+      repositoryName: submission.githubRepoFullName,
       githubRepoFullName: submission.githubRepoFullName,
       commitSha: submission.commitSha,
       compositeScore: report.compositeScore,
       verdict: report.verdict,
       categoryScores: report.categoryScores,
       publicSummary: report.publicSummary,
-      aiModelVersion: report.aiModelVersion,
       analyzerVersion: report.analyzerVersion,
       scoringVersion: report.scoringVersion,
+      reportGeneratorVersion: report.reportGeneratorVersion,
       rubricVersion: report.rubricVersion,
       generatedAt: report.generatedAt,
       isPublic: report.isPublic,

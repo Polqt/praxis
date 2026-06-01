@@ -14,10 +14,11 @@ import type { ProjectChallenge } from '@praxis/shared'
 
 type Props = {
   challenge: ProjectChallenge
-  githubReady: boolean
+  githubConnected: boolean
+  githubHasScopes: boolean
 }
 
-export function SubmitClient({ challenge, githubReady }: Props) {
+export function SubmitClient({ challenge, githubConnected, githubHasScopes }: Props) {
   const { repoUrl, commitSha, submitting, error, setRepoUrl, setCommitSha, handleSubmit } =
     useSubmitForm(challenge.id)
 
@@ -37,7 +38,7 @@ export function SubmitClient({ challenge, githubReady }: Props) {
       </Link>
 
       <div className="mt-6">
-        {!githubReady ? (
+        {!githubConnected ? (
           <Card>
             <CardContent className="p-6">
               <div className="flex flex-col items-start gap-4">
@@ -49,6 +50,21 @@ export function SubmitClient({ challenge, githubReady }: Props) {
                   </p>
                 </div>
                 <ConnectGitHubButton nextPath={`/submit?challengeId=${challenge.id}`} label="Connect GitHub" />
+              </div>
+            </CardContent>
+          </Card>
+        ) : !githubHasScopes ? (
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex flex-col items-start gap-4">
+                <IconBrandGithub size={24} className="text-muted-foreground" />
+                <div>
+                  <h2 className="font-semibold">Reconnect GitHub to continue</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Praxis needs repository read access to verify your work. Please reconnect to grant the required permissions.
+                  </p>
+                </div>
+                <ConnectGitHubButton nextPath={`/submit?challengeId=${challenge.id}`} label="Reconnect GitHub" />
               </div>
             </CardContent>
           </Card>

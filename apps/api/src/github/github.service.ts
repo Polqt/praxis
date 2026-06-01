@@ -25,7 +25,7 @@ export class GitHubService {
 
   async syncAccount(userId: string, accessToken: string) {
     const viewer = await this.githubApi.getViewer(accessToken)
-    const scopes = viewer.scopes.length > 0 ? viewer.scopes : ['read:user', 'repo']
+    const scopes = viewer.scopes
     const tokenScope = scopes.join(',')
     const encryptedToken = this.tokenService.encrypt(accessToken)
     const now = new Date()

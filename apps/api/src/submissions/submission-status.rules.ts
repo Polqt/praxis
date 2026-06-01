@@ -22,7 +22,6 @@ const allowedTransitions: Record<SubmissionStatus, SubmissionStatus[]> = {
     'expired',
   ],
   report_generation_failed: ['queued', 'failed', 'expired'],
-  awaiting_human_review: ['verified', 'insufficient', 'failed', 'expired'],
   verified: [],
   insufficient: [],
   failed: [],

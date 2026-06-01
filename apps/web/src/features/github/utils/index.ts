@@ -1,3 +1,9 @@
+import { REQUIRED_SCOPES } from '../constants/github.constants'
+
+export function hasRequiredScopes(scopes: string[]): boolean {
+  return REQUIRED_SCOPES.every((scope) => scopes.includes(scope))
+}
+
 export function formatRelativeDate(dateStr: string | null): string {
   if (!dateStr) return 'Never'
   const diff = Date.now() - new Date(dateStr).getTime()

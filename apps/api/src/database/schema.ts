@@ -25,7 +25,6 @@ export const submissionStatusEnum = pgEnum('submission_status', [
   'analysis_failed',
   'generating_report',
   'report_generation_failed',
-  'awaiting_human_review',
   'verified',
   'insufficient',
   'failed',
@@ -33,21 +32,17 @@ export const submissionStatusEnum = pgEnum('submission_status', [
 ])
 
 export const projectTypeEnum = pgEnum('project_type', [
-  'frontend',
   'backend',
-  'fullstack',
 ])
 
 export const verdictEnum = pgEnum('verdict', [
   'verified',
-  'conditional',
   'insufficient',
   'failed',
 ])
 
 export const sourceTypeEnum = pgEnum('source_type', [
   'project',
-  'task',
 ])
 
 // =====================
@@ -128,7 +123,6 @@ export const projectSubmissions = pgTable('project_submissions', {
   completedAt: timestamp('completed_at'),
   attempts: integer('attempts').notNull().default(1),
   failureReason: text('failure_reason'),
-  ingestedData: jsonb('ingested_data'),
   rubricVersion: integer('rubric_version').notNull(),
 }, (t) => [
   uniqueIndex('project_submissions_user_challenge_commit_idx').on(
@@ -174,9 +168,9 @@ export const projectVerificationReports = pgTable('project_verification_reports'
   verdict: verdictEnum('verdict').notNull(),
   categoryScores: jsonb('category_scores').notNull(),
   publicSummary: text('public_summary'),
-  aiModelVersion: text('ai_model_version').notNull(),
   analyzerVersion: text('analyzer_version').notNull().default('deterministic-v2'),
   scoringVersion: text('scoring_version').notNull().default('scoring-v2'),
+  reportGeneratorVersion: text('report_generator_version'),
   rubricVersion: integer('rubric_version'),
   generatedAt: timestamp('generated_at').defaultNow().notNull(),
   isPublic: boolean('is_public').notNull().default(false),
@@ -185,7 +179,7 @@ export const projectVerificationReports = pgTable('project_verification_reports'
 
 export const auditLogs = pgTable('audit_logs', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+  userId: text('user_id'),
   eventType: text('event_type').notNull(),
   metadata: jsonb('metadata'),
   ipAddress: text('ip_address'),

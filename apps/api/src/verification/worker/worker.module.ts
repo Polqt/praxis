@@ -6,6 +6,7 @@ import { IngestionModule } from '../ingestion/ingestion.module'
 import { QueueModule } from '../queue/queue.module'
 import { ReportsModule } from '../../reports/reports.module'
 import { SubmissionsModule } from '../../submissions/submissions.module'
+import { AuditModule } from '../../audit/audit.module'
 import { VerificationWorker } from './verification.worker'
 import { WorkerHealthService } from './worker-health.service'
 
@@ -16,6 +17,7 @@ import { WorkerHealthService } from './worker-health.service'
       load: [configuration],
       envFilePath: '.env',
     }),
+    AuditModule,
     AnalysisModule,
     IngestionModule,
     QueueModule,

@@ -78,12 +78,14 @@ export interface ProjectSubmissionEvent {
 export interface VerificationReport {
   id: string
   submissionId: string
+  repositoryName: string
   compositeScore: number
   verdict: Verdict
   categoryScores: Record<string, { score: number; narrative: string; citations: string[] }>
   publicSummary: string | null
   analyzerVersion: string
   scoringVersion: string
+  reportGeneratorVersion: string | null
   rubricVersion: number | null
   generatedAt: string
   isPublic: boolean

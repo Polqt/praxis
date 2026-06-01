@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { serverApiFetch } from '@/lib/api.server'
 import type { GitHubAccount, ProjectChallenge } from '@praxis/shared'
 import { SubmitClient } from '@/features/submissions/components/submit-client'
-import { REQUIRED_SCOPES } from '@/features/github/constants/github.constants'
+import { hasRequiredScopes } from '@/features/github/utils'
 
 type Props = {
   searchParams: Promise<{ challengeId?: string | string[] }>
@@ -42,7 +42,8 @@ export default async function SubmitPage(props: Props) {
     )
   }
 
-  const githubReady = github.connected && REQUIRED_SCOPES.every((scope) => (github as Extract<GitHubAccount, { connected: true }>).scopes.includes(scope))
+  const githubConnected = github.connected
+  const githubHasScopes = github.connected && hasRequiredScopes(github.scopes)
 
   return (
     <div className="max-w-150 mx-auto px-6 py-10">
@@ -52,7 +53,11 @@ export default async function SubmitPage(props: Props) {
       </p>
 
       <div className="mt-8">
-        <SubmitClient challenge={challenge} githubReady={githubReady} />
+        <SubmitClient
+          challenge={challenge}
+          githubConnected={githubConnected}
+          githubHasScopes={githubHasScopes}
+        />
       </div>
     </div>
   )

@@ -13,6 +13,7 @@ import { VerificationQueueService } from '../queue/queue.service'
 import { ReportsService } from '../../reports/reports.service'
 import { SubmissionStatusService } from '../../submissions/submission-status.service'
 import { StaleSubmissionService } from '../../submissions/stale-submission.service'
+import { AuditService } from '../../audit/audit.service'
 
 @Injectable()
 export class VerificationWorker implements OnModuleInit, OnModuleDestroy {
@@ -26,6 +27,7 @@ export class VerificationWorker implements OnModuleInit, OnModuleDestroy {
     private readonly reports: ReportsService,
     private readonly statuses: SubmissionStatusService,
     private readonly staleSubmissions: StaleSubmissionService,
+    private readonly audit: AuditService,
   ) {}
 
   onModuleInit() {
