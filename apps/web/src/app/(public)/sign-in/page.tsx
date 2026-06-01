@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { CheckCircle2, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
+import { safeInternalPath } from '@/lib/redirects'
+import { REQUIRED_SCOPES } from '@/features/github/constants/github.constants'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -97,6 +99,7 @@ function HalftoneArt() {
 function SignInPage() {
   const searchParams = useSearchParams()
   const sessionExpired = searchParams.get('error') === 'session_expired'
+  const nextPath = safeInternalPath(searchParams.get('next'))
 
   const [email, setEmail] = useState('')
   const [emailLoading, setEmailLoading] = useState(false)
@@ -113,9 +116,14 @@ function SignInPage() {
     setGithubError('')
     try {
       const supabase = createClient()
+      const callbackUrl = new URL('/auth/callback', window.location.origin)
+      callbackUrl.searchParams.set('next', nextPath)
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        options: {
+          redirectTo: callbackUrl.toString(),
+          ...(nextPath.startsWith('/submit') ? { scopes: REQUIRED_SCOPES.join(' ') } : {}),
+        },
       })
       if (error) setGithubError(error.message)
     } catch {
@@ -131,10 +139,12 @@ function SignInPage() {
     setEmailError('')
     try {
       const supabase = createClient()
+      const callbackUrl = new URL('/auth/callback', window.location.origin)
+      callbackUrl.searchParams.set('next', nextPath)
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: callbackUrl.toString(),
           shouldCreateUser: true,
         },
       })

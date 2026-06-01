@@ -77,11 +77,11 @@ export default async function StudioPage() {
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Button asChild>
-              <Link href="/studio/challenges">Browse Challenges</Link>
+              <Link href="/challenges">Browse Challenges</Link>
             </Button>
             {challenge && (
               <Button variant="outline" asChild>
-                <Link href={`/studio/submit?challengeId=${challenge.id}`}>Submit Repository</Link>
+                <Link href={`/submit?challengeId=${challenge.id}`}>Submit Repository</Link>
               </Button>
             )}
           </div>
@@ -137,7 +137,7 @@ export default async function StudioPage() {
                   Submitted {formatDate(activeSubmission.submittedAt)}
                 </p>
                 <Button className="mt-5" variant="outline" asChild>
-                  <Link href={`/studio/submissions/${activeSubmission.id}`}>View Submission</Link>
+                  <Link href={`/submissions/${activeSubmission.id}`}>View Submission</Link>
                 </Button>
               </div>
             ) : (
@@ -157,7 +157,7 @@ export default async function StudioPage() {
                   <span className="text-xs text-muted-foreground">{formatDate(latestReport.generatedAt)}</span>
                 </div>
                 <Button className="mt-5" variant="outline" asChild>
-                  <Link href={`/studio/submissions/${latestReport.submissionId}/report`}>View Report</Link>
+                  <Link href={`/reports/${latestReport.submissionId}`}>View Report</Link>
                 </Button>
               </div>
             ) : (

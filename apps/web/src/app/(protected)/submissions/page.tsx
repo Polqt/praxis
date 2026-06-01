@@ -19,7 +19,7 @@ export default async function StudioSubmissionsPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/studio/challenges">Submit Repository</Link>
+          <Link href="/challenges">Submit Repository</Link>
         </Button>
       </div>
 
@@ -36,7 +36,7 @@ export default async function StudioSubmissionsPage() {
               <div className="flex items-center gap-3 shrink-0">
                 <Badge variant="outline">{statusLabel(submission.status)}</Badge>
                 <Button variant="outline" asChild>
-                  <Link href={`/studio/submissions/${submission.id}`}>View Submission</Link>
+                  <Link href={`/submissions/${submission.id}`}>View Submission</Link>
                 </Button>
               </div>
             </CardContent>

@@ -7,7 +7,6 @@ import {
   IconLayoutSidebar,
   IconTrophy,
   IconSend,
-  IconFileAnalytics,
   IconSettings,
 } from '@tabler/icons-react'
 import { Separator } from '@/components/ui/separator'
@@ -23,9 +22,8 @@ import type { GitHubAccount, User } from '@praxis/shared'
 
 const NAV_ITEMS = [
   { href: '/studio', label: 'Studio', icon: IconLayoutSidebar },
-  { href: '/studio/challenges', label: 'Challenges', icon: IconTrophy },
-  { href: '/studio/submissions', label: 'Submissions', icon: IconSend },
-  { href: '/studio/submissions', label: 'Reports', icon: IconFileAnalytics },
+  { href: '/challenges', label: 'Challenges', icon: IconTrophy },
+  { href: '/submissions', label: 'Submissions', icon: IconSend },
   { href: '/settings', label: 'Settings', icon: IconSettings },
 ]
 

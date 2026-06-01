@@ -28,7 +28,7 @@ export function SubmitRepositoryForm({ challengeId }: Props) {
         githubRepoFullName: repo.trim(),
         commitSha: commitSha.trim() || undefined,
       })
-      router.push(`/studio/submissions/${submission.id}`)
+      router.push(`/submissions/${submission.id}`)
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create submission')

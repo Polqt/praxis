@@ -5,9 +5,13 @@ import { Card, CardContent } from '@/components/ui/card'
 import type { VerificationReport } from '@praxis/shared'
 import { ReportVisibilityButton } from '@/features/studio/components/report-visibility-button'
 
-export default async function PrivateReportPage(props: PageProps<'/studio/submissions/[id]/report'>) {
-  const { id } = await props.params
-  const report = await serverApiFetch<VerificationReport>(`/submissions/${id}/report`)
+type PrivateReportPageProps = {
+  params: Promise<{ submissionId: string }>
+}
+
+export default async function PrivateReportPage(props: PrivateReportPageProps) {
+  const { submissionId } = await props.params
+  const report = await serverApiFetch<VerificationReport>(`/submissions/${submissionId}/report`)
 
   return (
     <div className="px-10 py-8 max-w-5xl">

@@ -6,7 +6,11 @@ import { Card, CardContent } from '@/components/ui/card'
 import type { ProjectSubmission, ProjectSubmissionEvent } from '@praxis/shared'
 import { eventLabel, formatDate, githubRepoUrl, isTerminalSubmission, repoName, shortSha, statusLabel } from '@/lib/praxis-format'
 
-export default async function SubmissionTimelinePage(props: PageProps<'/studio/submissions/[id]'>) {
+type SubmissionTimelinePageProps = {
+  params: Promise<{ id: string }>
+}
+
+export default async function SubmissionTimelinePage(props: SubmissionTimelinePageProps) {
   const { id } = await props.params
   const [submission, events] = await Promise.all([
     serverApiFetch<ProjectSubmission>(`/submissions/${id}`),
@@ -34,7 +38,7 @@ export default async function SubmissionTimelinePage(props: PageProps<'/studio/s
             {submission.failureReason && <p className="text-destructive text-xs">{submission.failureReason}</p>}
             {isTerminalSubmission(submission) && (
               <Button className="w-full mt-4" asChild>
-                <Link href={`/studio/submissions/${submission.id}/report`}>View report</Link>
+                <Link href={`/reports/${submission.id}`}>View report</Link>
               </Button>
             )}
           </CardContent>

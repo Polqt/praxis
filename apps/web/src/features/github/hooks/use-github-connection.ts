@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { apiClient } from '@/lib/api'
+import { createClient } from '@/lib/supabase/client'
+import { REQUIRED_SCOPES } from '@/features/github/constants/github.constants'
 import type { GitHubAccount } from '@praxis/shared'
 
 type UseGitHubConnectionReturn = {
@@ -43,7 +45,15 @@ export function useGitHubConnection(
   }
 
   function handleConnectGitHub() {
-    window.location.href = '/studio/connect-github'
+    const callbackUrl = new URL('/auth/callback', window.location.origin)
+    callbackUrl.searchParams.set('next', '/settings')
+    void createClient().auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo: callbackUrl.toString(),
+        scopes: REQUIRED_SCOPES.join(' '),
+      },
+    })
   }
 
   return {

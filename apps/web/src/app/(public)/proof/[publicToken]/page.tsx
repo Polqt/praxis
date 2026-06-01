@@ -3,7 +3,11 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import type { VerificationReport } from '@praxis/shared'
 
-export default async function PublicProofPage(props: PageProps<'/proof/[publicToken]'>) {
+type PublicProofPageProps = {
+  params: Promise<{ publicToken: string }>
+}
+
+export default async function PublicProofPage(props: PublicProofPageProps) {
   const { publicToken } = await props.params
   const report = await serverApiFetch<VerificationReport>(`/proof/${publicToken}`)
 

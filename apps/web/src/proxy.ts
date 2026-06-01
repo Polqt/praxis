@@ -1,7 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { safeInternalPath } from '@/lib/redirects'
 
-const PROTECTED_PREFIXES = ['/studio', '/projects', '/submissions', '/settings', '/task', '/tasks']
+const PROTECTED_PREFIXES = ['/studio', '/submit', '/submissions', '/reports', '/settings']
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -29,22 +30,41 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
+  const pathWithSearch = `${pathname}${request.nextUrl.search}`
+
+  if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
+    const url = request.nextUrl.clone()
+    url.pathname = pathname.replace(/^\/dashboard/, '/studio')
+    return NextResponse.redirect(url)
+  }
+
+  if (pathname === '/studio/challenges' || pathname.startsWith('/studio/challenges/')) {
+    const url = request.nextUrl.clone()
+    url.pathname = pathname.replace(/^\/studio\/challenges/, '/challenges')
+    return NextResponse.redirect(url)
+  }
+
+  if (pathname === '/studio/submissions' || pathname.startsWith('/studio/submissions/')) {
+    const url = request.nextUrl.clone()
+    url.pathname = pathname.replace(/^\/studio\/submissions/, '/submissions')
+    return NextResponse.redirect(url)
+  }
+
+  if (pathname === '/studio/submit') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/submit'
+    return NextResponse.redirect(url)
+  }
 
   if (user && (pathname === '/sign-in' || pathname === '/sign-up' || pathname === '/login')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/studio'
+    const next = safeInternalPath(request.nextUrl.searchParams.get('next'))
+    const url = new URL(next, request.nextUrl.origin)
     return NextResponse.redirect(url)
   }
 
   if (!user && (pathname === '/sign-up' || pathname === '/login')) {
     const url = request.nextUrl.clone()
     url.pathname = '/sign-in'
-    return NextResponse.redirect(url)
-  }
-
-  if (user && (pathname === '/dashboard' || pathname.startsWith('/dashboard/'))) {
-    const url = request.nextUrl.clone()
-    url.pathname = pathname.replace(/^\/dashboard/, '/studio')
     return NextResponse.redirect(url)
   }
 
@@ -55,6 +75,7 @@ export async function proxy(request: NextRequest) {
   if (!user && isProtected) {
     const url = request.nextUrl.clone()
     url.pathname = '/sign-in'
+    url.searchParams.set('next', pathWithSearch)
     return NextResponse.redirect(url)
   }
 

@@ -1,22 +1,24 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse, type NextRequest } from 'next/server'
+import { safeInternalPath } from '@/lib/redirects'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const error = searchParams.get('error')
+  const nextPath = safeInternalPath(searchParams.get('next'))
 
   if (error) {
-    return NextResponse.redirect(`${origin}/sign-in?error=auth_failed`)
+    return NextResponse.redirect(`${origin}/sign-in?error=auth_failed&next=${encodeURIComponent(nextPath)}`)
   }
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/sign-in?error=missing_code`)
+    return NextResponse.redirect(`${origin}/sign-in?error=missing_code&next=${encodeURIComponent(nextPath)}`)
   }
 
   const cookieStore = await cookies()
-  const response = NextResponse.redirect(`${origin}/studio`)
+  const response = NextResponse.redirect(`${origin}${nextPath}`)
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -38,7 +40,7 @@ export async function GET(request: NextRequest) {
   const { data: { session }, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
   if (exchangeError || !session) {
-    return NextResponse.redirect(`${origin}/sign-in?error=auth_failed`)
+    return NextResponse.redirect(`${origin}/sign-in?error=auth_failed&next=${encodeURIComponent(nextPath)}`)
   }
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL
@@ -47,33 +49,24 @@ export async function GET(request: NextRequest) {
   try {
     await fetch(`${apiBase}/users/me`, { headers: bearer })
   } catch {
-    // Non-fatal — protected layout will retry.
+    // Non-fatal: protected layout will retry.
   }
 
   const provider = session.user.app_metadata?.provider
   const providerToken = session.provider_token
 
-  console.log('[callback] provider:', provider, '| provider_token present:', !!providerToken)
-
-  if (provider === 'github') {
-    if (!providerToken) {
-      console.error('[callback] GitHub provider but no provider_token — skipping sync')
-    } else {
-      try {
-        const syncRes = await fetch(`${apiBase}/github/sync`, {
-          method: 'POST',
-          headers: bearer,
-          body: JSON.stringify({ accessToken: providerToken }),
-        })
-        if (!syncRes.ok) {
-          const body = await syncRes.text()
-          console.error('[callback] GitHub sync returned', syncRes.status, body)
-        } else {
-          console.log('[callback] GitHub sync succeeded')
-        }
-      } catch (e) {
-        console.error('[callback] GitHub sync threw:', e)
+  if (provider === 'github' && providerToken) {
+    try {
+      const syncRes = await fetch(`${apiBase}/github/sync`, {
+        method: 'POST',
+        headers: bearer,
+        body: JSON.stringify({ accessToken: providerToken }),
+      })
+      if (!syncRes.ok) {
+        await syncRes.text()
       }
+    } catch {
+      // Non-fatal: submit/settings screens will ask the user to reconnect if sync did not complete.
     }
   }
 

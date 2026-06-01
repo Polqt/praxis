@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
 import { serverApiFetch } from '@/lib/api.server'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -6,10 +7,14 @@ import { Card, CardContent } from '@/components/ui/card'
 import type { ProjectChallenge } from '@praxis/shared'
 
 export default async function StudioChallengesPage() {
-  const challenges = await serverApiFetch<ProjectChallenge[]>('/challenges').catch(() => [])
+  const supabase = await createClient()
+  const [{ data: { user } }, challenges] = await Promise.all([
+    supabase.auth.getUser(),
+    serverApiFetch<ProjectChallenge[]>('/challenges').catch(() => []),
+  ])
 
   return (
-    <div className="px-10 py-8 max-w-5xl">
+    <div className="px-10 pt-24 pb-8 max-w-5xl">
       <h1 className="text-3xl font-semibold tracking-tight">Challenges</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         Praxis currently verifies one backend engineering standard.
@@ -33,9 +38,19 @@ export default async function StudioChallengesPage() {
                   ))}
                 </div>
               </div>
-              <Button asChild>
-                <Link href={`/studio/challenges/${challenge.id}`}>View standard</Link>
-              </Button>
+              <div className="flex shrink-0 gap-3">
+                <Button variant="outline" asChild>
+                  <Link href={`/challenges/${challenge.id}`}>View standard</Link>
+                </Button>
+                <Button asChild>
+                  <Link href={user
+                    ? `/submit?challengeId=${challenge.id}`
+                    : `/sign-in?next=${encodeURIComponent(`/submit?challengeId=${challenge.id}`)}`
+                  }>
+                    {user ? 'Submit Repository' : 'Start Verification'}
+                  </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
