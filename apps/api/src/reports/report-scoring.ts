@@ -40,17 +40,18 @@ export function scoreReport(rubric: Rubric, analysisData: RepositoryAnalysisData
 
 function signalForCategory(categoryName: string, analysisData: RepositoryAnalysisData) {
   const name = categoryName.toLowerCase()
-  if (name.includes('test')) return analysisData.hardSignals.tests
-  if (name.includes('deploy')) return analysisData.hardSignals.deployment
-  if (name.includes('security') || name.includes('auth')) return analysisData.hardSignals.auth
-  if (name.includes('architecture')) return analysisData.hardSignals.migrations
-  if (name.includes('documentation')) {
-    return {
-      present: true,
-      confidence: 0.5,
-      citations: analysisData.hardSignals.deployment.citations,
-    }
+  if (name.includes('api design')) {
+    return analysisData.hardSignals.ci.present
+      ? analysisData.hardSignals.ci
+      : analysisData.hardSignals.envUsage
   }
+  if (name.includes('authentication')) return analysisData.hardSignals.auth
+  if (name.includes('database design')) return analysisData.hardSignals.migrations
+  if (name.includes('testing')) return analysisData.hardSignals.tests
+  if (name.includes('documentation')) {
+    return analysisData.hardSignals.documentation
+  }
+  if (name.includes('deployment')) return analysisData.hardSignals.deployment
   return analysisData.hardSignals.ci.present
     ? analysisData.hardSignals.ci
     : analysisData.hardSignals.envUsage

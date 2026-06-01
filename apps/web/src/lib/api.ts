@@ -1,5 +1,13 @@
 import { createClient } from '@/lib/supabase/client'
-import type { DashboardStats, GitHubAccount, User } from '@praxis/shared'
+import type {
+  DashboardStats,
+  GitHubAccount,
+  ProjectChallenge,
+  ProjectSubmission,
+  ProjectSubmissionEvent,
+  User,
+  VerificationReport,
+} from '@praxis/shared'
 
 export class ApiError extends Error {
   constructor(
@@ -58,6 +66,22 @@ export const apiClient = {
       body: JSON.stringify(data),
     }),
   getDashboard: () => apiFetch<DashboardStats>('/users/me/dashboard'),
+  getChallenges: () => apiFetch<ProjectChallenge[]>('/challenges'),
+  getChallenge: (id: string) => apiFetch<ProjectChallenge>(`/challenges/${id}`),
+  createSubmission: (data: { challengeId: string; githubRepoFullName: string; commitSha?: string }) =>
+    apiFetch<ProjectSubmission>('/submissions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getSubmissions: () => apiFetch<ProjectSubmission[]>('/submissions'),
+  getSubmission: (id: string) => apiFetch<ProjectSubmission>(`/submissions/${id}`),
+  getSubmissionEvents: (id: string) => apiFetch<ProjectSubmissionEvent[]>(`/submissions/${id}/events`),
+  getSubmissionReport: (id: string) => apiFetch<VerificationReport>(`/submissions/${id}/report`),
+  setReportVisibility: (submissionId: string, isPublic: boolean) =>
+    apiFetch<VerificationReport>(`/reports/submissions/${submissionId}/visibility`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isPublic }),
+    }),
   getGitHubAccount: () => apiFetch<GitHubAccount>('/github/account'),
   syncGitHub: (accessToken: string) =>
     apiFetch<void>('/github/sync', {

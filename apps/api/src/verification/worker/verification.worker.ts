@@ -87,6 +87,8 @@ export class VerificationWorker implements OnModuleInit, OnModuleDestroy {
         return
       }
       case VERIFICATION_JOB_NAMES.awardSkills:
+        await this.reports.awardSkillsForSubmission(submissionId)
+        return
       case VERIFICATION_JOB_NAMES.expireStaleSubmission:
         return
       default:

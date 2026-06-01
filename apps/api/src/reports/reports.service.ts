@@ -8,6 +8,8 @@ import {
   projectSubmissions,
   projectVerificationReports,
   repositoryAnalyses,
+  skills,
+  userSkills,
 } from '../database/schema'
 import { scoreReport } from './report-scoring'
 
@@ -73,6 +75,44 @@ export class ReportsService {
     if (!reports[0] || !reports[0].isPublic) throw new NotFoundException('Proof not found')
     const submission = await this.getSubmission(reports[0].submissionId)
     return this.toSafeReport(reports[0], submission)
+  }
+
+  async awardSkillsForSubmission(submissionId: string) {
+    const submission = await this.getSubmission(submissionId)
+    const challenge = await this.getChallenge(submission.challengeId)
+    const report = await this.getReportBySubmission(submissionId)
+    if (report.verdict !== 'verified') return []
+
+    const rubric = challenge.rubric as { categories: { name: string; floor: number }[] }
+    const categoryScores = report.categoryScores as Record<string, { score: number }>
+    const awarded = []
+
+    for (const category of rubric.categories) {
+      const score = categoryScores[category.name]?.score ?? 0
+      if (score < category.floor) continue
+
+      const skillRows = await this.db.db
+        .select()
+        .from(skills)
+        .where(eq(skills.name, category.name))
+        .limit(1)
+
+      if (!skillRows[0]) continue
+
+      const inserted = await this.db.db
+        .insert(userSkills)
+        .values({
+          userId: submission.userId,
+          skillId: skillRows[0].id,
+          sourceType: 'project',
+        })
+        .onConflictDoNothing()
+        .returning()
+
+      if (inserted[0]) awarded.push(inserted[0])
+    }
+
+    return awarded
   }
 
   private async getSubmission(submissionId: string) {

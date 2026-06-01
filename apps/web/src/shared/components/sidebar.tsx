@@ -23,9 +23,9 @@ import type { GitHubAccount, User } from '@praxis/shared'
 
 const NAV_ITEMS = [
   { href: '/studio', label: 'Studio', icon: IconLayoutSidebar },
-  { href: '/challenges', label: 'Challenges', icon: IconTrophy },
-  { href: '/submissions', label: 'Submissions', icon: IconSend },
-  { href: '/submissions', label: 'Reports', icon: IconFileAnalytics },
+  { href: '/studio/challenges', label: 'Challenges', icon: IconTrophy },
+  { href: '/studio/submissions', label: 'Submissions', icon: IconSend },
+  { href: '/studio/submissions', label: 'Reports', icon: IconFileAnalytics },
   { href: '/settings', label: 'Settings', icon: IconSettings },
 ]
 

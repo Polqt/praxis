@@ -26,6 +26,7 @@ export class RepositoryAnalysisService {
         envUsage: this.signal(envCitations),
         migrations: this.signal(citations('migration')),
         auth: this.signal(citations('auth')),
+        documentation: this.signal(citations('doc')),
         dependencyRisk: {
           level: data.files.some((file) => file.path.toLowerCase().includes('package.json')) ? 'low' : 'medium',
           citations: citations('manifest'),

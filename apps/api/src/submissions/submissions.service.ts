@@ -81,6 +81,20 @@ export class SubmissionsService {
       .orderBy(desc(projectSubmissions.submittedAt))
   }
 
+  async getStats(userId: string) {
+    const submissions = await this.listForUser(userId)
+    return {
+      totalSubmissions: submissions.length,
+      verifiedCount: submissions.filter((submission) => submission.status === 'verified').length,
+      inProgressCount: submissions.filter((submission) => (
+        ['queued', 'ingesting', 'analyzing', 'generating_report'].includes(submission.status)
+      )).length,
+      reportsGenerated: submissions.filter((submission) => (
+        ['verified', 'insufficient', 'failed'].includes(submission.status)
+      )).length,
+    }
+  }
+
   async getForUser(userId: string, submissionId: string) {
     const rows = await this.db.db
       .select()

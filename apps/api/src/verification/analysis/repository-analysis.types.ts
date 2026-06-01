@@ -14,6 +14,7 @@ export interface RepositoryAnalysisData {
     envUsage: HardSignal
     migrations: HardSignal
     auth: HardSignal
+    documentation: HardSignal
     dependencyRisk: { level: 'low' | 'medium' | 'high'; citations: string[] }
     deployment: HardSignal
   }

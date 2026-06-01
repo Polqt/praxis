@@ -16,6 +16,7 @@ const passing = scoreReport(rubric, {
     envUsage: { present: true, confidence: 1, citations: ['src/config.ts'] },
     migrations: { present: true, confidence: 1, citations: ['prisma/migrations/1.sql'] },
     auth: { present: true, confidence: 1, citations: ['src/auth.ts'] },
+    documentation: { present: true, confidence: 1, citations: ['README.md'] },
     dependencyRisk: { level: 'low', citations: ['package.json'] },
     deployment: { present: true, confidence: 1, citations: ['Dockerfile'] },
   },
