@@ -1,11 +1,10 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { and, inArray, lt, notInArray } from 'drizzle-orm'
 import { DatabaseService } from '../database/database.service'
 import { projectSubmissionEvents, projectSubmissions } from '../database/schema'
 import type { SubmissionStatus } from '@praxis/shared'
 
-// All statuses that represent a completed verification — never touch these
 const TERMINAL_STATUSES: SubmissionStatus[] = [
   'verified',
   'insufficient',
@@ -20,6 +19,8 @@ const EXPIRY_FAILURE_REASON = 'Verification expired because it stayed in progres
 
 @Injectable()
 export class StaleSubmissionService {
+  private readonly logger = new Logger(StaleSubmissionService.name)
+
   constructor(
     private readonly db: DatabaseService,
     private readonly config: ConfigService,
@@ -60,13 +61,13 @@ export class StaleSubmissionService {
         })
         expired++
       } catch (err) {
-        console.error('stale-expiry: failed to expire submission', {
+        this.logger.error('stale-expiry: failed to expire submission', {
           submissionId: submission.id,
           error: err instanceof Error ? err.message : String(err),
         })
       }
     }
 
-    console.log(`stale-expiry: found ${stale.length} stale, expired ${expired}`)
+    this.logger.log(`stale-expiry: found ${stale.length} stale, expired ${expired}`)
   }
 }

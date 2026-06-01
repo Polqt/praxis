@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { DatabaseService } from '../database/database.service'
 import { auditLogs } from '../database/schema'
 
@@ -18,6 +18,8 @@ type AuditContext = {
 
 @Injectable()
 export class AuditService {
+  private readonly logger = new Logger(AuditService.name)
+
   constructor(private readonly db: DatabaseService) {}
 
   log(
@@ -36,7 +38,7 @@ export class AuditService {
         userAgent: context?.userAgent ?? null,
       })
       .catch((err: unknown) => {
-        console.error('audit log insert failed', { eventType, userId, err })
+        this.logger.error('audit log insert failed', { eventType, userId, err })
       })
   }
 }

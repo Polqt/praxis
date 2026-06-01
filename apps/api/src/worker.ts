@@ -16,7 +16,7 @@ async function bootstrap() {
   process.on('SIGTERM', () => void shutdown())
 }
 
-bootstrap().catch((error) => {
-  console.error(error)
+bootstrap().catch((error: unknown) => {
+  process.stderr.write(`Worker bootstrap failed: ${error instanceof Error ? error.stack : String(error)}\n`)
   process.exit(1)
 })

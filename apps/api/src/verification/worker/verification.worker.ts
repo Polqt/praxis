@@ -1,4 +1,4 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Job, Worker } from 'bullmq'
 import { RepositoryAnalysisService } from '../analysis/repository-analysis.service'
@@ -17,6 +17,7 @@ import { AuditService } from '../../audit/audit.service'
 
 @Injectable()
 export class VerificationWorker implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(VerificationWorker.name)
   private worker?: Worker<VerificationJobPayload>
 
   constructor(
@@ -44,7 +45,7 @@ export class VerificationWorker implements OnModuleInit, OnModuleDestroy {
     )
 
     this.worker.on('failed', (job, error) => {
-      console.error('verification job failed', {
+      this.logger.error('verification job failed', {
         id: job?.id,
         name: job?.name,
         submissionId: job?.data.submissionId,
@@ -123,7 +124,7 @@ export class VerificationWorker implements OnModuleInit, OnModuleDestroy {
         metadata: { jobName: job.name, attemptsMade: job.attemptsMade },
       })
     } catch (transitionError) {
-      console.error('failed to mark final job failure', {
+      this.logger.error('failed to mark final job failure', {
         submissionId: job.data.submissionId,
         jobName: job.name,
         message: transitionError instanceof Error ? transitionError.message : String(transitionError),
