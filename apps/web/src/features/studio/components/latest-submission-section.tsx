@@ -1,18 +1,24 @@
 'use client'
 
 import Link from 'next/link'
-import { IconClock } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
-import { statusConfig, IN_PROGRESS_STATUSES } from '@/features/submissions/constants/status-config'
+import { SECTION_LABEL } from '@/features/studio/constants/studio.constants'
+import { statusConfig } from '@/features/submissions/constants/status-config'
 import type { ProjectSubmission } from '@praxis/shared'
 
-const SECTION_LABEL = 'LATEST SUBMISSION'
-
 const TERMINAL_STATUSES = ['verified', 'insufficient', 'failed'] as const
-type TerminalStatus = typeof TERMINAL_STATUSES[number]
 
-function isTerminal(status: string): status is TerminalStatus {
-  return TERMINAL_STATUSES.includes(status as TerminalStatus)
+function isTerminal(status: string): boolean {
+  return TERMINAL_STATUSES.includes(status as typeof TERMINAL_STATUSES[number])
+}
+
+function relativeDate(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const days = Math.floor(diff / 86_400_000)
+  if (days === 0) return 'Today'
+  if (days === 1) return 'Yesterday'
+  if (days < 30) return `${days}d ago`
+  return `${Math.floor(days / 30)}mo ago`
 }
 
 type Props = {
@@ -21,42 +27,34 @@ type Props = {
 
 export function LatestSubmissionSection({ submission }: Props) {
   return (
-    <div className="mb-10">
-      <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-4">
-        {SECTION_LABEL}
-      </p>
+    <div>
+      <p className={`${SECTION_LABEL} mb-3`}>Latest submission</p>
       {submission ? (
-        <div className="rounded-lg border bg-card p-5">
+        <div className="rounded-lg border bg-card p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-[15px] font-medium text-foreground font-mono truncate mb-0.5">
-                {submission.githubRepoFullName}
-              </p>
-              <p className="text-[13px] text-muted-foreground">
-                {submission.rubricVersion ? `v${submission.rubricVersion}` : ''}
+              <p className="text-sm font-medium font-mono truncate">{submission.githubRepoFullName}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {submission.rubricVersion ? `v${submission.rubricVersion}` : '—'}
               </p>
             </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <span
-                className={`text-[10px] uppercase tracking-widest font-medium px-2 py-0.5 border rounded-sm ${statusConfig[submission.status].className}`}
-              >
-                {statusConfig[submission.status].label}
-              </span>
-              {isTerminal(submission.status) && (
-                <Button variant="outline" size="sm" asChild>
-                  <Link href={`/reports/${submission.id}`}>View report</Link>
-                </Button>
-              )}
-            </div>
+            <span
+              className={`text-[10px] uppercase tracking-widest font-medium px-2 py-0.5 border rounded-sm shrink-0 ${statusConfig[submission.status]?.className ?? 'text-muted-foreground bg-muted border-border'}`}
+            >
+              {statusConfig[submission.status]?.label ?? submission.status}
+            </span>
+          </div>
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+            <span className="text-xs text-muted-foreground">{relativeDate(submission.submittedAt)}</span>
+            {isTerminal(submission.status) && (
+              <Button variant="ghost" size="sm" className="h-6 text-xs px-2" asChild>
+                <Link href={`/reports/${submission.id}`}>View report</Link>
+              </Button>
+            )}
           </div>
         </div>
       ) : (
-        <div className="rounded-lg border border-dashed p-8 flex flex-col items-center gap-3 text-center">
-          <IconClock size={20} className="text-muted-foreground" />
-          <p className="text-[13px] text-muted-foreground">
-            No submissions yet. Verify your first project to get started.
-          </p>
-        </div>
+        <p className="text-sm text-muted-foreground">No submissions yet.</p>
       )}
     </div>
   )

@@ -1,8 +1,7 @@
 'use client'
 
-import { IconCheck } from '@tabler/icons-react'
-
-const SECTION_LABEL = 'VERIFIED SKILLS'
+import { Badge } from '@/components/ui/badge'
+import { SECTION_LABEL } from '@/features/studio/constants/studio.constants'
 
 type Props = {
   skills: string[]
@@ -10,24 +9,19 @@ type Props = {
 
 export function VerifiedSkillsSection({ skills }: Props) {
   return (
-    <div className="mb-10">
-      <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-4">
-        {SECTION_LABEL}
-      </p>
+    <div>
+      <p className={`${SECTION_LABEL} mb-3`}>Verified skills</p>
       {skills.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {skills.map((skill) => (
-            <span
-              key={skill}
-              className="inline-flex items-center gap-1.5 rounded-full border bg-background px-3 py-1 text-sm text-foreground"
-            >
-              <IconCheck size={12} className="text-green-600 shrink-0" />
+            <Badge key={skill} variant="secondary" className="gap-1">
+              <span className="text-green-500 text-[10px]">✓</span>
               {skill}
-            </span>
+            </Badge>
           ))}
         </div>
       ) : (
-        <p className="text-[13px] text-muted-foreground">No verified skills yet.</p>
+        <p className="text-sm text-muted-foreground">No verified skills yet.</p>
       )}
     </div>
   )

@@ -8,7 +8,9 @@ export default async function StudioPage() {
   const [user, githubAccount, latestSubmission, stats] = await Promise.all([
     serverApiFetch<User>('/users/me'),
     serverApiFetch<GitHubAccount>('/github/account').catch(() => ({ connected: false } as GitHubAccount)),
-    serverApiFetch<ProjectSubmission>('/submissions?limit=1&sort=desc').catch(() => null),
+    serverApiFetch<ProjectSubmission[] | ProjectSubmission>('/submissions?limit=1&sort=desc')
+      .then((r) => (Array.isArray(r) ? r[0] ?? null : r))
+      .catch(() => null),
     serverApiFetch<StudioStats>('/submissions/stats').catch(() => DEFAULT_STATS),
   ])
 

@@ -1,20 +1,31 @@
+'use client'
+
 import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
+import { useState } from 'react'
 import {
-  IconLayoutDashboard,
+  IconLayoutSidebar,
   IconTrophy,
   IconSend,
   IconFileAnalytics,
   IconSettings,
 } from '@tabler/icons-react'
 import { Separator } from '@/components/ui/separator'
-import { SignOutButton } from '@/features/auth/components/sign-out-button'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
+import { createClient } from '@/lib/supabase/client'
 import type { GitHubAccount, User } from '@praxis/shared'
 
 const NAV_ITEMS = [
-  { href: '/studio', label: 'Studio', icon: IconLayoutDashboard },
+  { href: '/studio', label: 'Studio', icon: IconLayoutSidebar },
   { href: '/challenges', label: 'Challenges', icon: IconTrophy },
   { href: '/submissions', label: 'Submissions', icon: IconSend },
-  { href: '/reports', label: 'Reports', icon: IconFileAnalytics },
+  { href: '/submissions', label: 'Reports', icon: IconFileAnalytics },
   { href: '/settings', label: 'Settings', icon: IconSettings },
 ]
 
@@ -24,51 +35,78 @@ type Props = {
 }
 
 export function Sidebar({ user, githubAccount }: Props) {
+  const pathname = usePathname()
+  const router = useRouter()
+  const [signingOut, setSigningOut] = useState(false)
+
+  async function handleSignOut() {
+    if (signingOut) return
+    setSigningOut(true)
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/sign-in')
+    router.refresh()
+  }
+
   return (
-    <aside className="w-52 shrink-0 border-r border-border flex flex-col bg-background h-screen sticky top-0">
-      <div className="px-5 py-5 border-b border-border">
-        <Link href="/studio" className="text-[15px] font-semibold tracking-tight text-foreground">
+    <aside className="w-56 min-h-screen flex flex-col border-r border-border bg-background">
+      <div className="px-5 py-5">
+        <Link href="/studio" className="text-base font-semibold tracking-tight text-foreground">
           Praxis
         </Link>
       </div>
 
-      <nav className="flex flex-col gap-0.5 p-3 flex-1">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className="flex items-center gap-2.5 px-3 py-2 text-[13px] text-muted-foreground rounded-sm hover:bg-muted hover:text-foreground transition-colors"
-          >
-            <Icon size={15} />
-            {label}
-          </Link>
-        ))}
+      <Separator />
+
+      <nav className="flex-1 px-3 py-3 flex flex-col gap-1">
+        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          const isActive = pathname === href || pathname.startsWith(`${href}/`)
+          return (
+            <Link
+              key={label}
+              href={href}
+              className={[
+                'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-150',
+                isActive
+                  ? 'bg-accent text-foreground font-medium'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+              ].join(' ')}
+            >
+              <Icon size={16} />
+              {label}
+            </Link>
+          )
+        })}
       </nav>
 
-      <div className="px-3 pb-2">
-        <Separator />
-      </div>
+      <Separator />
 
-      <div className="px-5 py-3 flex items-center gap-2">
-        {githubAccount.connected ? (
-          <>
-            <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
-            <div className="min-w-0">
-              <p className="text-[11px] text-muted-foreground leading-tight">GitHub Connected</p>
-              <p className="text-[12px] text-muted-foreground truncate">@{githubAccount.githubUsername}</p>
+      <div className="px-3 py-3">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="w-full flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors duration-150 text-left truncate">
+              <span className="truncate text-xs">{user.email}</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="start" className="w-52">
+            <div className="px-2 py-1.5 flex items-center gap-2">
+              <span
+                className={`size-1.5 rounded-full inline-block shrink-0 ${githubAccount.connected ? 'bg-green-500' : 'bg-muted-foreground'}`}
+              />
+              <span className="text-xs text-muted-foreground">
+                {githubAccount.connected ? 'GitHub Connected' : 'Not connected'}
+              </span>
             </div>
-          </>
-        ) : (
-          <>
-            <span className="w-2 h-2 rounded-full border border-muted-foreground shrink-0" />
-            <p className="text-[12px] text-muted-foreground">GitHub not connected</p>
-          </>
-        )}
-      </div>
-
-      <div className="px-3 pb-3 flex flex-col gap-1">
-        <p className="px-3 text-[11px] text-muted-foreground truncate">{user.email}</p>
-        <SignOutButton />
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={handleSignOut}
+              disabled={signingOut}
+              className="text-xs text-muted-foreground focus:text-foreground cursor-pointer"
+            >
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </aside>
   )

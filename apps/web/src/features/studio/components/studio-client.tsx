@@ -21,16 +21,22 @@ export function StudioClient({ user, githubAccount, latestSubmission, stats }: P
   const greeting = getGreeting(displayName)
 
   return (
-    <div className="p-10 max-w-3xl">
+    <div className="flex-1 px-12 py-10 overflow-y-auto">
       <HeroSection greeting={greeting} githubAccount={githubAccount} />
       <VerificationProgressSection stats={stats} />
-      <LatestSubmissionSection submission={latestSubmission} />
-      <VerifiedSkillsSection skills={stats.verifiedSkills} />
-      <ProofProfileSection
-        username={user.username}
-        skillsCount={stats.verifiedSkillsCount}
-        reportsCount={stats.reportsGenerated}
-      />
+      <div className="mt-10 grid grid-cols-[1fr_300px] gap-6">
+        <div className="flex flex-col gap-8">
+          <LatestSubmissionSection submission={latestSubmission} />
+          <VerifiedSkillsSection skills={stats.verifiedSkills ?? []} />
+        </div>
+        <div>
+          <ProofProfileSection
+            username={user.username}
+            skillsCount={stats.verifiedSkillsCount}
+            reportsCount={stats.reportsGenerated}
+          />
+        </div>
+      </div>
     </div>
   )
 }

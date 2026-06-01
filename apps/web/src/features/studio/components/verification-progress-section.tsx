@@ -1,9 +1,8 @@
 'use client'
 
 import { Progress } from '@/components/ui/progress'
+import { SECTION_LABEL } from '@/features/studio/constants/studio.constants'
 import type { StudioStats } from '@/features/studio/types'
-
-const SECTION_LABEL = 'VERIFICATION PROGRESS'
 
 type Props = {
   stats: StudioStats
@@ -16,28 +15,30 @@ export function VerificationProgressSection({ stats }: Props) {
     : 0
 
   return (
-    <div className="mb-10">
-      <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium mb-4">
-        {SECTION_LABEL}
-      </p>
-      <div className="rounded-lg bg-muted/30 p-5 mb-4">
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <p className="text-2xl font-medium text-foreground tabular-nums">{challengesCompleted}</p>
-            <p className="text-[13px] text-muted-foreground mt-0.5">Challenges completed</p>
+    <div className="mt-10">
+      <p className={`${SECTION_LABEL} mb-4`}>Verification progress</p>
+      <div className="rounded-lg bg-muted/40 p-5">
+        <div className="flex items-start divide-x divide-border">
+          <div className="pr-6">
+            <p className="text-2xl font-semibold tabular-nums">{challengesCompleted}</p>
+            <p className="text-xs text-muted-foreground mt-1">Challenges completed</p>
           </div>
-          <div>
-            <p className="text-2xl font-medium text-foreground tabular-nums">{verifiedSkillsCount}</p>
-            <p className="text-[13px] text-muted-foreground mt-0.5">Verified skills</p>
+          <div className="px-6">
+            <p className="text-2xl font-semibold tabular-nums">{verifiedSkillsCount}</p>
+            <p className="text-xs text-muted-foreground mt-1">Verified skills</p>
           </div>
-          <div>
-            <p className="text-2xl font-medium text-foreground tabular-nums">{reportsGenerated}</p>
-            <p className="text-[13px] text-muted-foreground mt-0.5">Reports generated</p>
+          <div className="px-6">
+            <p className="text-2xl font-semibold tabular-nums">{reportsGenerated}</p>
+            <p className="text-xs text-muted-foreground mt-1">Reports generated</p>
           </div>
         </div>
+        <div className="mt-4 pt-4 border-t border-border/50 flex items-center gap-4">
+          <Progress value={progressPct} className="h-[3px] flex-1" />
+          <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
+            {challengesCompleted} of {totalChallenges} challenges
+          </span>
+        </div>
       </div>
-      <Progress value={progressPct} className="mb-1.5" />
-      <p className="text-[13px] text-muted-foreground">{progressPct}% verified</p>
     </div>
   )
 }
