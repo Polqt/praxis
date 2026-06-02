@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Job, Worker } from 'bullmq'
 import { RepositoryAnalysisService } from '../analysis/repository-analysis.service'
@@ -16,7 +16,7 @@ import { StaleSubmissionService } from '../../submissions/stale-submission.servi
 import { AuditService } from '../../audit/audit.service'
 
 @Injectable()
-export class VerificationWorker implements OnModuleInit, OnModuleDestroy {
+export class VerificationWorker implements OnModuleDestroy {
   private readonly logger = new Logger(VerificationWorker.name)
   private worker?: Worker<VerificationJobPayload>
 
@@ -31,7 +31,7 @@ export class VerificationWorker implements OnModuleInit, OnModuleDestroy {
     private readonly audit: AuditService,
   ) {}
 
-  onModuleInit() {
+  start() {
     const redisUrl = this.config.get<string>('redis.url')
     if (!redisUrl) throw new Error('REDIS_URL is required')
 

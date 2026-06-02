@@ -1,11 +1,13 @@
 import 'reflect-metadata'
 import { NestFactory } from '@nestjs/core'
 import { WorkerModule } from './verification/worker/worker.module'
+import { VerificationWorker } from './verification/worker/verification.worker'
 import { WorkerHealthService } from './verification/worker/worker-health.service'
 import { VerificationQueueService } from './verification/queue/queue.service'
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(WorkerModule)
+  app.get(VerificationWorker).start()
   app.get(WorkerHealthService).start()
 
   const queueService = app.get(VerificationQueueService)
