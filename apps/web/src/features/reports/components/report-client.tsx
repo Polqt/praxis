@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { IconArrowLeft, IconInfoCircle } from '@tabler/icons-react'
 import { ReportHero } from '@/features/reports/components/report-hero'
-import { ReportSummary } from '@/features/reports/components/report-summary'
 import { ScoreOverview } from '@/features/reports/components/score-overview'
 import { VerifiedSkillsSection } from '@/features/reports/components/verified-skills-section'
 import { StrengthsImprovementsSection } from '@/features/reports/components/strengths-improvements-section'
@@ -42,7 +41,7 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
 
         <hr className="border-border my-8" />
 
-        <ReportSummary summary={report.summary} />
+        <p className="text-base text-muted-foreground leading-relaxed">{report.summary}</p>
 
         <div className="mt-10">
           <ScoreOverview scores={report.scores} />

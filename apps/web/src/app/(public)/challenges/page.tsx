@@ -7,7 +7,6 @@ import type { Challenge } from '@/features/challenges/types'
 function toChallenge(raw: ProjectChallenge): Challenge {
   return {
     id: raw.id,
-    slug: raw.id,
     title: raw.title,
     description: raw.description,
     category: 'backend',

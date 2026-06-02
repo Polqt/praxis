@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import type { User } from '@praxis/shared'
 
 export async function serverApiFetch<T>(
   path: string,
@@ -24,8 +23,4 @@ export async function serverApiFetch<T>(
   }
 
   return response.json() as Promise<T>
-}
-
-export async function getLocalUser(): Promise<User> {
-  return serverApiFetch<User>('/users/me')
 }

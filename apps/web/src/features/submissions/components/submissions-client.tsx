@@ -8,15 +8,12 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { formatDate, isTerminalSubmission, repoName, statusLabel } from '@/lib/praxis-format'
-import { IN_PROGRESS_STATUSES } from '@/features/submissions/constants'
+import { formatDate, repoName, statusLabel } from '@/lib/praxis-format'
+import { IN_PROGRESS_STATUSES, TERMINAL_STATUSES } from '@/features/submissions/constants'
 import type { ProjectSubmission, SubmissionStatus } from '@praxis/shared'
-
-const TERMINAL_STATUSES: SubmissionStatus[] = ['verified', 'insufficient', 'failed', 'expired']
 
 function StatusBadge({ status }: { status: SubmissionStatus }) {
   const label = statusLabel(status)
-  const isActive = IN_PROGRESS_STATUSES.includes(status)
 
   if (status === 'verified') {
     return (
@@ -33,13 +30,9 @@ function StatusBadge({ status }: { status: SubmissionStatus }) {
     )
   }
   if (status === 'failed' || status === 'expired') {
-    return (
-      <Badge variant="destructive" className="rounded text-[11px] font-medium">
-        {label}
-      </Badge>
-    )
+    return <Badge variant="destructive" className="rounded text-[11px] font-medium">{label}</Badge>
   }
-  if (isActive) {
+  if (IN_PROGRESS_STATUSES.includes(status)) {
     return (
       <Badge variant="secondary" className="rounded text-[11px] font-medium gap-1.5">
         <span className="size-1.5 rounded-full bg-current inline-block animate-pulse" />
@@ -47,11 +40,7 @@ function StatusBadge({ status }: { status: SubmissionStatus }) {
       </Badge>
     )
   }
-  return (
-    <Badge variant="outline" className="rounded text-[11px] font-medium">
-      {label}
-    </Badge>
-  )
+  return <Badge variant="outline" className="rounded text-[11px] font-medium">{label}</Badge>
 }
 
 type FilterTab = 'all' | 'verified' | 'in-progress' | 'failed'
@@ -63,16 +52,10 @@ function filterSubmissions(submissions: ProjectSubmission[], tab: FilterTab): Pr
   return submissions
 }
 
-type CardProps = {
-  submission: ProjectSubmission
-  index: number
-}
-
-function SubmissionCard({ submission, index }: CardProps) {
+function SubmissionCard({ submission, index }: { submission: ProjectSubmission; index: number }) {
   const router = useRouter()
   const isActive = IN_PROGRESS_STATUSES.includes(submission.status)
   const isTerminal = TERMINAL_STATUSES.includes(submission.status)
-  const delay = Math.min(index * 50, 400)
 
   return (
     <div
@@ -86,29 +69,18 @@ function SubmissionCard({ submission, index }: CardProps) {
         'animate-in fade-in-0 slide-in-from-bottom-1 duration-200',
         isActive ? 'border-l-2 border-l-primary' : '',
       ].join(' ')}
-      style={{ animationDelay: `${delay}ms` }}
+      style={{ animationDelay: `${Math.min(index * 50, 400)}ms` }}
     >
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
-          <p className="font-mono text-sm font-medium truncate">
-            {repoName(submission.githubRepoFullName)}
-          </p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Build a Production REST API
-          </p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {formatDate(submission.submittedAt)}
-          </p>
+          <p className="font-mono text-sm font-medium truncate">{repoName(submission.githubRepoFullName)}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{submission.githubRepoFullName}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{formatDate(submission.submittedAt)}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <StatusBadge status={submission.status} />
           {isTerminal && (
-            <Button
-              variant="ghost"
-              size="sm"
-              asChild
-              onClick={(e) => e.stopPropagation()}
-            >
+            <Button variant="ghost" size="sm" asChild onClick={(e) => e.stopPropagation()}>
               <Link href={`/reports/${submission.id}`}>View report</Link>
             </Button>
           )}
@@ -118,11 +90,14 @@ function SubmissionCard({ submission, index }: CardProps) {
   )
 }
 
-type Props = {
-  submissions: ProjectSubmission[]
-}
+const TABS: { value: FilterTab; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'verified', label: 'Verified' },
+  { value: 'in-progress', label: 'In Progress' },
+  { value: 'failed', label: 'Failed' },
+]
 
-export function SubmissionsClient({ submissions }: Props) {
+export function SubmissionsClient({ submissions }: { submissions: ProjectSubmission[] }) {
   const [tab, setTab] = useState<FilterTab>('all')
   const filtered = filterSubmissions(submissions, tab)
 
@@ -131,9 +106,7 @@ export function SubmissionsClient({ submissions }: Props) {
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Submissions</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Track every repository submitted for verification.
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">Track every repository submitted for verification.</p>
         </div>
         <Button size="sm" variant="outline" asChild>
           <Link href="/challenges">Submit repository</Link>
@@ -142,13 +115,13 @@ export function SubmissionsClient({ submissions }: Props) {
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as FilterTab)}>
         <TabsList className="bg-transparent p-0 h-auto gap-0 border-0">
-          {(['all', 'verified', 'in-progress', 'failed'] as const).map((t) => (
+          {TABS.map(({ value, label }) => (
             <TabsTrigger
-              key={t}
-              value={t}
-              className="px-4 py-2 text-xs font-medium capitalize rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:text-foreground text-muted-foreground bg-transparent shadow-none"
+              key={value}
+              value={value}
+              className="px-4 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:text-foreground text-muted-foreground bg-transparent shadow-none"
             >
-              {t === 'in-progress' ? 'In Progress' : t.charAt(0).toUpperCase() + t.slice(1)}
+              {label}
             </TabsTrigger>
           ))}
         </TabsList>

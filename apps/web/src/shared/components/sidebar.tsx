@@ -22,11 +22,11 @@ import { createClient } from '@/lib/supabase/client'
 import type { GitHubAccount, User } from '@praxis/shared'
 
 const NAV_ITEMS = [
-  { href: '/studio', label: 'Studio', icon: IconLayoutSidebar },
-  { href: '/challenges', label: 'Challenges', icon: IconTrophy },
-  { href: '/submissions', label: 'Submissions', icon: IconSend },
-  { href: '/reports', label: 'Reports', icon: IconFileAnalytics },
-  { href: '/settings', label: 'Settings', icon: IconSettings },
+  { href: '/studio', label: 'Studio', icon: IconLayoutSidebar, activePrefix: undefined },
+  { href: '/challenges', label: 'Challenges', icon: IconTrophy, activePrefix: undefined },
+  { href: '/submissions', label: 'Submissions', icon: IconSend, activePrefix: undefined },
+  { href: '/submissions', label: 'Reports', icon: IconFileAnalytics, activePrefix: '/reports' },
+  { href: '/settings', label: 'Settings', icon: IconSettings, activePrefix: undefined },
 ]
 
 type Props = {
@@ -59,8 +59,9 @@ export function Sidebar({ user, githubAccount }: Props) {
       <Separator />
 
       <nav className="flex-1 px-3 py-3 flex flex-col gap-1">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href || pathname.startsWith(`${href}/`)
+        {NAV_ITEMS.map(({ href, label, icon: Icon, activePrefix }) => {
+          const isActive = pathname === href || pathname.startsWith(`${href}/`) ||
+            (activePrefix !== undefined && (pathname === activePrefix || pathname.startsWith(`${activePrefix}/`)))
           return (
             <Link
               key={label}
