@@ -148,8 +148,6 @@ export class GitHubService {
       githubUserId: account.githubUserId,
       githubUsername: account.githubUsername,
       githubEmail: account.githubEmail,
-      tokenScope: account.tokenScope,
-      isActive: account.isActive,
       connectedAt: account.connectedAt,
       lastSyncedAt: account.lastSyncedAt,
     }

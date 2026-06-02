@@ -2,12 +2,23 @@ import 'reflect-metadata'
 import { NestFactory } from '@nestjs/core'
 import { WorkerModule } from './verification/worker/worker.module'
 import { WorkerHealthService } from './verification/worker/worker-health.service'
+import { VerificationQueueService } from './verification/queue/queue.service'
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(WorkerModule)
   app.get(WorkerHealthService).start()
 
+  const queueService = app.get(VerificationQueueService)
+
+  const scheduleStaleExpiry = () => {
+    queueService.enqueueExpireStale().catch(() => undefined)
+  }
+
+  scheduleStaleExpiry()
+  const staleInterval = setInterval(scheduleStaleExpiry, 30 * 60 * 1000)
+
   const shutdown = async () => {
+    clearInterval(staleInterval)
     await app.close()
     process.exit(0)
   }

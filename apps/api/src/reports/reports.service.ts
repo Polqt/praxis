@@ -97,7 +97,7 @@ export class ReportsService {
       .limit(1)
     if (!reports[0] || !reports[0].isPublic) throw new NotFoundException('Proof not found')
     const submission = await this.getSubmission(reports[0].submissionId)
-    return this.toSafeReport(reports[0], submission)
+    return this.toPublicProof(reports[0], submission)
   }
 
   async awardSkillsForSubmission(submissionId: string) {
@@ -185,6 +185,25 @@ export class ReportsService {
       rubricVersion: report.rubricVersion,
       generatedAt: report.generatedAt,
       isPublic: report.isPublic,
+      publicToken: report.publicToken,
+    }
+  }
+
+  private toPublicProof(report: typeof projectVerificationReports.$inferSelect, submission: typeof projectSubmissions.$inferSelect) {
+    return {
+      id: report.id,
+      submissionId: report.submissionId,
+      repositoryName: submission.githubRepoFullName,
+      commitSha: submission.commitSha,
+      compositeScore: report.compositeScore,
+      verdict: report.verdict,
+      categoryScores: report.categoryScores,
+      publicSummary: report.publicSummary,
+      analyzerVersion: report.analyzerVersion,
+      scoringVersion: report.scoringVersion,
+      reportGeneratorVersion: report.reportGeneratorVersion,
+      rubricVersion: report.rubricVersion,
+      generatedAt: report.generatedAt,
       publicToken: report.publicToken,
     }
   }

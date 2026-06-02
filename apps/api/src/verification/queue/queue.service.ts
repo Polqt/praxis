@@ -28,6 +28,14 @@ export class VerificationQueueService {
     return this.enqueue(VERIFICATION_JOB_NAMES.awardSkills, submissionId)
   }
 
+  enqueueExpireStale() {
+    return this.queue.add(
+      VERIFICATION_JOB_NAMES.expireStaleSubmission,
+      { submissionId: '' },
+      { jobId: 'expire-stale-recurring', removeOnComplete: true },
+    )
+  }
+
   private enqueue(name: VerificationJobName, submissionId: string) {
     return this.queue.add(name, { submissionId }, {
       ...DEFAULT_JOB_OPTIONS,
