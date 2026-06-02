@@ -1,3 +1,5 @@
+export const CARD_LABEL_CLASS = 'text-xs font-medium uppercase tracking-widest text-muted-foreground'
+
 export const ONBOARDING_GUIDANCE_GITHUB_CONNECTED = {
   heading: 'Ready to verify your first repository',
   body: 'Select a challenge, submit a GitHub repository, and receive an independent analysis report in minutes.',

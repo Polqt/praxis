@@ -3,9 +3,8 @@
 import Link from 'next/link'
 import { useState, useRef } from 'react'
 import { IconCopy, IconCheck } from '@tabler/icons-react'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { CARD_LABEL_CLASS } from '@/features/studio/constants'
 
 type Props = {
   username: string | null
@@ -27,50 +26,52 @@ export function ProofProfileSection({ username, skillsCount, reportsCount, proof
   }
 
   return (
-    <Card>
-      <CardContent className="p-6">
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">Proof Profile</p>
-        {username ? (
-          <>
-            <div className="mt-4 space-y-3 text-sm">
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">Username</span>
-                <span>@{username}</span>
-              </div>
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">Skills</span>
-                <span>{skillsCount}</span>
-              </div>
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">Reports</span>
-                <span>{reportsCount}</span>
-              </div>
-              <div className="flex justify-between gap-4">
-                <span className="text-muted-foreground">Status</span>
-                <Badge variant="outline" className={proofReady ? 'text-green-700 border-green-300' : 'text-amber-700 border-amber-300'}>
-                  {proofReady ? 'Ready to share' : 'Incomplete'}
-                </Badge>
-              </div>
+    <div className="rounded-lg border bg-card p-5 flex flex-col h-full">
+      <p className={CARD_LABEL_CLASS}>Proof profile</p>
+      {username ? (
+        <>
+          <div className="space-y-2 mt-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Username</span>
+              <span className="text-xs font-medium">@{username}</span>
             </div>
-            <div className="mt-5 flex gap-2">
-              <Button className="flex-1" variant="outline" asChild>
-                <Link href={`/p/${username}`}>View proof page</Link>
-              </Button>
-              <Button variant="outline" onClick={handleCopy} className="shrink-0">
-                {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
-                {copied ? 'Copied' : 'Copy link'}
-              </Button>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Skills</span>
+              <span className="text-xs font-medium">{skillsCount}</span>
             </div>
-          </>
-        ) : (
-          <>
-            <p className="mt-4 text-sm text-muted-foreground">Set a username to activate your public proof profile.</p>
-            <Button className="mt-5 w-full" variant="outline" asChild>
-              <Link href="/onboarding/username">Set username</Link>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Reports</span>
+              <span className="text-xs font-medium">{reportsCount}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Status</span>
+              <span className="text-xs font-medium flex items-center gap-1.5">
+                <span
+                  className={`size-1.5 rounded-full inline-block ${proofReady ? 'bg-green-500' : 'bg-amber-400'}`}
+                />
+                {proofReady ? 'Ready to share' : 'Incomplete'}
+              </span>
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t flex items-center gap-2">
+            <Button variant="outline" size="sm" className="flex-1" asChild>
+              <Link href={`/p/${username}`}>View proof page</Link>
             </Button>
-          </>
-        )}
-      </CardContent>
-    </Card>
+            <Button variant="ghost" size="sm" onClick={handleCopy} aria-label="Copy link">
+              {copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Set a username to activate your public proof profile.
+          </p>
+          <Button variant="outline" size="sm" className="mt-4 self-start" asChild>
+            <Link href="/onboarding/username">Set username</Link>
+          </Button>
+        </>
+      )}
+    </div>
   )
 }

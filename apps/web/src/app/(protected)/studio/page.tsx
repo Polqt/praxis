@@ -3,8 +3,14 @@ import { redirect } from 'next/navigation'
 import { serverApiFetch } from '@/lib/api.server'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import { ProofProfileSection } from '@/features/studio/components/proof-profile-section'
+import {
+  ONBOARDING_GUIDANCE_GITHUB_CONNECTED,
+  ONBOARDING_GUIDANCE_GITHUB_DISCONNECTED,
+  CARD_LABEL_CLASS,
+} from '@/features/studio/constants'
+import { formatDate, isTerminalSubmission, repoName, statusLabel } from '@/lib/praxis-format'
 import type {
   DashboardStats,
   GitHubAccount,
@@ -13,9 +19,6 @@ import type {
   User,
   VerificationReport,
 } from '@praxis/shared'
-import { formatDate, isTerminalSubmission, repoName, statusLabel } from '@/lib/praxis-format'
-import { ProofProfileSection } from '@/features/studio/components/proof-profile-section'
-import { ONBOARDING_GUIDANCE_GITHUB_CONNECTED, ONBOARDING_GUIDANCE_GITHUB_DISCONNECTED } from '@/features/studio/constants'
 
 type SubmissionStats = {
   totalSubmissions: number
@@ -28,6 +31,46 @@ function getGreeting(name: string) {
   const hour = new Date().getHours()
   const period = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'
   return `Good ${period}, ${name}.`
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const label = statusLabel(status as Parameters<typeof statusLabel>[0])
+  const isActive = !['verified', 'insufficient', 'failed', 'expired'].includes(status)
+
+  if (status === 'verified') {
+    return (
+      <Badge className="rounded bg-green-50 text-green-700 border border-green-200 dark:bg-green-950 dark:text-green-300 text-[11px] font-medium">
+        {label}
+      </Badge>
+    )
+  }
+  if (status === 'insufficient') {
+    return (
+      <Badge className="rounded bg-amber-50 text-amber-700 border border-amber-200 text-[11px] font-medium">
+        {label}
+      </Badge>
+    )
+  }
+  if (status === 'failed' || status === 'expired') {
+    return (
+      <Badge variant="destructive" className="rounded text-[11px] font-medium">
+        {label}
+      </Badge>
+    )
+  }
+  if (isActive) {
+    return (
+      <Badge variant="secondary" className="rounded text-[11px] font-medium gap-1.5">
+        <span className="size-1.5 rounded-full bg-current inline-block animate-pulse" />
+        {label}
+      </Badge>
+    )
+  }
+  return (
+    <Badge variant="outline" className="rounded text-[11px] font-medium">
+      {label}
+    </Badge>
+  )
 }
 
 export default async function StudioPage() {
@@ -53,22 +96,22 @@ export default async function StudioPage() {
   ])
 
   const challenge = challenges[0]
-  const activeSubmission = submissions.find((submission) => !isTerminalSubmission(submission)) ?? submissions[0] ?? null
+  const activeSubmission = submissions.find((s) => !isTerminalSubmission(s)) ?? submissions[0] ?? null
   const latestTerminalSubmission = submissions.find(isTerminalSubmission) ?? null
   const latestReport = latestTerminalSubmission
     ? await serverApiFetch<VerificationReport>(`/reports/submissions/${latestTerminalSubmission.id}`).catch(() => null)
     : null
   const displayName = user.username ?? user.email.split('@')[0]
-  const progress = challenges.length > 0
-    ? Math.min(100, Math.round((submissionStats.verifiedCount / challenges.length) * 100))
-    : 0
+  const total = challenges.length
+  const completed = submissionStats.verifiedCount
+  const progress = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0
   const proofReady = Boolean(user.username && dashboard.verifiedSkills.length > 0)
 
   return (
-    <div className="px-10 py-8 max-w-6xl">
+    <div className="px-10 py-10 max-w-5xl">
       <section className="flex items-start justify-between gap-6">
         <div className="max-w-2xl">
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight">{getGreeting(displayName)}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">{getGreeting(displayName)}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {githubAccount?.connected
               ? 'Your GitHub is connected and ready.'
@@ -87,118 +130,123 @@ export default async function StudioPage() {
         </div>
       </section>
 
-      <section className="mt-8 grid grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-2xl font-semibold tabular-nums">{submissionStats.verifiedCount}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Challenges Completed</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-2xl font-semibold tabular-nums">{dashboard.verifiedSkills.length}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Verified Skills</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-2xl font-semibold tabular-nums">{submissionStats.reportsGenerated}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Reports Generated</p>
-          </CardContent>
-        </Card>
-      </section>
+      <div className="mt-10 flex divide-x divide-border">
+        <div className="pr-8">
+          <p className="text-2xl font-semibold tabular-nums">{completed}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Challenges completed</p>
+        </div>
+        <div className="px-8">
+          <p className="text-2xl font-semibold tabular-nums">{dashboard.verifiedSkills.length}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Verified skills</p>
+        </div>
+        <div className="pl-8">
+          <p className="text-2xl font-semibold tabular-nums">{submissionStats.reportsGenerated}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Reports generated</p>
+        </div>
+      </div>
 
-      <Card className="mt-4">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <Progress value={progress} className="h-2 flex-1" />
-            <span className="text-sm tabular-nums text-muted-foreground">{progress}%</span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="mt-4 flex items-center gap-4">
+        <Progress value={progress} className="h-[2px] flex-1" />
+        <span className="text-xs text-muted-foreground shrink-0">{completed} of {total} challenges</span>
+      </div>
 
-      <section className="mt-6 grid grid-cols-[1.2fr_0.8fr] gap-5">
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Active Submission</p>
+      <div className="mt-8 grid grid-cols-2 gap-4">
+        <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 delay-0">
+          <div className="rounded-lg border bg-card p-5 flex flex-col h-full">
+            <p className={CARD_LABEL_CLASS}>Active submission</p>
             {activeSubmission ? (
-              <div className="mt-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-medium">{repoName(activeSubmission.githubRepoFullName)}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
+              <>
+                <div className="mt-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-mono text-sm font-medium truncate">
+                      {repoName(activeSubmission.githubRepoFullName)}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {challenge?.title ?? 'Build a Production REST API'}
                     </p>
                   </div>
-                  <Badge variant="outline">{statusLabel(activeSubmission.status)}</Badge>
+                  <StatusBadge status={activeSubmission.status} />
                 </div>
-                <p className="mt-4 text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mt-3">
                   Submitted {formatDate(activeSubmission.submittedAt)}
                 </p>
-                <Button className="mt-5" variant="outline" asChild>
-                  <Link href={`/submissions/${activeSubmission.id}`}>View Submission</Link>
+                <Button variant="outline" size="sm" className="mt-4 self-start" asChild>
+                  <Link href={`/submissions/${activeSubmission.id}`}>View submission</Link>
                 </Button>
-              </div>
+              </>
             ) : githubAccount?.connected ? (
-              <div className="mt-4">
+              <div className="mt-3">
                 <p className="text-sm font-medium">{ONBOARDING_GUIDANCE_GITHUB_CONNECTED.heading}</p>
-                <p className="mt-1.5 text-sm text-muted-foreground">{ONBOARDING_GUIDANCE_GITHUB_CONNECTED.body}</p>
+                <p className="mt-1.5 text-xs text-muted-foreground">{ONBOARDING_GUIDANCE_GITHUB_CONNECTED.body}</p>
                 <p className="mt-3 text-xs text-muted-foreground">{ONBOARDING_GUIDANCE_GITHUB_CONNECTED.note}</p>
               </div>
             ) : (
-              <div className="mt-4">
+              <div className="mt-3">
                 <p className="text-sm font-medium">{ONBOARDING_GUIDANCE_GITHUB_DISCONNECTED.heading}</p>
-                <p className="mt-1.5 text-sm text-muted-foreground">{ONBOARDING_GUIDANCE_GITHUB_DISCONNECTED.body}</p>
-                <Button className="mt-4" variant="outline" size="sm" asChild>
+                <p className="mt-1.5 text-xs text-muted-foreground">{ONBOARDING_GUIDANCE_GITHUB_DISCONNECTED.body}</p>
+                <Button variant="outline" size="sm" className="mt-4 self-start" asChild>
                   <Link href="/settings">Go to Settings</Link>
                 </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Latest Report</p>
+        <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 delay-75">
+          <div className="rounded-lg border bg-card p-5 flex flex-col h-full">
+            <p className={CARD_LABEL_CLASS}>Latest report</p>
             {latestReport && latestTerminalSubmission ? (
-              <div className="mt-4">
-                <p className="font-medium">{repoName(latestTerminalSubmission.githubRepoFullName)}</p>
-                <div className="mt-3 flex items-center gap-2">
-                  <Badge variant="outline" className="capitalize">{latestReport.verdict}</Badge>
-                  <span className="text-xs text-muted-foreground">{formatDate(latestReport.generatedAt)}</span>
+              <>
+                <div className="mt-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-mono text-sm font-medium truncate">
+                      {repoName(latestTerminalSubmission.githubRepoFullName)}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {formatDate(latestReport.generatedAt)}
+                    </p>
+                  </div>
+                  <StatusBadge status={latestReport.verdict} />
                 </div>
-                <Button className="mt-5" variant="outline" asChild>
-                  <Link href={`/reports/${latestReport.submissionId}`}>View Report</Link>
+                <Button variant="outline" size="sm" className="mt-4 self-start" asChild>
+                  <Link href={`/reports/${latestReport.submissionId}`}>View report</Link>
                 </Button>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-3">No report generated yet.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 delay-150">
+          <div className="rounded-lg border bg-card p-5 h-full">
+            <p className={CARD_LABEL_CLASS}>Verified skills</p>
+            {dashboard.verifiedSkills.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {dashboard.verifiedSkills.map((userSkill) => (
+                  <Badge key={userSkill.id} variant="secondary" className="gap-1 text-xs rounded">
+                    <span className="text-green-500 text-[10px]">✓</span>
+                    {userSkill.skill.name}
+                  </Badge>
+                ))}
               </div>
             ) : (
-              <p className="mt-4 text-sm text-muted-foreground">No report generated yet.</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Skills appear here after your first verified submission.
+              </p>
             )}
-          </CardContent>
-        </Card>
-      </section>
+          </div>
+        </div>
 
-      <section className="mt-6 grid grid-cols-[1fr_360px] gap-5">
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Verified Skills</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {dashboard.verifiedSkills.length > 0 ? dashboard.verifiedSkills.map((userSkill) => (
-                <Badge key={userSkill.id} variant="secondary">{userSkill.skill.name}</Badge>
-              )) : (
-                <p className="text-sm text-muted-foreground">No verified skills yet.</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <ProofProfileSection
-          username={user.username ?? null}
-          skillsCount={dashboard.verifiedSkills.length}
-          reportsCount={submissionStats.reportsGenerated}
-          proofReady={proofReady}
-        />
-      </section>
+        <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 delay-[225ms]">
+          <ProofProfileSection
+            username={user.username ?? null}
+            skillsCount={dashboard.verifiedSkills.length}
+            reportsCount={submissionStats.reportsGenerated}
+            proofReady={proofReady}
+          />
+        </div>
       </div>
+    </div>
   )
 }
