@@ -5,6 +5,13 @@ import { safeInternalPath } from '@/lib/redirects'
 const PROTECTED_PREFIXES = ['/studio', '/submit', '/submissions', '/reports', '/settings', '/onboarding']
 
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  const pathWithSearch = `${pathname}${request.nextUrl.search}`
+
+  if (pathname === '/auth/callback') {
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -30,13 +37,6 @@ export async function proxy(request: NextRequest) {
 
   // Refresh session — required for Supabase SSR on Vercel
   const { data: { user } } = await supabase.auth.getUser()
-
-  const { pathname } = request.nextUrl
-  const pathWithSearch = `${pathname}${request.nextUrl.search}`
-
-  if (pathname === '/auth/callback') {
-    return NextResponse.next({ request })
-  }
 
   if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
     const url = request.nextUrl.clone()
