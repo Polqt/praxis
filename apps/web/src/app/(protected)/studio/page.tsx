@@ -108,9 +108,9 @@ export default async function StudioPage() {
   const proofReady = Boolean(user.username && dashboard.verifiedSkills.length > 0)
 
   return (
-    <div className="px-10 py-10 max-w-5xl">
+    <div className="px-10 py-10 w-full">
       <section className="flex items-start justify-between gap-6">
-        <div className="max-w-2xl">
+        <div>
           <h1 className="text-3xl font-semibold tracking-tight">{getGreeting(displayName)}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {githubAccount?.connected

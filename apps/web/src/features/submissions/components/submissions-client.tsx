@@ -127,7 +127,7 @@ export function SubmissionsClient({ submissions }: Props) {
   const filtered = filterSubmissions(submissions, tab)
 
   return (
-    <div className="px-10 py-10 max-w-5xl">
+    <div className="px-10 py-10 w-full">
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Submissions</h1>
@@ -135,7 +135,7 @@ export function SubmissionsClient({ submissions }: Props) {
             Track every repository submitted for verification.
           </p>
         </div>
-        <Button size="sm" asChild>
+        <Button size="sm" variant="outline" asChild>
           <Link href="/challenges">Submit repository</Link>
         </Button>
       </div>

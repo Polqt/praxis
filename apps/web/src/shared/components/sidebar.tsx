@@ -7,6 +7,7 @@ import {
   IconLayoutSidebar,
   IconTrophy,
   IconSend,
+  IconFileAnalytics,
   IconSettings,
 } from '@tabler/icons-react'
 import { Separator } from '@/components/ui/separator'
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
   { href: '/studio', label: 'Studio', icon: IconLayoutSidebar },
   { href: '/challenges', label: 'Challenges', icon: IconTrophy },
   { href: '/submissions', label: 'Submissions', icon: IconSend },
+  { href: '/reports', label: 'Reports', icon: IconFileAnalytics },
   { href: '/settings', label: 'Settings', icon: IconSettings },
 ]
 

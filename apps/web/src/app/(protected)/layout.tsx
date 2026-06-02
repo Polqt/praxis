@@ -26,7 +26,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     <UserProvider user={localUser!}>
       <div className="h-screen flex bg-background overflow-hidden">
         <Sidebar user={localUser!} githubAccount={githubAccount} />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 min-w-0 overflow-y-auto">{children}</main>
       </div>
     </UserProvider>
   )
