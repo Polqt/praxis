@@ -33,6 +33,7 @@ export const submissionStatusEnum = pgEnum('submission_status', [
 
 export const projectTypeEnum = pgEnum('project_type', [
   'backend',
+  'frontend',
 ])
 
 export const verdictEnum = pgEnum('verdict', [

@@ -7,6 +7,7 @@ import { QueueModule } from '../queue/queue.module'
 import { ReportsModule } from '../../reports/reports.module'
 import { SubmissionsModule } from '../../submissions/submissions.module'
 import { AuditModule } from '../../audit/audit.module'
+import { NotificationsModule } from '../../notifications/notifications.module'
 import { VerificationWorker } from './verification.worker'
 import { WorkerHealthService } from './worker-health.service'
 
@@ -23,6 +24,7 @@ import { WorkerHealthService } from './worker-health.service'
     QueueModule,
     ReportsModule,
     SubmissionsModule,
+    NotificationsModule,
   ],
   providers: [VerificationWorker, WorkerHealthService],
 })

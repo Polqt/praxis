@@ -73,6 +73,63 @@ async function seed() {
     await db.insert(projectChallenges).values([challenge])
   }
 
+  const insertedFrontendTracks = await db
+    .insert(tracks)
+    .values([{
+      slug: 'frontend',
+      name: 'Frontend Engineering',
+      description: 'Verify production frontend applications through real GitHub repositories.',
+    }])
+    .onConflictDoNothing()
+    .returning()
+
+  const frontendTrack = insertedFrontendTracks[0]
+    ?? (await db.select().from(tracks).where(eq(tracks.slug, 'frontend')).limit(1))[0]
+
+  await db
+    .insert(skills)
+    .values([
+      { trackId: frontendTrack.id, name: 'Component Architecture', category: 'Component Architecture' },
+      { trackId: frontendTrack.id, name: 'State Management', category: 'State Management' },
+      { trackId: frontendTrack.id, name: 'Accessibility', category: 'Accessibility' },
+      { trackId: frontendTrack.id, name: 'Styling', category: 'Styling' },
+      { trackId: frontendTrack.id, name: 'Frontend Performance', category: 'Performance' },
+      { trackId: frontendTrack.id, name: 'Frontend Testing', category: 'Testing' },
+    ])
+    .onConflictDoNothing()
+
+  const frontendChallenge = {
+    trackId: frontendTrack.id,
+    title: 'Build a Production Frontend App',
+    description: `## Build a Production Frontend App\nSubmit any React or Next.js repository that demonstrates production frontend engineering.\nAccepted examples include dashboards, SaaS UIs, portfolio sites, e-commerce frontends, and internal tools. The repository must show a complete frontend with component architecture, state management, styling, accessibility, performance awareness, and tests.`,
+    projectType: 'frontend' as const,
+    rubric: {
+      categories: [
+        { name: 'Component Architecture', weight: 25, floor: 5 },
+        { name: 'State Management', weight: 20, floor: 3 },
+        { name: 'Accessibility', weight: 15, floor: 3 },
+        { name: 'Styling', weight: 15, floor: 3 },
+        { name: 'Performance', weight: 10, floor: 3 },
+        { name: 'Frontend Testing', weight: 15, floor: 5 },
+      ],
+    },
+    passingThreshold: 70,
+    version: 1,
+    isActive: true,
+  }
+
+  const existingFrontend = await db
+    .select()
+    .from(projectChallenges)
+    .where(eq(projectChallenges.title, frontendChallenge.title))
+    .limit(1)
+
+  if (existingFrontend[0]) {
+    await db.update(projectChallenges).set(frontendChallenge).where(eq(projectChallenges.id, existingFrontend[0].id))
+  } else {
+    await db.insert(projectChallenges).values([frontendChallenge])
+  }
+
   console.log('Seed complete')
   await client.end()
 }

@@ -6,6 +6,7 @@ export interface ScoreItem {
   narrative: string
   citations: string[]
   status?: 'pass' | 'fail' | 'floor'
+  minimumScore?: number
 }
 
 export interface Report {

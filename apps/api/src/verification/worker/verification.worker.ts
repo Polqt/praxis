@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { eq } from 'drizzle-orm'
 import { Job, Worker } from 'bullmq'
 import { RepositoryAnalysisService } from '../analysis/repository-analysis.service'
 import { RepositoryIngestionService } from '../ingestion/repository-ingestion.service'
@@ -14,6 +15,9 @@ import { ReportsService } from '../../reports/reports.service'
 import { SubmissionStatusService } from '../../submissions/submission-status.service'
 import { StaleSubmissionService } from '../../submissions/stale-submission.service'
 import { AuditService } from '../../audit/audit.service'
+import { NotificationsService } from '../../notifications/notifications.service'
+import { DatabaseService } from '../../database/database.service'
+import { users, projectSubmissions, projectVerificationReports, projectChallenges } from '../../database/schema'
 
 @Injectable()
 export class VerificationWorker implements OnModuleDestroy {
@@ -29,6 +33,8 @@ export class VerificationWorker implements OnModuleDestroy {
     private readonly statuses: SubmissionStatusService,
     private readonly staleSubmissions: StaleSubmissionService,
     private readonly audit: AuditService,
+    private readonly notifications: NotificationsService,
+    private readonly db: DatabaseService,
   ) {}
 
   start() {
@@ -62,7 +68,6 @@ export class VerificationWorker implements OnModuleDestroy {
   }
 
   private async process(job: Job<VerificationJobPayload>) {
-    // expireStaleSubmission operates on all stale submissions — it does not need a submissionId
     if (job.name === VERIFICATION_JOB_NAMES.expireStaleSubmission) {
       await this.staleSubmissions.expireStale()
       return
@@ -80,11 +85,12 @@ export class VerificationWorker implements OnModuleDestroy {
         await this.statuses.transition({ submissionId, toStatus: 'analyzing', reason: 'ingestion_complete' })
         await this.queue.enqueueAnalyzeProject(submissionId)
         return
-      case VERIFICATION_JOB_NAMES.analyzeProject:
+      case VERIFICATION_JOB_NAMES.analyzeProject: {
         const analysis = await this.analysis.analyzeSubmission(submissionId)
         await this.statuses.transition({ submissionId, toStatus: 'generating_report', reason: 'analysis_complete' })
         await this.queue.enqueueGenerateReport(submissionId)
         return analysis
+      }
       case VERIFICATION_JOB_NAMES.generateReport: {
         const analysis = await this.analysis.analyzeSubmission(submissionId)
         const report = await this.reports.generateForSubmission(submissionId, analysis.id)
@@ -95,15 +101,71 @@ export class VerificationWorker implements OnModuleDestroy {
           metadata: { reportId: report.id, verdict: report.verdict },
         })
         await this.queue.enqueueAwardSkills(submissionId)
+        await this.queue.enqueueSendReportEmail(submissionId)
         return
       }
       case VERIFICATION_JOB_NAMES.awardSkills:
         await this.reports.awardSkillsForSubmission(submissionId)
         return
+      case VERIFICATION_JOB_NAMES.sendReportEmail:
+        await this.sendReportEmail(submissionId)
+        return
 
       default:
         throw new Error(`Unknown verification job: ${job.name}`)
     }
+  }
+
+  private async sendReportEmail(submissionId: string): Promise<void> {
+    const submissionRows = await this.db.db
+      .select()
+      .from(projectSubmissions)
+      .where(eq(projectSubmissions.id, submissionId))
+      .limit(1)
+    const submission = submissionRows[0]
+    if (!submission) return
+
+    const userRows = await this.db.db
+      .select({ email: users.email, username: users.username })
+      .from(users)
+      .where(eq(users.id, submission.userId))
+      .limit(1)
+    const user = userRows[0]
+    if (!user?.email) return
+
+    const reportRows = await this.db.db
+      .select()
+      .from(projectVerificationReports)
+      .where(eq(projectVerificationReports.submissionId, submissionId))
+      .limit(1)
+    const report = reportRows[0]
+    if (!report) return
+
+    const challengeRows = await this.db.db
+      .select({ title: projectChallenges.title })
+      .from(projectChallenges)
+      .where(eq(projectChallenges.id, submission.challengeId))
+      .limit(1)
+    const challengeTitle = challengeRows[0]?.title ?? 'Verification Challenge'
+
+    const categoryScores = report.categoryScores as Record<string, { score: number; minimumScore: number }>
+    const floorFailures = Object.entries(categoryScores)
+      .filter(([, v]) => v.score < v.minimumScore)
+      .map(([category, v]) => ({ category, score: v.score, minimumScore: v.minimumScore }))
+
+    const webBaseUrl = this.config.get<string>('webBaseUrl') ?? 'https://praxisdev.vercel.app'
+    const reportUrl = `${webBaseUrl}/submissions/${submissionId}`
+
+    await this.notifications.sendReportReady({
+      toEmail: user.email,
+      username: user.username ?? user.email.split('@')[0],
+      repositoryName: submission.githubRepoFullName,
+      challengeTitle,
+      compositeScore: report.compositeScore,
+      verdict: report.verdict as 'verified' | 'insufficient' | 'failed',
+      reportUrl,
+      floorFailures,
+    })
   }
 
   private async markFinalFailure(job: Job<VerificationJobPayload>, error: Error) {

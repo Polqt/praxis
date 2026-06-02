@@ -29,6 +29,81 @@ export const CATEGORY_STATUS_CLASS: Record<string, string> = {
   floor: 'bg-amber-100 text-amber-700 border-amber-200',
 }
 
+export const CATEGORY_FIX_INSTRUCTIONS: Record<string, string[]> = {
+  'API Design': [
+    'Add a request validation library (zod, class-validator, or joi) to your dependencies.',
+    'Add authentication middleware to protect your routes.',
+    'Use environment variables for all configuration — no hardcoded values.',
+  ],
+  'Authentication': [
+    'Add a JWT library (jsonwebtoken, jose) or session management to your dependencies.',
+    'Create dedicated auth files (auth.guard.ts, auth.middleware.ts, or equivalent).',
+    'Add password hashing via bcrypt or argon2 if handling user credentials.',
+  ],
+  'Database Design': [
+    'Add an ORM (Drizzle, Prisma, TypeORM, or Sequelize) to your dependencies.',
+    'Create migration files to track schema changes over time.',
+    'Define schema or entity files with relational patterns (foreign keys, associations).',
+  ],
+  'Testing': [
+    'Add at least one test file — any test framework (Jest, Vitest, Mocha) counts.',
+    'Add integration tests that hit your actual routes or service layer.',
+    'Add a coverage configuration (jest.config.ts or vitest.config.ts with coverage).',
+  ],
+  'Documentation': [
+    'Add a README.md with setup instructions (install, env vars, run command).',
+    'Add API documentation (openapi.yaml, swagger.yaml, or a docs/api.md).',
+    'Add a CONTRIBUTING.md for contribution guidelines.',
+  ],
+  'Deployment': [
+    'Add a Dockerfile to containerize your application.',
+    'Add a CI workflow (.github/workflows/) that runs tests on push.',
+    'Add a deployment workflow or platform config (render.yaml, railway.toml, vercel.json).',
+  ],
+  'Security': [
+    'Remove any committed .env files or hardcoded secrets from your repository.',
+    'Add a validation library (zod, class-validator) to validate all inputs.',
+    'Use environment variables for secrets — never hardcode them in source files.',
+  ],
+  'Architecture': [
+    'Organize your source into meaningful subdirectories (src/routes, src/services, src/models).',
+    'Separate concerns into distinct layers (controllers/handlers, services, repositories).',
+    'Group related files into feature modules rather than a flat structure.',
+  ],
+  'Component Architecture': [
+    'Organize components into a /components directory with subdirectories by feature or type.',
+    'Add index.ts barrel exports for clean imports.',
+    'Create a /components/ui or /components/shared directory for reusable components.',
+    'Type all component props with TypeScript interfaces.',
+  ],
+  'State Management': [
+    'Add a state library (Zustand, Redux Toolkit, or Jotai) or use React Context for global state.',
+    'Extract repeated state logic into custom hooks (useXxx.ts) in a /hooks directory.',
+  ],
+  'Accessibility': [
+    'Add aria-label or aria-describedby to interactive elements without visible labels.',
+    'Use semantic HTML elements (nav, main, header, footer, article, section).',
+    'Add alt attributes to all img elements.',
+    'Add eslint-plugin-jsx-a11y to catch accessibility issues at lint time.',
+  ],
+  'Styling': [
+    'Add a styling library (Tailwind CSS, styled-components, or CSS modules) to your dependencies.',
+    'Add a global stylesheet (globals.css or equivalent).',
+    'Add responsive breakpoints for mobile/tablet/desktop layouts.',
+  ],
+  'Performance': [
+    'Use next/image or equivalent for automatic image optimization.',
+    'Add React.lazy() or next/dynamic() for code-split heavy components.',
+    'Add a next.config.ts or vite.config.ts with optimization settings.',
+  ],
+  'Frontend Testing': [
+    'Add at least one component test file (.spec.tsx or .test.tsx).',
+    'Use Testing Library (@testing-library/react) for component tests.',
+    'Add Cypress or Playwright for end-to-end tests.',
+    'Add a coverage configuration in your test config.',
+  ],
+}
+
 export const exampleReport: Report = {
   id: 'example',
   submissionId: 'example',

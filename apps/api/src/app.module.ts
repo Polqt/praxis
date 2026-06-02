@@ -15,6 +15,7 @@ import { AnalysisModule } from './verification/analysis/analysis.module'
 import { IngestionModule } from './verification/ingestion/ingestion.module'
 import { VerificationWorker } from './verification/worker/verification.worker'
 import { WorkerHealthService } from './verification/worker/worker-health.service'
+import { NotificationsModule } from './notifications/notifications.module'
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { WorkerHealthService } from './verification/worker/worker-health.service
     QueueModule,
     AnalysisModule,
     IngestionModule,
+    NotificationsModule,
   ],
   providers: [VerificationWorker, WorkerHealthService],
 })

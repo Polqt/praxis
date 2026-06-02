@@ -6,6 +6,12 @@ import type { SecuritySignals } from './security.signals'
 import type { ArchitectureSignals } from './architecture.signals'
 import type { AuthenticationSignals } from './authentication.signals'
 import type { DatabaseSignals } from './database.signals'
+import type { ComponentArchitectureSignals } from './component-architecture.signals'
+import type { StateManagementSignals } from './state-management.signals'
+import type { AccessibilitySignals } from './accessibility.signals'
+import type { StylingSignals } from './styling.signals'
+import type { FrontendPerformanceSignals } from './frontend-performance.signals'
+import type { FrontendTestingSignals } from './frontend-testing.signals'
 
 const VALIDATION_LIBRARIES = ['class-validator', 'joi', 'zod', 'yup', 'ajv', 'superstruct']
 const JWT_LIBRARIES = ['jsonwebtoken', 'jose', '@nestjs/jwt', 'passport-jwt', 'express-jwt', 'jwt-simple']
@@ -18,6 +24,21 @@ const SCHEMA_FILE_PATTERN = /schema\.(ts|js|prisma)|entity\.(ts|js)|model\.(ts|j
 const RELATION_PATTERN = /@ManyToOne|@OneToMany|@OneToOne|@ManyToMany|@Relation|@Column|references\(\)|belongsTo|hasMany|hasOne|belongsToMany/i
 const TRANSACTION_PATTERN = /\.transaction\(|BEGIN|COMMIT|ROLLBACK|withTransaction|@Transaction/i
 const SEED_PATTERN = /seed\.(ts|js|sql)|seeds\/|seeders\/|fixtures\//i
+
+const STATE_LIBRARIES = ['redux', '@reduxjs/toolkit', 'zustand', 'jotai', 'recoil', 'mobx', 'xstate', 'valtio']
+const STYLING_LIBRARIES = ['tailwindcss', 'styled-components', '@emotion/react', 'sass', 'less', 'css-modules', 'stitches', 'vanilla-extract', 'unocss']
+const COMPONENT_FILE_PATTERN = /\.(tsx|jsx)$/
+const CUSTOM_HOOK_PATTERN = /use[A-Z]\w+\.(ts|tsx)$|\/hooks\/use[A-Z]/
+const ARIA_PATTERN = /aria-\w+|role=["']\w/i
+const SEMANTIC_HTML_PATTERN = /<(main|nav|header|footer|article|section|aside|figure|figcaption|time|mark|details|summary)\b/i
+const ALT_PATTERN = /alt=["'][^"']/i
+const A11Y_CONFIG_PATTERN = /eslint-plugin-jsx-a11y|axe-core|\.a11y\./i
+const RESPONSIVE_PATTERN = /sm:|md:|lg:|xl:|@media|breakpoint/i
+const LAZY_PATTERN = /React\.lazy|dynamic\(|import\(|Suspense/i
+const CODE_SPLIT_PATTERN = /dynamic\(|React\.lazy|import\(/i
+const IMAGE_OPT_PATTERN = /next\/image|<Image|sharp|imagemin/i
+const CONTEXT_PATTERN = /createContext|useContext|React\.createContext/i
+const GLOBAL_STYLE_PATTERN = /globals?\.(css|scss|less)|_app\.(tsx|jsx)|layout\.(tsx|jsx)/i
 
 const SETUP_KEYWORDS = /install|setup|getting started|prerequisites/i
 const API_DOC_PATHS = /openapi\.ya?ml|swagger\.ya?ml|api\.md|docs\/(api|swagger)/i
@@ -264,5 +285,103 @@ export function extractDatabaseSignals(data: RepositoryIngestionData): DatabaseS
     hasSeedData: SEED_PATTERN.test(allPaths.join('\n')),
     detectedOrmLibrary: detectedOrm,
     detectedMigrationPaths: top(migrationPaths, 5),
+  }
+}
+
+export function extractComponentArchitectureSignals(data: RepositoryIngestionData): ComponentArchitectureSignals {
+  const componentFiles = data.files.filter((f) => COMPONENT_FILE_PATTERN.test(f.path))
+  const allPaths = data.files.map((f) => f.path)
+  const hasComponentDirectory = allPaths.some((p) => /\/components?\//i.test(p))
+  const hasIndexExports = allPaths.some((p) => /\/index\.(ts|tsx|js|jsx)$/.test(p))
+  const hasSharedComponents = allPaths.some((p) => /\/(shared|common|ui)\//i.test(p))
+  const allContent = componentFiles.map((f) => f.content ?? '').join('\n')
+  const hasPropTypes = /PropTypes\.|: React\.FC|interface \w+Props/.test(allContent)
+
+  return {
+    hasComponentDirectory,
+    componentFileCount: componentFiles.length,
+    hasIndexExports,
+    hasPropTypes,
+    hasSharedComponents,
+    componentFilePaths: top(componentFiles.map((f) => f.path), 5),
+  }
+}
+
+export function extractStateManagementSignals(data: RepositoryIngestionData): StateManagementSignals {
+  const manifestFiles = byKind(data.files, 'manifest')
+  const manifestContent = manifestFiles.map((f) => f.content ?? '').join('\n')
+  const allContent = data.files.map((f) => f.content ?? '').join('\n')
+  const detectedLib = STATE_LIBRARIES.find((lib) => manifestContent.includes(`"${lib}"`)) ?? null
+  const hasContextApi = CONTEXT_PATTERN.test(allContent)
+  const hookFiles = data.files.filter((f) => CUSTOM_HOOK_PATTERN.test(f.path))
+
+  return {
+    hasStateLibrary: !!detectedLib,
+    detectedStateLibrary: detectedLib,
+    hasContextApi,
+    hasCustomHooks: hookFiles.length > 0,
+    customHookPaths: top(hookFiles.map((f) => f.path), 5),
+  }
+}
+
+export function extractAccessibilitySignals(data: RepositoryIngestionData): AccessibilitySignals {
+  const sourceFiles = byKind(data.files, 'source')
+  const componentFiles = data.files.filter((f) => COMPONENT_FILE_PATTERN.test(f.path))
+  const allContent = [...sourceFiles, ...componentFiles].map((f) => f.content ?? '').join('\n')
+  const manifestContent = byKind(data.files, 'manifest').map((f) => f.content ?? '').join('\n')
+  const a11yFiles = data.files.filter((f) => A11Y_CONFIG_PATTERN.test(f.path))
+
+  return {
+    hasAriaAttributes: ARIA_PATTERN.test(allContent),
+    hasSemanticHtml: SEMANTIC_HTML_PATTERN.test(allContent),
+    hasAltAttributes: ALT_PATTERN.test(allContent),
+    hasA11yLintConfig: A11Y_CONFIG_PATTERN.test(manifestContent) || a11yFiles.length > 0,
+    detectedA11yFiles: top(a11yFiles.map((f) => f.path), 3),
+  }
+}
+
+export function extractStylingSignals(data: RepositoryIngestionData): StylingSignals {
+  const manifestFiles = byKind(data.files, 'manifest')
+  const manifestContent = manifestFiles.map((f) => f.content ?? '').join('\n')
+  const allContent = data.files.map((f) => f.content ?? '').join('\n')
+  const allPaths = data.files.map((f) => f.path)
+  const detectedLib = STYLING_LIBRARIES.find((lib) => manifestContent.includes(`"${lib}"`)) ?? null
+  const stylingFiles = data.files.filter((f) => /\.(css|scss|less|styl)$/.test(f.path))
+
+  return {
+    hasStylingApproach: !!detectedLib || stylingFiles.length > 0,
+    detectedStylingLibrary: detectedLib,
+    hasGlobalStyles: GLOBAL_STYLE_PATTERN.test(allPaths.join('\n')),
+    hasResponsivePatterns: RESPONSIVE_PATTERN.test(allContent),
+    stylingFilePaths: top(stylingFiles.map((f) => f.path), 5),
+  }
+}
+
+export function extractFrontendPerformanceSignals(data: RepositoryIngestionData): FrontendPerformanceSignals {
+  const allContent = data.files.map((f) => f.content ?? '').join('\n')
+  const allPaths = data.files.map((f) => f.path).join('\n')
+
+  return {
+    hasImageOptimization: IMAGE_OPT_PATTERN.test(allContent) || IMAGE_OPT_PATTERN.test(allPaths),
+    hasLazyLoading: LAZY_PATTERN.test(allContent),
+    hasCodeSplitting: CODE_SPLIT_PATTERN.test(allContent),
+    hasBundleConfig: /next\.config\.|vite\.config\.|webpack\.config\./.test(allPaths),
+    hasNextConfig: /next\.config\.(ts|js|mjs)/.test(allPaths),
+  }
+}
+
+export function extractFrontendTestingSignals(data: RepositoryIngestionData): FrontendTestingSignals {
+  const testFiles = byKind(data.files, 'test')
+  const allPaths = testFiles.map((f) => f.path)
+  const hasComponentTests = testFiles.some((f) => COMPONENT_FILE_PATTERN.test(f.path) || /\.(spec|test)\.(tsx|jsx)$/.test(f.path))
+  const hasE2eTests = E2E_TEST_PATHS.test(allPaths.join('\n'))
+  const hasCoverageConfig = COVERAGE_CONFIG_PATHS.test(data.files.map((f) => f.path).join('\n'))
+
+  return {
+    testFileCount: testFiles.length,
+    hasComponentTests,
+    hasE2eTests,
+    hasCoverageConfig,
+    testFilePaths: top(allPaths, 5),
   }
 }

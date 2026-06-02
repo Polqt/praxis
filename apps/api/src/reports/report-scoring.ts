@@ -7,6 +7,12 @@ import { SecurityScorer } from '../scoring/categories/security.scorer'
 import { ArchitectureScorer } from '../scoring/categories/architecture.scorer'
 import { AuthenticationScorer } from '../scoring/categories/authentication.scorer'
 import { DatabaseScorer } from '../scoring/categories/database.scorer'
+import { ComponentArchitectureScorer } from '../scoring/categories/component-architecture.scorer'
+import { StateManagementScorer } from '../scoring/categories/state-management.scorer'
+import { AccessibilityScorer } from '../scoring/categories/accessibility.scorer'
+import { StylingScorer } from '../scoring/categories/styling.scorer'
+import { FrontendPerformanceScorer } from '../scoring/categories/frontend-performance.scorer'
+import { FrontendTestingScorer } from '../scoring/categories/frontend-testing.scorer'
 import {
   extractTestingSignals,
   extractDocumentationSignals,
@@ -15,6 +21,12 @@ import {
   extractArchitectureSignals,
   extractAuthenticationSignals,
   extractDatabaseSignals,
+  extractComponentArchitectureSignals,
+  extractStateManagementSignals,
+  extractAccessibilitySignals,
+  extractStylingSignals,
+  extractFrontendPerformanceSignals,
+  extractFrontendTestingSignals,
 } from '../scoring/signals/signal-extractor'
 
 interface RubricCategory {
@@ -34,6 +46,12 @@ const securityScorer = new SecurityScorer()
 const architectureScorer = new ArchitectureScorer()
 const authenticationScorer = new AuthenticationScorer()
 const databaseScorer = new DatabaseScorer()
+const componentArchitectureScorer = new ComponentArchitectureScorer()
+const stateManagementScorer = new StateManagementScorer()
+const accessibilityScorer = new AccessibilityScorer()
+const stylingScorer = new StylingScorer()
+const frontendPerformanceScorer = new FrontendPerformanceScorer()
+const frontendTestingScorer = new FrontendTestingScorer()
 
 function scoreCategoryByName(categoryName: string, ingestionData: RepositoryIngestionData) {
   const name = categoryName.toLowerCase()
@@ -61,6 +79,24 @@ function scoreCategoryByName(categoryName: string, ingestionData: RepositoryInge
   }
   if (name.includes('architecture')) {
     return architectureScorer.score(extractArchitectureSignals(ingestionData))
+  }
+  if (name.includes('component architecture') || name.includes('component design')) {
+    return componentArchitectureScorer.score(extractComponentArchitectureSignals(ingestionData))
+  }
+  if (name.includes('state management')) {
+    return stateManagementScorer.score(extractStateManagementSignals(ingestionData))
+  }
+  if (name.includes('accessibility')) {
+    return accessibilityScorer.score(extractAccessibilitySignals(ingestionData))
+  }
+  if (name.includes('styling') || name.includes('ui design')) {
+    return stylingScorer.score(extractStylingSignals(ingestionData))
+  }
+  if (name.includes('performance')) {
+    return frontendPerformanceScorer.score(extractFrontendPerformanceSignals(ingestionData))
+  }
+  if (name.includes('frontend testing')) {
+    return frontendTestingScorer.score(extractFrontendTestingSignals(ingestionData))
   }
 
   return securityScorer.score(extractSecuritySignals(ingestionData))

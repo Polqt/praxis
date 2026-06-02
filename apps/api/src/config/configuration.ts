@@ -30,4 +30,9 @@ export default () => ({
     rateLimitPerHour: parseInt(process.env.SUBMISSION_RATE_LIMIT_PER_HOUR ?? '5', 10),
   },
   port: parseInt(process.env.PORT ?? '4000', 10),
+  notifications: {
+    resendApiKey: process.env.RESEND_API_KEY ?? '',
+    fromEmail: process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev',
+  },
+  webBaseUrl: process.env.WEB_BASE_URL ?? 'https://praxisdev.vercel.app',
 })

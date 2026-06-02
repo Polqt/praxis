@@ -12,7 +12,7 @@ export type SubmissionStatus =
   | 'failed'
   | 'expired'
 
-export type ProjectType = 'backend'
+export type ProjectType = 'backend' | 'frontend'
 
 export type Verdict = 'verified' | 'insufficient' | 'failed'
 

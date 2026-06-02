@@ -10,20 +10,23 @@ type Props = {
   params: Promise<{ username: string }>
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { username } = await params
-  const profile = await fetch(
+async function fetchProfile(username: string): Promise<PublicProfile | null> {
+  return fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/users/${encodeURIComponent(username)}/profile`,
     { cache: 'no-store' },
-  ).then((res) => (res.ok ? res.json() as Promise<PublicProfile> : null)).catch(() => null)
+  ).then((res) => (res.ok ? (res.json() as Promise<PublicProfile>) : null)).catch(() => null)
+}
 
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { username } = await params
+  const profile = await fetchProfile(username)
   if (!profile) return { title: 'Profile not found' }
 
   const verified = profile.reportsCount
-  const skills = profile.verifiedSkills.length
+  const skillCount = profile.verifiedSkills.length
   const title = `@${profile.username} | Praxis`
   const description = verified > 0
-    ? `${verified} verified project${verified !== 1 ? 's' : ''}, ${skills} skill${skills !== 1 ? 's' : ''} on Praxis.`
+    ? `${verified} verified project${verified !== 1 ? 's' : ''}, ${skillCount} skill${skillCount !== 1 ? 's' : ''} on Praxis.`
     : `${profile.username}'s developer profile on Praxis.`
 
   return {
@@ -38,14 +41,7 @@ export default async function PublicProfilePage({ params }: Props) {
   const { username } = await params
 
   const [profile, viewingUser] = await Promise.all([
-    fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/users/${encodeURIComponent(username)}/profile`,
-      { cache: 'no-store' },
-    ).then(async (res) => {
-      if (res.status === 404) return null
-      if (!res.ok) throw new Error('Failed to fetch profile')
-      return res.json() as Promise<PublicProfile>
-    }),
+    fetchProfile(username),
     serverApiFetch<User>('/users/me').catch(() => null),
   ])
 
@@ -55,7 +51,10 @@ export default async function PublicProfilePage({ params }: Props) {
     <div className="min-h-screen bg-background">
       <div className="max-w-170 mx-auto px-6 pt-12 pb-20">
         <div className="mb-10">
-          <Link href="/" className="text-sm font-semibold tracking-tight text-foreground hover:opacity-80 transition-opacity">
+          <Link
+            href={viewingUser ? '/studio' : '/'}
+            className="text-sm font-semibold tracking-tight text-foreground hover:opacity-80 transition-opacity"
+          >
             Praxis
           </Link>
         </div>

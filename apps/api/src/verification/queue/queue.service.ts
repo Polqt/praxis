@@ -28,6 +28,10 @@ export class VerificationQueueService {
     return this.enqueue(VERIFICATION_JOB_NAMES.awardSkills, submissionId)
   }
 
+  enqueueSendReportEmail(submissionId: string) {
+    return this.enqueue(VERIFICATION_JOB_NAMES.sendReportEmail, submissionId)
+  }
+
   enqueueExpireStale() {
     return this.queue.add(
       VERIFICATION_JOB_NAMES.expireStaleSubmission,

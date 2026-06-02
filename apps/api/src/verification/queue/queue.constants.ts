@@ -6,6 +6,7 @@ export const VERIFICATION_JOB_NAMES = {
   analyzeProject: 'analyze-project',
   generateReport: 'generate-report',
   awardSkills: 'award-skills',
+  sendReportEmail: 'send-report-email',
   expireStaleSubmission: 'expire-stale-submission',
 } as const
 

@@ -100,12 +100,14 @@ export class ReportsService {
     const submission = await this.getSubmission(submissionId)
     if (submission.userId !== userId) throw new NotFoundException('Report not found')
     const report = await this.getReportBySubmission(submissionId)
-    return this.toSafeReport(report, submission)
+    const challenge = await this.getChallenge(submission.challengeId)
+    return this.toSafeReport(report, submission, challenge)
   }
 
   async setVisibility(userId: string, submissionId: string, isPublic: boolean) {
     const submission = await this.getSubmission(submissionId)
     if (submission.userId !== userId) throw new NotFoundException('Report not found')
+    const challenge = await this.getChallenge(submission.challengeId)
     const token = isPublic ? randomBytes(24).toString('base64url') : null
     const rows = await this.db.db.update(projectVerificationReports)
       .set({ isPublic, publicToken: token })
@@ -115,7 +117,7 @@ export class ReportsService {
     this.audit.log(userId, isPublic ? 'report_published' : 'report_unpublished', {
       reportId: rows[0].id,
     })
-    return this.toSafeReport(rows[0], submission)
+    return this.toSafeReport(rows[0], submission, challenge)
   }
 
   async getPublicProof(publicToken: string) {
@@ -196,7 +198,11 @@ export class ReportsService {
     return rows[0]
   }
 
-  private toSafeReport(report: typeof projectVerificationReports.$inferSelect, submission: typeof projectSubmissions.$inferSelect) {
+  private toSafeReport(
+    report: typeof projectVerificationReports.$inferSelect,
+    submission: typeof projectSubmissions.$inferSelect,
+    challenge: typeof projectChallenges.$inferSelect,
+  ) {
     const scores = (report.categoryScores ?? {}) as Record<string, StoredCategoryScore>
     const strengths = deriveStrengths(scores)
     const improvements = deriveImprovements(scores)
@@ -207,6 +213,7 @@ export class ReportsService {
       repositoryName: submission.githubRepoFullName,
       githubRepoFullName: submission.githubRepoFullName,
       commitSha: submission.commitSha,
+      challengeTitle: challenge.title,
       compositeScore: report.compositeScore,
       verdict: report.verdict,
       categoryScores: report.categoryScores,
@@ -230,9 +237,9 @@ export class ReportsService {
   ) {
     const scores = (report.categoryScores ?? {}) as Record<string, StoredCategoryScore>
 
-    const safeScores: Record<string, { score: number; narrative: string; citations: string[] }> = {}
+    const safeScores: Record<string, { score: number; narrative: string; citations: string[]; minimumScore?: number }> = {}
     for (const [name, v] of Object.entries(scores)) {
-      safeScores[name] = { score: v.score, narrative: v.narrative, citations: v.citations }
+      safeScores[name] = { score: v.score, narrative: v.narrative, citations: v.citations, minimumScore: v.minimumScore }
     }
 
     return {
