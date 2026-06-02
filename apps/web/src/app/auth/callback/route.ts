@@ -17,6 +17,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/sign-in?error=missing_code&next=${encodeURIComponent(nextPath)}`)
   }
 
+  const requestCookieNames = request.cookies.getAll().map((cookie) => cookie.name)
+  const supabaseCookieNames = requestCookieNames.filter((name) =>
+    name.toLowerCase().includes('supabase') ||
+    name.toLowerCase().includes('sb-')
+  )
+
   const cookieStore = await cookies()
 
   const supabase = createServerClient(
@@ -44,7 +50,13 @@ export async function GET(request: NextRequest) {
       code: exchangeError?.code,
       status: exchangeError?.status,
       hasCode: Boolean(code),
+      origin,
       nextPath,
+      supabaseUrlHost: process.env.NEXT_PUBLIC_SUPABASE_URL
+        ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).host
+        : 'missing',
+      hasAnonKey: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+      supabaseCookieNames,
     })
 
     return NextResponse.redirect(`${origin}/sign-in?error=auth_failed&next=${encodeURIComponent(nextPath)}`)
