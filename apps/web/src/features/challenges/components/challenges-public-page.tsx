@@ -22,9 +22,9 @@ export function ChallengesPublicPage({ challenges, isAuthenticated }: Props) {
 
   return (
     <div>
-      <section className="bg-muted/40 pt-28 pb-20 px-6 md:px-10">
+      <section className="bg-muted/40 h-[calc(100vh-3.5rem)] flex flex-col justify-center px-6 md:px-10">
         <div className="max-w-3xl mx-auto text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
+          <div className="flex items-center justify-center gap-2 mb-3">
             <span className="size-2 rounded-sm bg-primary inline-block shrink-0" />
             <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
               Verification challenges
@@ -47,32 +47,32 @@ export function ChallengesPublicPage({ challenges, isAuthenticated }: Props) {
         </div>
       </section>
 
-      <MarqueeTicker />
-
-      <section className="bg-background px-6 md:px-20 py-16">
-        <h2 className="text-xl font-semibold tracking-tight">Browse verification challenges</h2>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Each challenge verifies a specific engineering discipline through real repository analysis.
-        </p>
-
-        <div className="mt-6">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as ChallengeCategory)}>
-            <TabsList>
-              <TabsTrigger value="frontend">Frontend Engineering</TabsTrigger>
-              <TabsTrigger value="backend">Backend Engineering</TabsTrigger>
-            </TabsList>
-            <TabsContent value="frontend">
-              <ChallengeList challenges={frontend} isAuthenticated={isAuthenticated} />
-            </TabsContent>
-            <TabsContent value="backend">
-              <ChallengeList challenges={backend} isAuthenticated={isAuthenticated} />
-            </TabsContent>
-          </Tabs>
+      <section className="bg-background h-screen flex flex-col px-6 md:px-20">
+        <MarqueeTicker />
+        <div className="flex-1 flex flex-col justify-center py-8">
+          <h2 className="text-xl font-semibold tracking-tight">Browse verification challenges</h2>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Each challenge verifies a specific engineering discipline through real repository analysis.
+          </p>
+          <div className="mt-6">
+            <Tabs value={tab} onValueChange={(v) => setTab(v as ChallengeCategory)}>
+              <TabsList>
+                <TabsTrigger value="frontend">Frontend Engineering</TabsTrigger>
+                <TabsTrigger value="backend">Backend Engineering</TabsTrigger>
+              </TabsList>
+              <TabsContent value="frontend">
+                <ChallengeList challenges={frontend} isAuthenticated={isAuthenticated} />
+              </TabsContent>
+              <TabsContent value="backend">
+                <ChallengeList challenges={backend} isAuthenticated={isAuthenticated} />
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
       </section>
 
-      <section className="bg-muted/40 px-6 md:px-20 py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+      <section className="bg-muted/40 h-screen flex items-center px-6 md:px-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center w-full">
           <div>
             <div className="flex items-center gap-2 mb-4">
               <span className="size-2 rounded-sm bg-primary inline-block shrink-0" />
@@ -104,7 +104,7 @@ export function ChallengesPublicPage({ challenges, isAuthenticated }: Props) {
 
 function ChallengeList({ challenges, isAuthenticated }: { challenges: Challenge[]; isAuthenticated: boolean }) {
   if (challenges.length === 0) {
-    return <p className="text-sm text-muted-foreground">No challenges available.</p>
+    return <p className="text-sm text-muted-foreground mt-3">No challenges available.</p>
   }
 
   return (
