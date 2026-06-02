@@ -4,6 +4,8 @@ import { ValidationPipe, Logger } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
 import { AppModule } from './app.module'
 import { GlobalExceptionFilter } from './common/global-exception.filter'
+import { WorkerHealthService } from './verification/worker/worker-health.service'
+import { VerificationQueueService } from './verification/queue/queue.service'
 
 async function bootstrap() {
   const corsOrigin = process.env.CORS_ORIGIN
@@ -25,9 +27,18 @@ async function bootstrap() {
   const { httpAdapter } = app.get(HttpAdapterHost)
   app.useGlobalFilters(new GlobalExceptionFilter(httpAdapter))
 
+  app.get(WorkerHealthService).start()
+
+  const queueService = app.get(VerificationQueueService)
+  const scheduleStaleExpiry = () => { queueService.enqueueExpireStale().catch(() => undefined) }
+  scheduleStaleExpiry()
+  const staleInterval = setInterval(scheduleStaleExpiry, 30 * 60 * 1000)
+
   const port = process.env.PORT ?? 4000
   await app.listen(port)
   logger.log(`API listening on port ${port}`)
+
+  process.on('SIGTERM', () => { clearInterval(staleInterval) })
 }
 
 bootstrap()

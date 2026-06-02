@@ -94,9 +94,10 @@ export class SubmissionsService {
         },
       })
       Object.assign(submission, queued)
+
+      await this.verificationQueue.enqueueIngestRepo(submission.id)
     }
 
-    await this.verificationQueue.enqueueIngestRepo(submission.id)
     return submission
   }
 

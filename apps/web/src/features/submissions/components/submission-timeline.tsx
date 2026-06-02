@@ -94,7 +94,7 @@ export function SubmissionTimeline({ submission, events }: Props) {
                   {stage.label}
                 </span>
                 {ts && (
-                  <span className="text-xs text-muted-foreground shrink-0">{formatDate(ts)}</span>
+                  <span className="text-xs text-muted-foreground shrink-0" suppressHydrationWarning>{formatDate(ts)}</span>
                 )}
               </div>
               {state === 'active' && (
