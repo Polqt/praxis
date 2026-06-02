@@ -7,21 +7,18 @@ type Props = {
 }
 
 export function VerifiedSkillsSection({ skills }: Props) {
+  if (skills.length === 0) return null
   return (
     <div>
-      <p className={`text-xs font-medium uppercase tracking-widest text-muted-foreground mb-4`}>Verified skills</p>
-      {skills.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No skills verified for this submission.</p>
-      ) : (
-        <div className="flex flex-col gap-2.5">
-          {skills.map((skill) => (
-            <div key={skill} className="flex items-center gap-2.5">
-              <IconCircleCheckFilled size={14} className="text-green-500 shrink-0" />
-              <span className="text-sm font-medium">{skill}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-4">Verified skills</p>
+      <div className="flex flex-wrap gap-2">
+        {skills.map((skill) => (
+          <span key={skill} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border bg-card text-sm font-medium">
+            <IconCircleCheckFilled size={13} className="text-green-500 shrink-0" />
+            {skill}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }
