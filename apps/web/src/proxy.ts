@@ -58,12 +58,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (user && (pathname === '/sign-in' || pathname === '/sign-up' || pathname === '/login')) {
-    const next = safeInternalPath(request.nextUrl.searchParams.get('next'))
-    const url = new URL(next, request.nextUrl.origin)
-    return NextResponse.redirect(url)
-  }
-
   if (!user && (pathname === '/sign-up' || pathname === '/login')) {
     const url = request.nextUrl.clone()
     url.pathname = '/sign-in'

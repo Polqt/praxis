@@ -9,13 +9,13 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   const supabase = await createClient()
 
   const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user) redirect('/sign-in')
+  if (error || !user) redirect('/sign-in?next=/studio')
 
   let localUser: User
   try {
     localUser = await serverApiFetch<User>('/users/me')
   } catch {
-    redirect('/sign-in')
+    redirect('/sign-in?next=/studio')
   }
 
   const githubAccount = await serverApiFetch<GitHubAccount>('/github/account').catch(
