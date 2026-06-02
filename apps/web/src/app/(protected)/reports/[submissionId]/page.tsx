@@ -27,9 +27,11 @@ function toReport(raw: VerificationReport, submission: ProjectSubmission): Repor
     citations: data.citations ?? [],
   }))
 
-  const strengths = raw.strengths.length > 0 ? raw.strengths : deriveStrengths(scores)
-  const improvements = raw.improvements.length > 0 ? raw.improvements : deriveImprovements(scores)
-  const derivedStrengthsAndImprovements = raw.strengths.length === 0 || raw.improvements.length === 0
+  const rawStrengths = raw.strengths ?? []
+  const rawImprovements = raw.improvements ?? []
+  const strengths = rawStrengths.length > 0 ? rawStrengths : deriveStrengths(scores)
+  const improvements = rawImprovements.length > 0 ? rawImprovements : deriveImprovements(scores)
+  const derivedStrengthsAndImprovements = rawStrengths.length === 0 || rawImprovements.length === 0
 
   const allCitedFiles = Array.from(new Set(scores.flatMap((s) => s.citations)))
 
