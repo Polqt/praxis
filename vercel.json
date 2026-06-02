@@ -1,6 +1,0 @@
-{
-  "framework": "nextjs",
-  "installCommand": "npx --yes pnpm@9 install --frozen-lockfile --prod=false",
-  "buildCommand": "npx --yes pnpm@9 --filter @praxis/web build",
-  "outputDirectory": "apps/web/.next"
-}
