@@ -16,15 +16,20 @@ export interface ReportReadyPayload {
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name)
-  private readonly resend: Resend
   private readonly fromEmail: string
+  private readonly apiKey: string
 
   constructor(private readonly config: ConfigService) {
-    this.resend = new Resend(config.get<string>('notifications.resendApiKey'))
+    this.apiKey = config.get<string>('notifications.resendApiKey') ?? ''
     this.fromEmail = config.get<string>('notifications.fromEmail') ?? 'onboarding@resend.dev'
   }
 
   async sendReportReady(payload: ReportReadyPayload): Promise<void> {
+    if (!this.apiKey) {
+      this.logger.warn('RESEND_API_KEY not set — skipping report ready email')
+      return
+    }
+    const resend = new Resend(this.apiKey)
     const { toEmail, username, repositoryName, challengeTitle, compositeScore, verdict, reportUrl, floorFailures } = payload
 
     const verdictLabel = verdict === 'verified' ? 'Verified ✓' : verdict === 'insufficient' ? 'Insufficient' : 'Failed'
@@ -77,7 +82,7 @@ export class NotificationsService {
     `
 
     try {
-      await this.resend.emails.send({ from: this.fromEmail, to: toEmail, subject, html })
+      await resend.emails.send({ from: this.fromEmail, to: toEmail, subject, html })
       this.logger.log(`Report ready email sent to ${toEmail} for ${repositoryName}`)
     } catch (err) {
       this.logger.error(`Failed to send report ready email to ${toEmail}`, err instanceof Error ? err.message : String(err))
