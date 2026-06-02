@@ -21,20 +21,6 @@ const V1_TABLES = [
   'audit_logs',
 ]
 
-const EXPECTED_MIGRATIONS = [
-  '0001_baseline',
-  '0002_drop_v0_deprecated',
-  '0003_v1_schema',
-  '0004_submission_events_and_users_rls',
-  '0005_repository_ingestions_and_analyses',
-  '0006_username_unique_constraint',
-  '0007_report_version_fields',
-  '0008_audit_logs',
-  '0009_enum_cleanup',
-  '0010_submissions_drop_ingested_data',
-  '0011_reports_version_fields',
-]
-
 interface CheckResult {
   name: string
   pass: boolean
@@ -49,11 +35,11 @@ async function main() {
     return
   }
 
-  const sql = postgres(dbUrl, { max: 1 })
+  const sql = postgres(dbUrl, { max: 1, connect_timeout: 20 })
   const results: CheckResult[] = []
 
   try {
-    // Check V1 tables exist
+    // 1. Check V1 tables exist
     const existingTables = await sql.unsafe(`
       SELECT table_name FROM information_schema.tables
       WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
@@ -67,7 +53,7 @@ async function main() {
       })
     }
 
-    // Check RLS enabled
+    // 2. Check RLS enabled
     const rlsRows = await sql.unsafe(`
       SELECT relname, relrowsecurity FROM pg_class
       JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace
@@ -81,20 +67,75 @@ async function main() {
       })
     }
 
-    // Check migrations applied
-    const appliedMigrations = await sql.unsafe(`
-      SELECT name FROM drizzle.__drizzle_migrations ORDER BY created_at
-    `).catch(() => []) as { name: string }[]
-    const appliedSet = new Set(appliedMigrations.map((r) => r.name))
-    for (const migration of EXPECTED_MIGRATIONS) {
-      results.push({
-        name: `migration:${migration}`,
-        pass: appliedSet.has(migration),
-        detail: appliedSet.has(migration) ? 'applied' : 'NOT APPLIED',
-      })
+    // 3. Check schema state directly (replaces migration hash tracking which Drizzle doesn't populate for manually-applied migrations)
+    const schemaChecks: { name: string; query: string; expectEmpty: boolean; description: string }[] = [
+      {
+        name: 'schema:ingested_data_dropped',
+        query: `SELECT column_name FROM information_schema.columns WHERE table_name='project_submissions' AND column_name='ingested_data'`,
+        expectEmpty: true,
+        description: 'ingested_data column dropped from project_submissions',
+      },
+      {
+        name: 'schema:ai_model_version_dropped',
+        query: `SELECT column_name FROM information_schema.columns WHERE table_name='project_verification_reports' AND column_name='ai_model_version'`,
+        expectEmpty: true,
+        description: 'ai_model_version column dropped from project_verification_reports',
+      },
+      {
+        name: 'schema:report_generator_version_exists',
+        query: `SELECT column_name FROM information_schema.columns WHERE table_name='project_verification_reports' AND column_name='report_generator_version'`,
+        expectEmpty: false,
+        description: 'report_generator_version column present in project_verification_reports',
+      },
+      {
+        name: 'schema:analyzer_version_exists',
+        query: `SELECT column_name FROM information_schema.columns WHERE table_name='project_verification_reports' AND column_name='analyzer_version'`,
+        expectEmpty: false,
+        description: 'analyzer_version column present in project_verification_reports',
+      },
+      {
+        name: 'schema:audit_logs_exists',
+        query: `SELECT table_name FROM information_schema.tables WHERE table_name='audit_logs'`,
+        expectEmpty: false,
+        description: 'audit_logs table exists',
+      },
+    ]
+    for (const check of schemaChecks) {
+      const rows = await sql.unsafe(check.query)
+      const pass = check.expectEmpty ? rows.length === 0 : rows.length > 0
+      results.push({ name: check.name, pass, detail: pass ? check.description : `FAILED: ${check.description}` })
     }
 
-    // Check username unique index exists
+    // 4. Enum value checks
+    const submissionStatusVals = await sql.unsafe(`
+      SELECT enumlabel FROM pg_enum
+      JOIN pg_type ON pg_type.oid = pg_enum.enumtypid
+      WHERE pg_type.typname = 'submission_status' ORDER BY enumsortorder
+    `)
+    const statusValues = submissionStatusVals.map((r: { enumlabel: string }) => r.enumlabel)
+    results.push({
+      name: 'enum:submission_status_no_awaiting_human_review',
+      pass: !statusValues.includes('awaiting_human_review'),
+      detail: !statusValues.includes('awaiting_human_review')
+        ? `Values: ${statusValues.join(', ')}`
+        : 'awaiting_human_review STILL PRESENT',
+    })
+
+    const verdictVals = await sql.unsafe(`
+      SELECT enumlabel FROM pg_enum
+      JOIN pg_type ON pg_type.oid = pg_enum.enumtypid
+      WHERE pg_type.typname = 'verdict' ORDER BY enumsortorder
+    `)
+    const verdictValues = verdictVals.map((r: { enumlabel: string }) => r.enumlabel)
+    results.push({
+      name: 'enum:verdict_no_conditional',
+      pass: !verdictValues.includes('conditional'),
+      detail: !verdictValues.includes('conditional')
+        ? `Values: ${verdictValues.join(', ')}`
+        : 'conditional STILL PRESENT',
+    })
+
+    // 5. Check username unique index
     const usernameIdx = await sql.unsafe(`
       SELECT indexname FROM pg_indexes
       WHERE tablename = 'users' AND indexname = 'users_username_unique'
@@ -105,26 +146,22 @@ async function main() {
       detail: usernameIdx.length > 0 ? 'exists' : 'MISSING',
     })
 
-    // Check ingested_data column is dropped from project_submissions
-    const ingestedDataCol = await sql.unsafe(`
-      SELECT column_name FROM information_schema.columns
-      WHERE table_name = 'project_submissions' AND column_name = 'ingested_data'
-    `)
-    results.push({
-      name: 'column:project_submissions.ingested_data_dropped',
-      pass: ingestedDataCol.length === 0,
-      detail: ingestedDataCol.length === 0 ? 'dropped' : 'STILL EXISTS',
-    })
+    // 6. Service-role insert test on audit_logs
+    try {
+      await sql.unsafe(`INSERT INTO audit_logs (event_type) VALUES ('audit_test')`)
+      await sql.unsafe(`DELETE FROM audit_logs WHERE event_type = 'audit_test'`)
+      results.push({ name: 'access:service_role_audit_insert', pass: true, detail: 'INSERT + DELETE on audit_logs succeeded' })
+    } catch (err) {
+      results.push({ name: 'access:service_role_audit_insert', pass: false, detail: `Failed: ${(err as Error).message}` })
+    }
 
-    // Check ai_model_version column is dropped from project_verification_reports
-    const aiModelCol = await sql.unsafe(`
-      SELECT column_name FROM information_schema.columns
-      WHERE table_name = 'project_verification_reports' AND column_name = 'ai_model_version'
-    `)
+    // 7. Count applied migration hashes (informational)
+    const migrationCount = await sql.unsafe(`SELECT COUNT(*) as cnt FROM drizzle.__drizzle_migrations`).catch(() => [{ cnt: 'unknown' }])
+    const cnt = (migrationCount[0] as { cnt: string | number }).cnt
     results.push({
-      name: 'column:project_verification_reports.ai_model_version_dropped',
-      pass: aiModelCol.length === 0,
-      detail: aiModelCol.length === 0 ? 'dropped' : 'STILL EXISTS',
+      name: 'info:drizzle_migration_hashes',
+      pass: true,
+      detail: `${cnt} hash(es) tracked in drizzle.__drizzle_migrations (migrations 0009-0011 were applied directly, not via drizzle-kit)`,
     })
 
   } finally {
@@ -139,7 +176,7 @@ async function main() {
     `# DB Audit Report`,
     ``,
     `**Date:** ${date}`,
-    `**Database:** ${process.env.DATABASE_DIRECT_URL ? 'direct' : 'pooled'}`,
+    `**Database:** ${process.env.DATABASE_DIRECT_URL ? 'Supabase direct (port 5432)' : 'pooled'}`,
     ``,
     `## Results`,
     ``,

@@ -31,7 +31,7 @@ export class VerificationQueueService {
   private enqueue(name: VerificationJobName, submissionId: string) {
     return this.queue.add(name, { submissionId }, {
       ...DEFAULT_JOB_OPTIONS,
-      jobId: `${name}:${submissionId}`,
+      jobId: `${name}-${submissionId}`,
     })
   }
 }
