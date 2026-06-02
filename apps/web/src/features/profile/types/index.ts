@@ -5,6 +5,7 @@ export interface ProfileReport {
   challengeTitle: string
   challengeCategory: string
   verdict: string
+  submissionStatus: string
   verifiedAt: string
   publicToken: string | null
   compositeScore: number | null

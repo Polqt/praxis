@@ -124,7 +124,8 @@ export class ReportsService {
       .limit(1)
     if (!reports[0] || !reports[0].isPublic) throw new NotFoundException('Proof not found')
     const submission = await this.getSubmission(reports[0].submissionId)
-    return this.toPublicProof(reports[0], submission)
+    const challenge = await this.getChallenge(submission.challengeId)
+    return this.toPublicProof(reports[0], submission, challenge)
   }
 
   async awardSkillsForSubmission(submissionId: string) {
@@ -222,7 +223,11 @@ export class ReportsService {
     }
   }
 
-  private toPublicProof(report: typeof projectVerificationReports.$inferSelect, submission: typeof projectSubmissions.$inferSelect) {
+  private toPublicProof(
+    report: typeof projectVerificationReports.$inferSelect,
+    submission: typeof projectSubmissions.$inferSelect,
+    challenge: typeof projectChallenges.$inferSelect,
+  ) {
     const scores = (report.categoryScores ?? {}) as Record<string, StoredCategoryScore>
 
     const safeScores: Record<string, { score: number; narrative: string; citations: string[] }> = {}
@@ -235,6 +240,7 @@ export class ReportsService {
       submissionId: report.submissionId,
       repositoryName: submission.githubRepoFullName,
       commitSha: submission.commitSha,
+      challengeTitle: challenge.title,
       compositeScore: report.compositeScore,
       verdict: report.verdict,
       categoryScores: safeScores,

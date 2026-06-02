@@ -79,6 +79,8 @@ export interface VerificationReport {
   id: string
   submissionId: string
   repositoryName: string
+  commitSha: string
+  challengeTitle: string
   compositeScore: number
   verdict: Verdict
   categoryScores: Record<string, { score: number; narrative: string; citations: string[]; status?: string; minimumScore?: number }>

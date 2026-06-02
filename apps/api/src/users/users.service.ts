@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, inArray } from 'drizzle-orm'
 import { DatabaseService } from '../database/database.service'
 import {
   projectChallenges,
@@ -128,12 +128,13 @@ export class UsersService {
         challengeId: projectSubmissions.challengeId,
         githubRepoFullName: projectSubmissions.githubRepoFullName,
         completedAt: projectSubmissions.completedAt,
+        status: projectSubmissions.status,
       })
       .from(projectSubmissions)
       .where(
         and(
           eq(projectSubmissions.userId, user.id),
-          eq(projectSubmissions.status, 'verified'),
+          inArray(projectSubmissions.status, ['verified', 'insufficient']),
         ),
       )
       .orderBy(desc(projectSubmissions.completedAt))
@@ -174,6 +175,7 @@ export class UsersService {
           challengeTitle: challenge.title,
           challengeCategory: challenge.projectType,
           verdict: report.verdict,
+          submissionStatus: sub.status,
           verifiedAt: (sub.completedAt ?? report.generatedAt).toISOString(),
           publicToken: report.publicToken ?? null,
           compositeScore: report.compositeScore ?? null,
@@ -185,12 +187,14 @@ export class UsersService {
       (r): r is NonNullable<typeof r> => r !== null,
     )
 
+    const verifiedCount = verifiedSubmissions.filter((s) => s.status === 'verified').length
+
     return {
       username: user.username as string,
       verifiedSkills: earnedSkills.map((s) => s.name),
-      reportsCount: verifiedSubmissions.length,
-      verificationsCount: verifiedSubmissions.length,
-      challengesCompleted: verifiedSubmissions.length,
+      reportsCount: verifiedCount,
+      verificationsCount: verifiedCount,
+      challengesCompleted: verifiedCount,
       latestReports,
     }
   }

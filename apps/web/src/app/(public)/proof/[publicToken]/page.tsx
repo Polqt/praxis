@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 import { serverApiFetch } from '@/lib/api.server'
 import { ReportClient } from '@/features/reports/components/report-client'
 import { deriveStrengths } from '@/features/reports/utils/derive-strengths'
@@ -8,6 +9,34 @@ import type { Report, ReportStatus, ScoreItem } from '@/features/reports/types'
 
 type PublicProofPageProps = {
   params: Promise<{ publicToken: string }>
+}
+
+export async function generateMetadata({ params }: PublicProofPageProps): Promise<Metadata> {
+  const { publicToken } = await params
+  const raw = await serverApiFetch<VerificationReport>(`/proof/${publicToken}`).catch(() => null)
+  if (!raw) return { title: 'Proof not found' }
+
+  const repoName = raw.repositoryName ?? 'Unknown repo'
+  const verdict = raw.verdict === 'verified' ? 'Verified' : 'Insufficient'
+  const score = raw.compositeScore
+  const title = `${repoName} — ${verdict} · ${score}/100 | Praxis`
+  const description = raw.publicSummary ?? `${repoName} was evaluated by Praxis and scored ${score}/100.`
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      siteName: 'Praxis',
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
+    },
+  }
 }
 
 const VALID_STATUSES: ReportStatus[] = ['verified', 'insufficient', 'failed']
@@ -36,8 +65,8 @@ function toReport(raw: VerificationReport): Report {
     id: raw.id,
     submissionId: raw.submissionId,
     repositoryName: raw.repositoryName ?? '',
-    commitSha: '',
-    challengeTitle: '',
+    commitSha: raw.commitSha ?? '',
+    challengeTitle: raw.challengeTitle ?? '',
     status: toReportStatus(raw.verdict),
     compositeScore: raw.compositeScore,
     summary: raw.publicSummary ?? '',

@@ -16,20 +16,58 @@ type Props = {
 }
 
 export function VerifiedProjectsSection({ reports, profileUsername, viewingUser }: Props) {
+  const verified = reports.filter((r) => r.submissionStatus === 'verified')
+  const insufficient = reports.filter((r) => r.submissionStatus === 'insufficient')
+
+  return (
+    <div className="flex flex-col gap-6">
+      <Section
+        label="Verified projects"
+        reports={verified}
+        profileUsername={profileUsername}
+        viewingUser={viewingUser}
+        emptyText="No verified projects yet."
+      />
+      {insufficient.length > 0 && (
+        <Section
+          label="Needs improvement"
+          reports={insufficient}
+          profileUsername={profileUsername}
+          viewingUser={viewingUser}
+          emptyText=""
+          muted
+        />
+      )}
+    </div>
+  )
+}
+
+type SectionProps = {
+  label: string
+  reports: ProfileReport[]
+  profileUsername: string
+  viewingUser: User | null
+  emptyText: string
+  muted?: boolean
+}
+
+function Section({ label, reports, profileUsername, viewingUser, emptyText, muted }: SectionProps) {
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">Verified projects</p>
+      <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">{label}</p>
       {reports.length === 0 ? (
-        <div className="rounded-lg border border-dashed flex flex-col items-center justify-center py-8 gap-2">
-          <IconFolder size={20} className="text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">No verified projects yet.</p>
-        </div>
+        emptyText ? (
+          <div className="rounded-lg border border-dashed flex flex-col items-center justify-center py-8 gap-2">
+            <IconFolder size={20} className="text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">{emptyText}</p>
+          </div>
+        ) : null
       ) : (
         <div className="flex flex-col gap-3">
           {reports.map((report) => {
             const reportLink = resolveReportLink(report, profileUsername, viewingUser)
             return (
-              <div key={report.id} className="rounded-lg border bg-card">
+              <div key={report.id} className={`rounded-lg border bg-card ${muted ? 'opacity-70' : ''}`}>
                 <div className="px-4 py-3 flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <p className="text-sm font-medium font-mono truncate">{report.repositoryName}</p>
@@ -45,7 +83,7 @@ export function VerifiedProjectsSection({ reports, profileUsername, viewingUser 
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-muted-foreground capitalize">{report.challengeCategory}</span>
                     <span className="text-xs text-muted-foreground">·</span>
-                    <span className="text-xs text-muted-foreground">{formatDate(report.verifiedAt)}</span>
+                    <span className="text-xs text-muted-foreground" suppressHydrationWarning>{formatDate(report.verifiedAt)}</span>
                   </div>
                   {reportLink && (
                     <Button variant="ghost" size="sm" className="h-7 text-xs px-2 shrink-0" asChild>
