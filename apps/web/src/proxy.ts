@@ -28,7 +28,9 @@ export async function proxy(request: NextRequest) {
     }
   )
 
+  // Refresh session — required for Supabase SSR on Vercel
   const { data: { user } } = await supabase.auth.getUser()
+
   const { pathname } = request.nextUrl
   const pathWithSearch = `${pathname}${request.nextUrl.search}`
 
