@@ -2,7 +2,9 @@ import { TERMINAL_STATUSES } from '@/features/submissions/constants'
 import type { ProjectSubmission, ProjectSubmissionEvent, SubmissionStatus } from '@praxis/shared'
 
 export function statusLabel(status: SubmissionStatus) {
-  return status.replaceAll('_', ' ')
+  return status
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
 export function shortSha(sha: string) {
