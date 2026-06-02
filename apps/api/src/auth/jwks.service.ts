@@ -51,7 +51,7 @@ export class JwksService implements OnModuleInit {
     const { keys } = await response.json() as { keys: JwkKey[] }
     const map = new Map<string, KeyObject>()
     for (const jwk of keys) {
-      const keyObject = createPublicKey({ key: jwk as any, format: 'jwk' })
+      const keyObject = createPublicKey({ key: jwk as unknown as import('node:crypto').JsonWebKey, format: 'jwk' })
       map.set(jwk.kid, keyObject)
     }
     this.keys = map

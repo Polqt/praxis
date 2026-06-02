@@ -34,7 +34,7 @@ export class SupabaseGuard implements CanActivate {
 
     let publicKey: jwt.Secret
     try {
-      publicKey = await this.jwks.getKey(decoded.header.kid) as any
+      publicKey = await this.jwks.getKey(decoded.header.kid)
     } catch {
       throw new UnauthorizedException()
     }

@@ -66,12 +66,35 @@ function scoreCategoryByName(categoryName: string, ingestionData: RepositoryInge
   return securityScorer.score(extractSecuritySignals(ingestionData))
 }
 
+function deriveStrengths(categoryScores: Record<string, { score: number; status: string }>): string[] {
+  return Object.entries(categoryScores)
+    .filter(([, v]) => v.score >= 8)
+    .sort(([, a], [, b]) => b.score - a.score)
+    .slice(0, 4)
+    .map(([name]) => `Strong result in ${name}`)
+}
+
+function deriveImprovements(categoryScores: Record<string, { score: number; status: string }>): string[] {
+  return Object.entries(categoryScores)
+    .filter(([, v]) => v.score <= 6)
+    .sort(([, a], [, b]) => a.score - b.score)
+    .slice(0, 4)
+    .map(([name]) => `Improve coverage in ${name}`)
+}
+
 export function scoreReport(
   rubric: Rubric,
   ingestionData: RepositoryIngestionData,
   passingThreshold: number,
 ) {
-  const categoryScores: Record<string, { score: number; narrative: string; citations: string[]; signals: Record<string, unknown> }> = {}
+  const categoryScores: Record<string, {
+    score: number
+    narrative: string
+    citations: string[]
+    status: string
+    minimumScore: number
+    signals: Record<string, unknown>
+  }> = {}
   let weighted = 0
   let floorFailed = false
 
@@ -86,6 +109,8 @@ export function scoreReport(
       score: result.score,
       narrative: result.narrative,
       citations: result.citations,
+      status: result.status,
+      minimumScore: category.floor,
       signals: result.signals,
     }
   }
@@ -93,10 +118,15 @@ export function scoreReport(
   const compositeScore = Math.round(weighted / 10)
   const verdict: Verdict = floorFailed || compositeScore < passingThreshold ? 'insufficient' : 'verified'
 
+  const strengths = deriveStrengths(categoryScores)
+  const improvements = deriveImprovements(categoryScores)
+
   return {
     compositeScore,
     verdict,
     categoryScores,
+    strengths,
+    improvements,
     publicSummary: verdict === 'verified'
       ? 'This project meets the deterministic Praxis verification threshold.'
       : 'This project does not yet meet the deterministic Praxis verification threshold.',

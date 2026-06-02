@@ -16,6 +16,33 @@ import {
 import { AuditService } from '../audit/audit.service'
 import { scoreReport } from './report-scoring'
 
+const SCORE_HIGH_THRESHOLD = 8
+const SCORE_MID_THRESHOLD = 6
+
+type StoredCategoryScore = {
+  score: number
+  narrative: string
+  citations: string[]
+  status: string
+  minimumScore: number
+}
+
+function deriveStrengths(scores: Record<string, StoredCategoryScore>): string[] {
+  return Object.entries(scores)
+    .filter(([, v]) => v.score >= SCORE_HIGH_THRESHOLD)
+    .sort(([, a], [, b]) => b.score - a.score)
+    .slice(0, 4)
+    .map(([name]) => `Strong result in ${name}`)
+}
+
+function deriveImprovements(scores: Record<string, StoredCategoryScore>): string[] {
+  return Object.entries(scores)
+    .filter(([, v]) => v.score <= SCORE_MID_THRESHOLD)
+    .sort(([, a], [, b]) => a.score - b.score)
+    .slice(0, 4)
+    .map(([name]) => `Improve coverage in ${name}`)
+}
+
 @Injectable()
 export class ReportsService {
   constructor(
@@ -169,6 +196,10 @@ export class ReportsService {
   }
 
   private toSafeReport(report: typeof projectVerificationReports.$inferSelect, submission: typeof projectSubmissions.$inferSelect) {
+    const scores = (report.categoryScores ?? {}) as Record<string, StoredCategoryScore>
+    const strengths = deriveStrengths(scores)
+    const improvements = deriveImprovements(scores)
+
     return {
       id: report.id,
       submissionId: report.submissionId,
@@ -179,6 +210,8 @@ export class ReportsService {
       verdict: report.verdict,
       categoryScores: report.categoryScores,
       publicSummary: report.publicSummary,
+      strengths,
+      improvements,
       analyzerVersion: report.analyzerVersion,
       scoringVersion: report.scoringVersion,
       reportGeneratorVersion: report.reportGeneratorVersion,
@@ -190,6 +223,13 @@ export class ReportsService {
   }
 
   private toPublicProof(report: typeof projectVerificationReports.$inferSelect, submission: typeof projectSubmissions.$inferSelect) {
+    const scores = (report.categoryScores ?? {}) as Record<string, StoredCategoryScore>
+
+    const safeScores: Record<string, { score: number; narrative: string; citations: string[] }> = {}
+    for (const [name, v] of Object.entries(scores)) {
+      safeScores[name] = { score: v.score, narrative: v.narrative, citations: v.citations }
+    }
+
     return {
       id: report.id,
       submissionId: report.submissionId,
@@ -197,11 +237,9 @@ export class ReportsService {
       commitSha: submission.commitSha,
       compositeScore: report.compositeScore,
       verdict: report.verdict,
-      categoryScores: report.categoryScores,
+      categoryScores: safeScores,
       publicSummary: report.publicSummary,
       analyzerVersion: report.analyzerVersion,
-      scoringVersion: report.scoringVersion,
-      reportGeneratorVersion: report.reportGeneratorVersion,
       rubricVersion: report.rubricVersion,
       generatedAt: report.generatedAt,
       publicToken: report.publicToken,

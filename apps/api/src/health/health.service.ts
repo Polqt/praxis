@@ -6,10 +6,8 @@ import { DatabaseService } from '../database/database.service'
 import { VERIFICATION_QUEUE_NAME } from '../verification/queue/queue.constants'
 import { redisConnectionOptions } from '../verification/queue/redis-connection'
 
-type ComponentStatus = 'ok' | 'fail'
-
 interface ComponentResult {
-  status: ComponentStatus
+  status: 'ok' | 'fail'
   message?: string
 }
 

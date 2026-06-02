@@ -26,13 +26,8 @@ function toReport(raw: VerificationReport): Report {
     citations: data.citations ?? [],
   }))
 
-  const rawAny = raw as unknown as Record<string, unknown>
-  const hasRealStrengths = Array.isArray(rawAny.strengths) && (rawAny.strengths as unknown[]).length > 0
-  const hasRealImprovements = Array.isArray(rawAny.improvements) && (rawAny.improvements as unknown[]).length > 0
-
-  const strengths = hasRealStrengths ? (rawAny.strengths as string[]) : deriveStrengths(scores)
-  const improvements = hasRealImprovements ? (rawAny.improvements as string[]) : deriveImprovements(scores)
-
+  const strengths = raw.strengths.length > 0 ? raw.strengths : deriveStrengths(scores)
+  const improvements = raw.improvements.length > 0 ? raw.improvements : deriveImprovements(scores)
   const allCitedFiles = Array.from(new Set(scores.flatMap((s) => s.citations)))
 
   return {
@@ -48,7 +43,7 @@ function toReport(raw: VerificationReport): Report {
     skills: [],
     strengths,
     improvements,
-    derivedStrengthsAndImprovements: !hasRealStrengths || !hasRealImprovements,
+    derivedStrengthsAndImprovements: raw.strengths.length === 0 || raw.improvements.length === 0,
     allCitedFiles,
     generatedAt: raw.generatedAt,
     modelVersion: raw.analyzerVersion,

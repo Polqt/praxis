@@ -81,8 +81,10 @@ export interface VerificationReport {
   repositoryName: string
   compositeScore: number
   verdict: Verdict
-  categoryScores: Record<string, { score: number; narrative: string; citations: string[] }>
+  categoryScores: Record<string, { score: number; narrative: string; citations: string[]; status?: string; minimumScore?: number }>
   publicSummary: string | null
+  strengths: string[]
+  improvements: string[]
   analyzerVersion: string
   scoringVersion: string
   reportGeneratorVersion: string | null
