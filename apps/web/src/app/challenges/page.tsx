@@ -9,7 +9,7 @@ function toChallenge(raw: ProjectChallenge): Challenge {
     id: raw.id,
     title: raw.title,
     description: raw.description,
-    category: 'backend',
+    category: raw.projectType === 'frontend' ? 'frontend' : 'backend',
     difficulty: 'intermediate',
     skills: raw.rubric.categories.map((c) => c.name),
   }
