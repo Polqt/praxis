@@ -18,7 +18,6 @@ export async function GET(request: NextRequest) {
   }
 
   const cookieStore = await cookies()
-  const response = NextResponse.redirect(`${origin}${nextPath}`)
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,7 +29,7 @@ export async function GET(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            cookieStore.set(name, value, options)
           )
         },
       },
@@ -43,13 +42,26 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/sign-in?error=auth_failed&next=${encodeURIComponent(nextPath)}`)
   }
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL
+  // Build the redirect response AFTER cookies are set
+  const response = NextResponse.redirect(`${origin}${nextPath}`)
+
+  // Copy all cookies from the cookie store to the response
+  cookieStore.getAll().forEach(({ name, value }) => {
+    response.cookies.set(name, value, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+    })
+  })
+
+  const apiBase = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') ?? ''
   const bearer = { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }
 
   try {
-    await fetch(`${apiBase}/users/me`, { headers: bearer })
+    await fetch(`${apiBase}/api/users/me`, { headers: bearer })
   } catch {
-    // Non-fatal: protected layout will retry.
+    // Non-fatal
   }
 
   const provider = session.user.app_metadata?.provider
@@ -57,16 +69,13 @@ export async function GET(request: NextRequest) {
 
   if (provider === 'github' && providerToken) {
     try {
-      const syncRes = await fetch(`${apiBase}/github/sync`, {
+      await fetch(`${apiBase}/api/github/sync`, {
         method: 'POST',
         headers: bearer,
         body: JSON.stringify({ accessToken: providerToken }),
       })
-      if (!syncRes.ok) {
-        await syncRes.text()
-      }
     } catch {
-      // Non-fatal: submit/settings screens will ask the user to reconnect if sync did not complete.
+      // Non-fatal
     }
   }
 
