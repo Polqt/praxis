@@ -5,7 +5,7 @@ services:
     region: oregon
     plan: free
     rootDir: .
-    buildCommand: corepack enable && corepack prepare pnpm@9 --activate && pnpm install --frozen-lockfile && pnpm --filter @praxis/api build
+    buildCommand: npx pnpm@9 install --frozen-lockfile && npx pnpm@9 --filter @praxis/api build
     startCommand: node apps/api/dist/apps/api/src/main.js
     healthCheckPath: /api/health/live
     envVars:
@@ -40,7 +40,7 @@ services:
     region: oregon
     plan: free
     rootDir: .
-    buildCommand: corepack enable && corepack prepare pnpm@9 --activate && pnpm install --frozen-lockfile && pnpm --filter @praxis/api build
+    buildCommand: npx pnpm@9 install --frozen-lockfile && npx pnpm@9 --filter @praxis/api build
     startCommand: node apps/api/dist/apps/api/src/worker.js
     envVars:
       - key: NODE_ENV
