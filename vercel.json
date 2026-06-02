@@ -1,0 +1,7 @@
+{
+  "framework": "nextjs",
+  "installCommand": "npm install -g pnpm@9 && pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter @praxis/web build",
+  "outputDirectory": "apps/web/.next",
+  "rootDirectory": "."
+}
