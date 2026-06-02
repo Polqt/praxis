@@ -84,7 +84,6 @@ function MockupWindow() {
       </div>
 
       <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-        {/* Left — profile */}
         <div className="p-10">
           <div className="flex items-center gap-4 mb-7">
             <div
@@ -247,7 +246,7 @@ export default function LandingPage() {
 
           <div className="flex items-center justify-center gap-3 mb-14">
             <Link
-              href="/sign-up"
+              href="/sign-in"
               className="inline-flex items-center justify-center h-11 px-8 bg-foreground text-background text-[11px] font-medium uppercase tracking-widest rounded-none hover:bg-foreground/90 transition-colors"
             >
               GET STARTED
@@ -445,7 +444,7 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-3">
             <Link
-              href="/sign-up"
+              href="/challenges"
               className="inline-flex items-center justify-center h-11 px-8 bg-background text-foreground text-[11px] font-medium uppercase tracking-widest rounded-none hover:bg-background/90 transition-colors"
             >
               GET STARTED

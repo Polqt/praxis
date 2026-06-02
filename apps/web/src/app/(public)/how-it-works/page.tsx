@@ -83,7 +83,7 @@ export default function HowItWorksPage() {
             Connect your GitHub. Pick a challenge. Submit your project. Your proof page goes live.
           </p>
           <Link
-            href="/sign-up"
+            href="/challenges"
             className="inline-flex items-center justify-center h-11 px-8 bg-foreground text-background text-[11px] font-medium uppercase tracking-widest rounded-none hover:opacity-90 transition-opacity"
           >
             Get started
@@ -291,7 +291,7 @@ export default function HowItWorksPage() {
           </h2>
           <div className="flex items-center gap-3 mb-6">
             <Link
-              href="/sign-up"
+              href="/challenges"
               className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none hover:opacity-90 transition-opacity"
               style={{ background: 'var(--background)', color: 'var(--foreground)' }}
             >
