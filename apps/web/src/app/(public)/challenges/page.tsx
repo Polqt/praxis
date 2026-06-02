@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { serverApiFetch } from '@/lib/api.server'
-import { ChallengesClient } from '@/features/challenges/components/challenges-client'
 import { ChallengesPublicPage } from '@/features/challenges/components/challenges-public-page'
 import type { ProjectChallenge } from '@praxis/shared'
 import type { Challenge } from '@/features/challenges/types'
@@ -25,13 +24,5 @@ export default async function ChallengesPage() {
   const raw = await serverApiFetch<ProjectChallenge[]>('/challenges').catch(() => [] as ProjectChallenge[])
   const challenges = raw.map(toChallenge)
 
-  if (isAuthenticated) {
-    return (
-      <main className="flex-1 px-12 py-10">
-        <ChallengesClient challenges={challenges} isAuthenticated={true} />
-      </main>
-    )
-  }
-
-  return <ChallengesPublicPage challenges={challenges} />
+  return <ChallengesPublicPage challenges={challenges} isAuthenticated={isAuthenticated} />
 }

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DIFFICULTY_CLASS, DIFFICULTY_LABEL } from '@/features/challenges/constants'
 import { buildAuthRedirect } from '@/shared/utils/build-auth-redirect'
+import { stripMarkdown } from '@/features/challenges/utils'
 import type { Challenge } from '@/features/challenges/types'
 
 type Props = {
@@ -22,7 +23,7 @@ export function ChallengeCard({ challenge, isAuthenticated }: Props) {
     <div className="rounded-lg border bg-card">
       <div className="px-5 py-4">
         <p className="text-sm font-semibold">{challenge.title}</p>
-        <p className="text-xs text-muted-foreground mt-1">{challenge.description}</p>
+        <p className="text-xs text-muted-foreground mt-1">{stripMarkdown(challenge.description)}</p>
       </div>
       <div className="px-5 py-3 border-t border-border/60 flex items-center gap-4">
         <div className="flex-1 flex flex-wrap gap-1.5">

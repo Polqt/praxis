@@ -3,20 +3,18 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { buildAuthRedirect } from '@/shared/utils/build-auth-redirect'
 import { MarqueeTicker } from '@/features/challenges/components/marquee-ticker'
 import { VerificationReportMockup } from '@/features/challenges/components/verification-report-mockup'
-import { DIFFICULTY_CLASS, DIFFICULTY_LABEL } from '@/features/challenges/constants'
+import { ChallengeCard } from '@/features/challenges/components/challenge-card'
 import type { Challenge, ChallengeCategory } from '@/features/challenges/types'
-import { stripMarkdown } from '../utils'
 
 type Props = {
   challenges: Challenge[]
+  isAuthenticated: boolean
 }
 
-export function ChallengesPublicPage({ challenges }: Props) {
+export function ChallengesPublicPage({ challenges, isAuthenticated }: Props) {
   const [tab, setTab] = useState<ChallengeCategory>('frontend')
 
   const frontend = challenges.filter((c) => c.category === 'frontend')
@@ -40,7 +38,7 @@ export function ChallengesPublicPage({ challenges }: Props) {
           </p>
           <div className="mt-6 flex items-center justify-center gap-3">
             <Button asChild>
-              <Link href="/sign-in">Get started</Link>
+              <Link href={isAuthenticated ? '/submit' : '/sign-in'}>Get started</Link>
             </Button>
             <Button variant="outline" asChild>
               <Link href="/example-report">See an example</Link>
@@ -64,10 +62,10 @@ export function ChallengesPublicPage({ challenges }: Props) {
               <TabsTrigger value="backend">Backend Engineering</TabsTrigger>
             </TabsList>
             <TabsContent value="frontend">
-              <ChallengeList challenges={frontend} />
+              <ChallengeList challenges={frontend} isAuthenticated={isAuthenticated} />
             </TabsContent>
             <TabsContent value="backend">
-              <ChallengeList challenges={backend} />
+              <ChallengeList challenges={backend} isAuthenticated={isAuthenticated} />
             </TabsContent>
           </Tabs>
         </div>
@@ -91,7 +89,7 @@ export function ChallengesPublicPage({ challenges }: Props) {
             </p>
             <div className="mt-6">
               <Button asChild>
-                <Link href="/sign-in">Get started</Link>
+                <Link href={isAuthenticated ? '/submit' : '/sign-in'}>Get started</Link>
               </Button>
             </div>
           </div>
@@ -104,7 +102,7 @@ export function ChallengesPublicPage({ challenges }: Props) {
   )
 }
 
-function ChallengeList({ challenges }: { challenges: Challenge[] }) {
+function ChallengeList({ challenges, isAuthenticated }: { challenges: Challenge[]; isAuthenticated: boolean }) {
   if (challenges.length === 0) {
     return <p className="text-sm text-muted-foreground">No challenges available.</p>
   }
@@ -112,38 +110,8 @@ function ChallengeList({ challenges }: { challenges: Challenge[] }) {
   return (
     <div className="flex flex-col gap-3">
       {challenges.map((challenge) => (
-        <PublicChallengeCard key={challenge.id} challenge={challenge} />
+        <ChallengeCard key={challenge.id} challenge={challenge} isAuthenticated={isAuthenticated} />
       ))}
-    </div>
-  )
-}
-
-function PublicChallengeCard({ challenge }: { challenge: Challenge }) {
-  const href = buildAuthRedirect(`/submit?challengeId=${challenge.id}`)
-
-  return (
-    <div className="rounded-lg border bg-card">
-      <div className="px-5 py-4">
-        <p className="text-sm font-semibold">{challenge.title}</p>
-        <p className="text-xs text-muted-foreground mt-1">{stripMarkdown(challenge.description)}</p>
-      </div>
-      <div className="px-5 py-3 border-t border-border/60 flex items-center gap-4">
-        <div className="flex-1 flex flex-wrap gap-1.5">
-          {challenge.skills.map((skill) => (
-            <Badge key={skill} variant="outline" className="text-[11px]">
-              {skill}
-            </Badge>
-          ))}
-        </div>
-        <span
-          className={`shrink-0 text-[11px] font-medium px-2 py-0.5 border rounded-sm ${DIFFICULTY_CLASS[challenge.difficulty]}`}
-        >
-          {DIFFICULTY_LABEL[challenge.difficulty]}
-        </span>
-        <Button variant="outline" size="sm" asChild className="shrink-0">
-          <Link href={href}>Start verification</Link>
-        </Button>
-      </div>
     </div>
   )
 }
