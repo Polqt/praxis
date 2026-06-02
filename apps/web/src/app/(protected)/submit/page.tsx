@@ -14,10 +14,12 @@ export default async function SubmitPage(props: Props) {
 
   if (!challengeId) {
     return (
-      <div className="max-w-150 mx-auto px-6 py-10">
-        <p className="text-sm text-muted-foreground text-center">
-          Invalid challenge. Please{' '}
-          <Link href="/challenges" className="underline">select a challenge first</Link>.
+      <div className="px-10 py-10 w-full">
+        <p className="text-sm text-muted-foreground">
+          No challenge selected.{' '}
+          <Link href="/challenges" className="underline hover:text-foreground transition-colors">
+            Browse challenges
+          </Link>
         </p>
       </div>
     )
@@ -27,16 +29,18 @@ export default async function SubmitPage(props: Props) {
   let github: GitHubAccount
 
   try {
-    [challenge, github] = await Promise.all([
+    ;[challenge, github] = await Promise.all([
       serverApiFetch<ProjectChallenge>(`/challenges/${challengeId}`),
       serverApiFetch<GitHubAccount>('/github/account').catch(() => ({ connected: false } as GitHubAccount)),
     ])
   } catch {
     return (
-      <div className="max-w-150 mx-auto px-6 py-10">
-        <p className="text-sm text-muted-foreground text-center">
-          Invalid challenge. Please{' '}
-          <Link href="/challenges" className="underline">select a challenge first</Link>.
+      <div className="px-10 py-10 w-full">
+        <p className="text-sm text-muted-foreground">
+          Challenge not found.{' '}
+          <Link href="/challenges" className="underline hover:text-foreground transition-colors">
+            Browse challenges
+          </Link>
         </p>
       </div>
     )
@@ -46,18 +50,48 @@ export default async function SubmitPage(props: Props) {
   const githubHasScopes = github.connected && hasRequiredScopes(github.scopes)
 
   return (
-    <div className="max-w-150 mx-auto px-6 py-10">
-      <h1 className="text-2xl font-semibold tracking-tight">Submit repository</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Submit a GitHub repository for independent verification.
-      </p>
+    <div className="px-10 py-10 w-full">
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold tracking-tight">Submit repository</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Submit a real repository for independent deterministic verification.
+        </p>
+      </div>
 
-      <div className="mt-8">
-        <SubmitClient
-          challenge={challenge}
-          githubConnected={githubConnected}
-          githubHasScopes={githubHasScopes}
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <SubmitClient
+            challenge={challenge}
+            githubConnected={githubConnected}
+            githubHasScopes={githubHasScopes}
+          />
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-lg border bg-card p-5">
+            <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-3">What gets evaluated</p>
+            <div className="space-y-2">
+              {(challenge.rubric as { categories: { name: string; weight: number }[] }).categories.map((c) => (
+                <div key={c.name} className="flex items-center justify-between">
+                  <span className="text-sm">{c.name}</span>
+                  <span className="text-xs text-muted-foreground">{c.weight}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg border bg-card p-5">
+            <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-3">How it works</p>
+            <ol className="space-y-2">
+              {['Submit a GitHub repository URL', 'Praxis ingests your code', 'Signals are extracted deterministically', 'You receive a scored report with citations'].map((step, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                  <span className="shrink-0 size-4 rounded-full bg-muted text-[10px] font-medium flex items-center justify-center text-foreground mt-0.5">{i + 1}</span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
       </div>
     </div>
   )
