@@ -7,7 +7,7 @@ import { CheckCircle2, Loader2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
 import { safeInternalPath } from '@/lib/redirects'
-import { REQUIRED_SCOPES } from '@/features/github/constants/github.constants'
+import { GITHUB_AUTH_SCOPES, REQUIRED_SCOPES } from '@/features/github/constants/github.constants'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -122,7 +122,7 @@ function SignInPage() {
         provider: 'github',
         options: {
           redirectTo: callbackUrl.toString(),
-          ...(nextPath.startsWith('/submit') ? { scopes: REQUIRED_SCOPES.join(' ') } : {}),
+          scopes: (nextPath.startsWith('/submit') ? REQUIRED_SCOPES : GITHUB_AUTH_SCOPES).join(' '),
         },
       })
       if (error) setGithubError(error.message)

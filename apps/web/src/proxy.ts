@@ -34,6 +34,10 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const pathWithSearch = `${pathname}${request.nextUrl.search}`
 
+  if (pathname === '/auth/callback') {
+    return NextResponse.next({ request })
+  }
+
   if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
     const url = request.nextUrl.clone()
     url.pathname = pathname.replace(/^\/dashboard/, '/studio')

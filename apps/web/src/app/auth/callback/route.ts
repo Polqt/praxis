@@ -39,6 +39,14 @@ export async function GET(request: NextRequest) {
   const { data: { session }, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
   if (exchangeError || !session) {
+    console.error('Supabase auth code exchange failed', {
+      message: exchangeError?.message,
+      code: exchangeError?.code,
+      status: exchangeError?.status,
+      hasCode: Boolean(code),
+      nextPath,
+    })
+
     return NextResponse.redirect(`${origin}/sign-in?error=auth_failed&next=${encodeURIComponent(nextPath)}`)
   }
 
