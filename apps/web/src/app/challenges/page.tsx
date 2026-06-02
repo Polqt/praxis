@@ -17,8 +17,8 @@ function toChallenge(raw: ProjectChallenge): Challenge {
 
 export default async function ChallengesPage() {
   const supabase = await createClient()
-  const { data: { user: authUser } } = await supabase.auth.getUser()
-  const isAuthenticated = !!authUser
+  const { data: { user } } = await supabase.auth.getUser()
+  const isAuthenticated = !!user
 
   const raw = await serverApiFetch<ProjectChallenge[]>('/challenges').catch(() => [] as ProjectChallenge[])
   const challenges = raw.map(toChallenge)
