@@ -7,6 +7,7 @@ import { ScoreOverview } from './score-overview'
 import { VerifiedSkillsSection } from './verified-skills-section'
 import { StrengthsImprovementsSection } from './strengths-improvements-section'
 import { ReportFooter } from './report-footer'
+import { ShareProofButton } from './share-proof-button'
 import { REPORT_DISCLAIMER_TEXT, REPORT_DISCLAIMER_LINK_LABEL, REPORT_DISCLAIMER_LINK_HREF } from '@/features/reports/constants'
 import type { Report } from '@/features/reports/types'
 
@@ -28,7 +29,12 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
           <IconArrowLeft size={14} />
           {backLabel}
         </Link>
-        {actions && <div>{actions}</div>}
+        <div className="flex items-center gap-2">
+          {report.isPublic && report.publicToken && (
+            <ShareProofButton publicToken={report.publicToken} />
+          )}
+          {actions && actions}
+        </div>
       </div>
 
       <ReportHero
@@ -43,7 +49,11 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
       <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl">{report.summary}</p>
 
       <div className="mt-10">
-        <ScoreOverview scores={report.scores} />
+        <ScoreOverview
+          scores={report.scores}
+          repositoryName={report.repositoryName}
+          commitSha={report.commitSha}
+        />
       </div>
 
       {report.skills.length > 0 && (

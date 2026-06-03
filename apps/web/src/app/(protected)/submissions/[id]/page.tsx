@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import type { ProjectSubmission, ProjectSubmissionEvent } from '@praxis/shared'
 import { formatDate, githubRepoUrl, repoName, shortSha, statusLabel } from '@/lib/praxis-format'
 import { SubmissionTimeline } from '@/features/submissions/components/submission-timeline'
+import { SubmissionPoller } from '@/features/submissions/components/submission-poller'
 import { IN_PROGRESS_STATUSES, TERMINAL_STATUSES } from '@/features/submissions/constants'
 import { IconArrowLeft, IconBrandGithub, IconAlertCircle, IconClock, IconExternalLink } from '@tabler/icons-react'
 
@@ -27,12 +28,13 @@ export default async function SubmissionDetailPage(props: Props) {
   ])
 
   const isInProgress = IN_PROGRESS_STATUSES.includes(submission.status)
-  const isTerminal = TERMINAL_STATUSES.includes(submission.status)
   const hasReport = submission.status === 'verified' || submission.status === 'insufficient'
   const isFailed = ['failed', 'ingestion_failed', 'analysis_failed', 'report_generation_failed'].includes(submission.status)
 
   return (
     <div className="px-10 py-10 w-full">
+      <SubmissionPoller isInProgress={isInProgress} />
+
       <div className="mb-8">
         <Link
           href="/submissions"
@@ -75,11 +77,18 @@ export default async function SubmissionDetailPage(props: Props) {
               </div>
               <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-muted-foreground">Commit</span>
-                <span className="text-xs font-mono">{shortSha(submission.commitSha)}</span>
+                <a
+                  href={`${githubRepoUrl(submission.githubRepoFullName)}/commit/${submission.commitSha}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-mono hover:underline"
+                >
+                  {shortSha(submission.commitSha)}
+                </a>
               </div>
               <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-muted-foreground">Submitted</span>
-                <span className="text-xs">{formatDate(submission.submittedAt)}</span>
+                <span className="text-xs" suppressHydrationWarning>{formatDate(submission.submittedAt)}</span>
               </div>
               <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-muted-foreground">Status</span>

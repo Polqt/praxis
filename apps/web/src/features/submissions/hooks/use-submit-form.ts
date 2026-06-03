@@ -31,10 +31,15 @@ export type UseSubmitFormReturn = {
 
 export function useSubmitForm(challengeId: string): UseSubmitFormReturn {
   const router = useRouter()
-  const [repoUrl, setRepoUrl] = useState('')
+  const [repoUrl, setRepoUrlRaw] = useState('')
   const [commitSha, setCommitSha] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  function setRepoUrl(v: string) {
+    setRepoUrlRaw(v)
+    if (error) setError(null)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -42,7 +47,7 @@ export function useSubmitForm(challengeId: string): UseSubmitFormReturn {
 
     const githubRepoFullName = parseGitHubUrl(repoUrl)
     if (!githubRepoFullName) {
-      setError('Please enter a valid GitHub repository URL (e.g. https://github.com/owner/repo).')
+      setError('Enter a valid GitHub URL — e.g. https://github.com/owner/repo')
       return
     }
 
@@ -55,8 +60,16 @@ export function useSubmitForm(challengeId: string): UseSubmitFormReturn {
       })
       router.push(`/submissions/${submission.id}`)
     } catch (err) {
-      if (err instanceof ApiError && err.status === 429) {
-        setError('You have reached the submission limit. Please wait before submitting again.')
+      if (err instanceof ApiError) {
+        if (err.status === 429) {
+          setError('Submission limit reached. Please wait a few minutes before submitting again.')
+        } else if (err.status === 404) {
+          setError('Repository not found. Make sure it exists and you have access to it.')
+        } else if (err.status === 403) {
+          setError('You must own or have write access to submit this repository.')
+        } else {
+          setError(err.message || 'Something went wrong. Please try again.')
+        }
       } else {
         setError('Something went wrong. Please try again.')
       }

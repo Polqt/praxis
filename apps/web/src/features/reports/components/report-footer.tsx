@@ -1,7 +1,6 @@
 'use client'
 
-import { formatDate } from "@/lib/praxis-format"
-
+import { formatDate } from '@/lib/praxis-format'
 
 type Props = {
   repositoryName: string
@@ -12,15 +11,33 @@ type Props = {
 }
 
 export function ReportFooter({ repositoryName, commitSha, challengeTitle, generatedAt, modelVersion }: Props) {
+  const shortSha = commitSha.slice(0, 7)
+  const commitUrl = repositoryName && commitSha
+    ? `https://github.com/${repositoryName}/commit/${commitSha}`
+    : null
+
   return (
     <div className="flex flex-wrap gap-x-8 gap-y-4">
       <div>
         <p className="text-[11px] text-muted-foreground mb-0.5">Repository</p>
-        <p className="text-[11px] font-mono">{repositoryName}</p>
+        <a
+          href={`https://github.com/${repositoryName}`}
+          target="_blank"
+          rel="noreferrer"
+          className="text-[11px] font-mono hover:underline"
+        >
+          {repositoryName}
+        </a>
       </div>
       <div>
         <p className="text-[11px] text-muted-foreground mb-0.5">Commit</p>
-        <p className="text-[11px] font-mono">{commitSha.slice(0, 7)}</p>
+        {commitUrl ? (
+          <a href={commitUrl} target="_blank" rel="noreferrer" className="text-[11px] font-mono hover:underline">
+            {shortSha}
+          </a>
+        ) : (
+          <p className="text-[11px] font-mono">{shortSha}</p>
+        )}
       </div>
       <div>
         <p className="text-[11px] text-muted-foreground mb-0.5">Challenge</p>
@@ -28,7 +45,7 @@ export function ReportFooter({ repositoryName, commitSha, challengeTitle, genera
       </div>
       <div>
         <p className="text-[11px] text-muted-foreground mb-0.5">Generated</p>
-        <p className="text-[11px]">{formatDate(generatedAt)}</p>
+        <p className="text-[11px]" suppressHydrationWarning>{formatDate(generatedAt)}</p>
       </div>
       <div>
         <p className="text-[11px] text-muted-foreground mb-0.5">Analyzer</p>

@@ -6,9 +6,16 @@ import type { ScoreItem } from '@/features/reports/types'
 
 type Props = {
   scores: ScoreItem[]
+  repositoryName?: string
+  commitSha?: string
 }
 
-export function ScoreOverview({ scores }: Props) {
+export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
+  function citationUrl(filePath: string): string | null {
+    if (!repositoryName || !commitSha) return null
+    return `https://github.com/${repositoryName}/blob/${commitSha}/${filePath}`
+  }
+
   return (
     <div>
       <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-6">Rubric results</p>
@@ -71,11 +78,24 @@ export function ScoreOverview({ scores }: Props) {
                     Evidence found
                   </p>
                   <div className="flex flex-col gap-1">
-                    {item.citations.map((file) => (
-                      <span key={file} className="text-[11px] font-mono text-muted-foreground">
-                        {file}
-                      </span>
-                    ))}
+                    {item.citations.map((file) => {
+                      const url = citationUrl(file)
+                      return url ? (
+                        <a
+                          key={file}
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] font-mono text-muted-foreground hover:text-foreground hover:underline transition-colors"
+                        >
+                          {file}
+                        </a>
+                      ) : (
+                        <span key={file} className="text-[11px] font-mono text-muted-foreground">
+                          {file}
+                        </span>
+                      )
+                    })}
                   </div>
                 </div>
               )}

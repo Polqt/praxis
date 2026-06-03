@@ -96,7 +96,10 @@ export default async function StudioPage() {
   ])
 
   const challenge = challenges[0]
-  const activeSubmission = submissions.find((s) => !isTerminalSubmission(s)) ?? submissions[0] ?? null
+  const activeSubmission = submissions.find((s) => !isTerminalSubmission(s)) ?? null
+  const activeChallenge = activeSubmission
+    ? (challenges.find((c) => c.id === activeSubmission.challengeId) ?? challenge)
+    : challenge
   const latestTerminalSubmission = submissions.find(isTerminalSubmission) ?? null
   const latestReport = latestTerminalSubmission
     ? await serverApiFetch<VerificationReport>(`/reports/submissions/${latestTerminalSubmission.id}`).catch(() => null)
@@ -121,11 +124,9 @@ export default async function StudioPage() {
             <Button asChild>
               <Link href="/challenges">Browse Challenges</Link>
             </Button>
-            {challenge && (
-              <Button variant="outline" asChild>
-                <Link href={`/submit?challengeId=${challenge.id}`}>Submit Repository</Link>
-              </Button>
-            )}
+            <Button variant="outline" asChild>
+              <Link href="/challenges">Submit Repository</Link>
+            </Button>
           </div>
         </div>
       </section>
@@ -162,7 +163,7 @@ export default async function StudioPage() {
                       {repoName(activeSubmission.githubRepoFullName)}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {challenge?.title ?? 'Build a Production REST API'}
+                      {activeChallenge?.title ?? ''}
                     </p>
                   </div>
                   <StatusBadge status={activeSubmission.status} />
