@@ -5,11 +5,12 @@ const terminalStatuses = new Set<SubmissionStatus>([
   'insufficient',
   'failed',
   'expired',
+  'cancelled',
 ])
 
 const allowedTransitions: Record<SubmissionStatus, SubmissionStatus[]> = {
-  created: ['queued', 'expired'],
-  queued: ['ingesting', 'expired'],
+  created: ['queued', 'expired', 'cancelled'],
+  queued: ['ingesting', 'expired', 'cancelled'],
   ingesting: ['analyzing', 'ingestion_failed', 'expired'],
   ingestion_failed: ['queued', 'failed', 'expired'],
   analyzing: ['generating_report', 'analysis_failed', 'expired'],
@@ -26,6 +27,7 @@ const allowedTransitions: Record<SubmissionStatus, SubmissionStatus[]> = {
   insufficient: [],
   failed: [],
   expired: [],
+  cancelled: [],
 }
 
 export function isTerminalSubmissionStatus(status: SubmissionStatus) {

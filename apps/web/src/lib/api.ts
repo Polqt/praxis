@@ -76,6 +76,8 @@ export const apiClient = {
   getSubmissions: () => apiFetch<ProjectSubmission[]>('/submissions'),
   getSubmission: (id: string) => apiFetch<ProjectSubmission>(`/submissions/${id}`),
   getSubmissionEvents: (id: string) => apiFetch<ProjectSubmissionEvent[]>(`/submissions/${id}/events`),
+  cancelSubmission: (id: string) => apiFetch<ProjectSubmission>(`/submissions/${id}/cancel`, { method: 'PATCH' }),
+  requeueSubmission: (id: string) => apiFetch<ProjectSubmission>(`/submissions/${id}/requeue`, { method: 'PATCH' }),
   getReportBySubmissionId: (submissionId: string) => apiFetch<VerificationReport>(`/reports/submissions/${submissionId}`),
   setReportVisibility: (submissionId: string, isPublic: boolean) =>
     apiFetch<VerificationReport>(`/reports/submissions/${submissionId}/visibility`, {

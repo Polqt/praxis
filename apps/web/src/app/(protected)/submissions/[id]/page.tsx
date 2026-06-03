@@ -6,6 +6,8 @@ import type { ProjectSubmission, ProjectSubmissionEvent } from '@praxis/shared'
 import { formatDate, githubRepoUrl, repoName, shortSha, statusLabel } from '@/lib/praxis-format'
 import { SubmissionTimeline } from '@/features/submissions/components/submission-timeline'
 import { SubmissionPoller } from '@/features/submissions/components/submission-poller'
+import { CancelSubmissionButton } from '@/features/submissions/components/cancel-submission-button'
+import { RequeueSubmissionButton } from '@/features/submissions/components/requeue-submission-button'
 import { IN_PROGRESS_STATUSES } from '@/features/submissions/constants'
 import { IconArrowLeft, IconBrandGithub, IconAlertCircle, IconClock, IconExternalLink } from '@tabler/icons-react'
 
@@ -20,6 +22,7 @@ function statusVariant(status: string): 'default' | 'outline' | 'secondary' | 'd
   return 'outline'
 }
 
+
 export default async function SubmissionDetailPage(props: Props) {
   const { id } = await props.params
   const [submission, events] = await Promise.all([
@@ -30,6 +33,7 @@ export default async function SubmissionDetailPage(props: Props) {
   const isInProgress = IN_PROGRESS_STATUSES.includes(submission.status)
   const hasReport = submission.status === 'verified' || submission.status === 'insufficient'
   const isFailed = ['failed', 'ingestion_failed', 'analysis_failed', 'report_generation_failed'].includes(submission.status)
+  const isQueued = submission.status === 'queued'
 
   return (
     <div className="px-10 py-10 w-full">
@@ -111,6 +115,10 @@ export default async function SubmissionDetailPage(props: Props) {
             </div>
           )}
 
+          {isQueued && (
+            <CancelSubmissionButton submissionId={submission.id} />
+          )}
+
           {hasReport && (
             <Button className="w-full" asChild>
               <Link href={`/reports/${submission.id}`}>View full report</Link>
@@ -131,6 +139,26 @@ export default async function SubmissionDetailPage(props: Props) {
               <Button variant="outline" size="sm" className="mt-4 w-full" asChild>
                 <Link href={`/submit?challengeId=${submission.challengeId}`}>Submit again</Link>
               </Button>
+            </div>
+          )}
+
+          {submission.status === 'cancelled' && (
+            <div className="rounded-lg border bg-card p-5">
+              <div className="flex items-start gap-3">
+                <IconClock size={15} className="text-muted-foreground shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">Submission cancelled</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    You cancelled this submission before verification started.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 space-y-2">
+                <RequeueSubmissionButton submissionId={submission.id} />
+                <Button variant="ghost" size="sm" className="w-full text-muted-foreground" asChild>
+                  <Link href={`/submit?challengeId=${submission.challengeId}`}>Submit a different commit</Link>
+                </Button>
+              </div>
             </div>
           )}
 

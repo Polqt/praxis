@@ -3,6 +3,7 @@ import { serverApiFetch } from '@/lib/api.server'
 import { ReportClient } from '@/features/reports/components/report-client'
 import { ReportVisibilityButton } from '@/features/studio/components/report-visibility-button'
 import { ReportFeedbackForm } from '@/features/reports/components/report-feedback-form'
+import { ShareOnTwitterButton } from '@/features/reports/components/share-on-twitter-button'
 import { toReport } from '@/features/reports/utils/to-report'
 import type { VerificationReport, ProjectSubmission } from '@praxis/shared'
 
@@ -20,6 +21,8 @@ export default async function PrivateReportPage({ params }: Props) {
 
   if (!raw) notFound()
 
+  const showTwitterShare = raw.verdict === 'verified' || raw.verdict === 'insufficient'
+
   return (
     <ReportClient
       report={toReport(raw)}
@@ -28,6 +31,14 @@ export default async function PrivateReportPage({ params }: Props) {
         <ReportVisibilityButton submissionId={raw.submissionId} isPublic={raw.isPublic} initialPublicToken={raw.publicToken} />
       }
       feedbackSlot={<ReportFeedbackForm submissionId={submissionId} />}
+      twitterSlot={showTwitterShare ? (
+        <ShareOnTwitterButton
+          verdict={raw.verdict as 'verified' | 'insufficient'}
+          compositeScore={raw.compositeScore}
+          challengeTitle={raw.challengeTitle ?? ''}
+          publicToken={raw.publicToken}
+        />
+      ) : undefined}
     />
   )
 }

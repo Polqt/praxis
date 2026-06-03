@@ -11,6 +11,7 @@ export type SubmissionStatus =
   | 'insufficient'
   | 'failed'
   | 'expired'
+  | 'cancelled'
 
 export type ProjectType = 'backend' | 'frontend'
 
@@ -79,6 +80,7 @@ export interface VerificationReport {
   id: string
   submissionId: string
   repositoryName: string
+  githubRepoFullName?: string
   commitSha: string
   challengeTitle: string
   compositeScore: number

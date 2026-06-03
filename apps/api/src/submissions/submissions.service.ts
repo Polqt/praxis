@@ -1,6 +1,6 @@
-import { BadRequestException, ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { and, count, desc, eq, gte } from 'drizzle-orm'
+import { and, count, desc, eq, gte, ne } from 'drizzle-orm'
 import { ChallengesService } from '../challenges/challenges.service'
 import { DatabaseService } from '../database/database.service'
 import { projectSubmissionEvents, projectSubmissions } from '../database/schema'
@@ -34,6 +34,7 @@ export class SubmissionsService {
       .where(and(
         eq(projectSubmissions.userId, userId),
         gte(projectSubmissions.submittedAt, oneHourAgo),
+        ne(projectSubmissions.status, 'cancelled'),
       ))
     const recentCount = recentCountRows[0]?.value ?? 0
     if (recentCount >= rateLimitPerHour) {
@@ -115,7 +116,7 @@ export class SubmissionsService {
       totalSubmissions: submissions.length,
       verifiedCount: submissions.filter((submission) => submission.status === 'verified').length,
       inProgressCount: submissions.filter((submission) => (
-        ['queued', 'ingesting', 'analyzing', 'generating_report'].includes(submission.status)
+        ['created', 'queued', 'ingesting', 'analyzing', 'generating_report'].includes(submission.status)
       )).length,
       reportsGenerated: submissions.filter((submission) => (
         ['verified', 'insufficient', 'failed'].includes(submission.status)
@@ -155,6 +156,50 @@ export class SubmissionsService {
       verifiedSkills,
       recentSubmissions: submissions.slice(0, 5),
     }
+  }
+
+  async requeueSubmission(userId: string, submissionId: string) {
+    const submission = await this.getForUser(userId, submissionId)
+
+    if (submission.status !== 'cancelled') {
+      throw new ConflictException('Only cancelled submissions can be requeued')
+    }
+
+    const updated = await this.db.db
+      .update(projectSubmissions)
+      .set({ status: 'queued', completedAt: null })
+      .where(eq(projectSubmissions.id, submissionId))
+      .returning()
+
+    await this.db.db.insert(projectSubmissionEvents).values({
+      submissionId,
+      fromStatus: 'cancelled',
+      toStatus: 'queued',
+      reason: 'submission_requeued',
+    })
+
+    this.audit.log(userId, 'submission_requeued', { submissionId })
+    await this.verificationQueue.enqueueIngestRepo(submissionId)
+
+    return updated[0]
+  }
+
+  async cancelSubmission(userId: string, submissionId: string) {
+    const submission = await this.getForUser(userId, submissionId)
+
+    if (submission.status !== 'queued') {
+      throw new ConflictException('Only queued submissions can be cancelled')
+    }
+
+    const updated = await this.statusService.transition({
+      submissionId,
+      toStatus: 'cancelled',
+      reason: 'submission_cancelled',
+    })
+
+    this.audit.log(userId, 'submission_cancelled', { submissionId })
+
+    return updated
   }
 
   private async findDuplicate(userId: string, challengeId: string, commitSha: string) {

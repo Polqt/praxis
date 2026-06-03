@@ -83,8 +83,8 @@ export function ReportVisibilityButton({ submissionId, isPublic, initialPublicTo
 
     return (
       <div className="flex flex-col items-end gap-2">
-        <Button variant="outline" onClick={() => setConfirmingUnpublish(true)} disabled={pending}>
-          Unpublish proof
+        <Button variant="outline" onClick={() => setConfirmingUnpublish(true)} disabled={pending} size="sm">
+          {pending ? 'Updating...' : 'Unpublish proof'}
         </Button>
         {proofUrl && (
           <div className="flex items-center gap-1.5">
@@ -101,7 +101,7 @@ export function ReportVisibilityButton({ submissionId, isPublic, initialPublicTo
 
   return (
     <div className="flex flex-col items-end gap-2">
-      <Button onClick={publish} disabled={pending}>
+      <Button onClick={publish} disabled={pending} size="sm">
         {pending ? 'Updating...' : 'Publish proof'}
       </Button>
       {error && <p className="text-xs text-destructive">{error}</p>}
