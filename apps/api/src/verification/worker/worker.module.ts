@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import configuration from '../../config/configuration'
 import { AnalysisModule } from '../analysis/analysis.module'
+import { ExecutionModule } from '../execution/execution.module'
 import { IngestionModule } from '../ingestion/ingestion.module'
 import { QueueModule } from '../queue/queue.module'
 import { ReportsModule } from '../../reports/reports.module'
@@ -20,6 +21,7 @@ import { WorkerHealthService } from './worker-health.service'
     }),
     AuditModule,
     AnalysisModule,
+    ExecutionModule,
     IngestionModule,
     QueueModule,
     ReportsModule,

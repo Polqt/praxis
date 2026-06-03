@@ -152,6 +152,24 @@ export const repositoryIngestions = pgTable('repository_ingestions', {
   uniqueIndex('repository_ingestions_repo_commit_idx').on(t.githubRepoId, t.commitSha),
 ])
 
+export const repositoryExecutions = pgTable('repository_executions', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  repositoryIngestionId: text('repository_ingestion_id').notNull().references(() => repositoryIngestions.id),
+  language: text('language').notNull(),
+  testCommand: text('test_command').notNull(),
+  exitCode: integer('exit_code').notNull(),
+  passed: integer('passed').notNull().default(0),
+  failed: integer('failed').notNull().default(0),
+  skipped: integer('skipped').notNull().default(0),
+  durationMs: integer('duration_ms'),
+  stdout: text('stdout'),
+  stderr: text('stderr'),
+  timedOut: boolean('timed_out').notNull().default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex('repository_executions_ingestion_idx').on(t.repositoryIngestionId),
+])
+
 export const repositoryAnalyses = pgTable('repository_analyses', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
   repositoryIngestionId: text('repository_ingestion_id').notNull().references(() => repositoryIngestions.id),

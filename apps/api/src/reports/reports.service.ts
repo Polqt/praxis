@@ -9,6 +9,7 @@ import {
   projectSubmissions,
   projectVerificationReports,
   repositoryAnalyses,
+  repositoryExecutions,
   repositoryIngestions,
   reportFeedback,
   skills,
@@ -58,10 +59,27 @@ export class ReportsService {
     const challenge = await this.getChallenge(submission.challengeId)
     const analysis = await this.getAnalysis(repositoryAnalysisId)
     const ingestion = await this.getIngestion(analysis.repositoryIngestionId)
+    const executionRows = await this.db.db
+      .select()
+      .from(repositoryExecutions)
+      .where(eq(repositoryExecutions.repositoryIngestionId, analysis.repositoryIngestionId))
+      .limit(1)
+
+    const executionResult = executionRows[0]
+      ? {
+          passed: executionRows[0].passed,
+          failed: executionRows[0].failed,
+          skipped: executionRows[0].skipped,
+          timedOut: executionRows[0].timedOut,
+          language: executionRows[0].language,
+        }
+      : null
+
     const scored = scoreReport(
       challenge.rubric as { categories: { name: string; weight: number; floor: number }[] },
       ingestion.ingestedData as RepositoryIngestionData,
       challenge.passingThreshold,
+      executionResult,
     )
 
     const enriched = await this.enrichment.enrich({

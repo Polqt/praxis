@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm'
 import { Job, Worker } from 'bullmq'
 import { RepositoryAnalysisService } from '../analysis/repository-analysis.service'
 import { RepositoryIngestionService } from '../ingestion/repository-ingestion.service'
+import { RepositoryExecutionService } from '../execution/repository-execution.service'
 import {
   VERIFICATION_JOB_NAMES,
   VERIFICATION_QUEUE_NAME,
@@ -17,7 +18,7 @@ import { StaleSubmissionService } from '../../submissions/stale-submission.servi
 import { AuditService } from '../../audit/audit.service'
 import { NotificationsService } from '../../notifications/notifications.service'
 import { DatabaseService } from '../../database/database.service'
-import { users, projectSubmissions, projectVerificationReports, projectChallenges } from '../../database/schema'
+import { users, projectSubmissions, projectVerificationReports, projectChallenges, repositoryIngestions } from '../../database/schema'
 
 @Injectable()
 export class VerificationWorker implements OnModuleDestroy {
@@ -35,6 +36,7 @@ export class VerificationWorker implements OnModuleDestroy {
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
     private readonly db: DatabaseService,
+    private readonly execution: RepositoryExecutionService,
   ) {}
 
   start() {
@@ -82,9 +84,34 @@ export class VerificationWorker implements OnModuleDestroy {
       case VERIFICATION_JOB_NAMES.ingestRepo:
         await this.statuses.transition({ submissionId, toStatus: 'ingesting', reason: 'job_started' })
         await this.ingestion.ingestSubmission(submissionId)
+        if (this.execution.enabled) {
+          await this.queue.enqueueExecuteTests(submissionId)
+        } else {
+          await this.statuses.transition({ submissionId, toStatus: 'analyzing', reason: 'ingestion_complete' })
+          await this.queue.enqueueAnalyzeProject(submissionId)
+        }
+        return
+      case VERIFICATION_JOB_NAMES.executeTests: {
+        const submissionRows = await this.db.db
+          .select({ commitSha: projectSubmissions.commitSha, githubRepoId: projectSubmissions.githubRepoId })
+          .from(projectSubmissions)
+          .where(eq(projectSubmissions.id, submissionId))
+          .limit(1)
+        const submission = submissionRows[0]
+        if (submission) {
+          const ingestionRows = await this.db.db
+            .select({ id: repositoryIngestions.id })
+            .from(repositoryIngestions)
+            .where(eq(repositoryIngestions.commitSha, submission.commitSha))
+            .limit(1)
+          if (ingestionRows[0]) {
+            await this.execution.executeForIngestion(ingestionRows[0].id)
+          }
+        }
         await this.statuses.transition({ submissionId, toStatus: 'analyzing', reason: 'ingestion_complete' })
         await this.queue.enqueueAnalyzeProject(submissionId)
         return
+      }
       case VERIFICATION_JOB_NAMES.analyzeProject: {
         const analysis = await this.analysis.analyzeSubmission(submissionId)
         await this.statuses.transition({ submissionId, toStatus: 'generating_report', reason: 'analysis_complete' })

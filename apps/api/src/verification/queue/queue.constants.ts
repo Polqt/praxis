@@ -3,6 +3,7 @@ export const VERIFICATION_QUEUE = Symbol('VERIFICATION_QUEUE')
 
 export const VERIFICATION_JOB_NAMES = {
   ingestRepo: 'ingest-repo',
+  executeTests: 'execute-tests',
   analyzeProject: 'analyze-project',
   generateReport: 'generate-report',
   awardSkills: 'award-skills',

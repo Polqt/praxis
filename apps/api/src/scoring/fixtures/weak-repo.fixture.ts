@@ -11,6 +11,7 @@ export const weakTesting: TestingSignals = {
   hasE2eTests: false,
   hasCoverageConfig: false,
   testFilePaths: ['app.test.ts'],
+  executionResult: null,
 }
 
 export const weakDocumentation: DocumentationSignals = {

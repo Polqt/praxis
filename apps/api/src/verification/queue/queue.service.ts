@@ -16,6 +16,10 @@ export class VerificationQueueService {
     return this.enqueue(VERIFICATION_JOB_NAMES.ingestRepo, submissionId)
   }
 
+  enqueueExecuteTests(submissionId: string) {
+    return this.enqueue(VERIFICATION_JOB_NAMES.executeTests, submissionId)
+  }
+
   enqueueAnalyzeProject(submissionId: string) {
     return this.enqueue(VERIFICATION_JOB_NAMES.analyzeProject, submissionId)
   }
