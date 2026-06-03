@@ -52,6 +52,13 @@ export function SiteHeader() {
               >
                 HOW
               </Link>
+              <span className="text-border select-none">|</span>
+              <Link
+                href="/leaderboard"
+                className="text-[12px] font-medium uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors px-4 py-1"
+              >
+                LEADERBOARD
+              </Link>
             </nav>
           </div>
 
@@ -101,6 +108,7 @@ export function SiteHeader() {
                 { href: '/why', label: 'WHY' },
                 { href: '/challenges', label: 'CHALLENGES' },
                 { href: '/how-it-works', label: 'HOW' },
+                { href: '/leaderboard', label: 'LEADERBOARD' },
               ].map(({ href, label }) => (
                 <Link
                   key={href}

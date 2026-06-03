@@ -1,7 +1,9 @@
 'use client'
 
+import { motion } from 'framer-motion'
 import { IconAlertTriangle } from '@tabler/icons-react'
 import { scoreBarColor, CATEGORY_STATUS_CLASS, CATEGORY_FIX_INSTRUCTIONS } from '@/features/reports/constants'
+import { staggerContainer, fadeUp } from '@/lib/animations'
 import type { ScoreItem } from '@/features/reports/types'
 
 type Props = {
@@ -19,7 +21,12 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
   return (
     <div>
       <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-6">Rubric results</p>
-      <div className="rounded-lg border divide-y divide-border">
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="rounded-lg border divide-y divide-border"
+      >
         {scores.map((item) => {
           const floorMissed = (item.status === 'floor' || item.status === 'fail')
             && item.minimumScore !== undefined
@@ -27,7 +34,7 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
           const fixSteps = CATEGORY_FIX_INSTRUCTIONS[item.category] ?? []
 
           return (
-            <div key={item.category} className="p-5">
+            <motion.div key={item.category} variants={fadeUp} className="p-5">
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-sm font-medium flex-1">{item.category}</span>
                 {item.status && (
@@ -41,9 +48,11 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
               </div>
 
               <div className="h-1 rounded-full bg-muted overflow-hidden mb-3">
-                <div
-                  className={`h-full rounded-full transition-all ${scoreBarColor(item.score)}`}
-                  style={{ width: `${(item.score / 10) * 100}%` }}
+                <motion.div
+                  className={`h-full rounded-full ${scoreBarColor(item.score)}`}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(item.score / 10) * 100}%` }}
+                  transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
                 />
               </div>
 
@@ -99,10 +108,10 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
                   </div>
                 </div>
               )}
-            </div>
+            </motion.div>
           )
         })}
-      </div>
+      </motion.div>
     </div>
   )
 }

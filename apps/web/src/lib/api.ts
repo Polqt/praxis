@@ -91,4 +91,12 @@ export const apiClient = {
   disconnectGitHub: () => apiFetch<void>('/github/account', { method: 'DELETE' }),
   checkUsernameAvailability: (username: string) =>
     apiFetch<{ available: boolean }>(`/users/check-username?username=${encodeURIComponent(username)}`),
+  getLeaderboard: () => apiFetch<LeaderboardEntry[]>('/users/leaderboard'),
+}
+
+export interface LeaderboardEntry {
+  rank: number
+  username: string
+  verifiedCount: number
+  bestScore: number
 }

@@ -1,13 +1,15 @@
 'use client'
 
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { IconFolder } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 import { resolveReportLink } from '@/features/profile/utils/resolve-report-link'
-import type { ProfileReport } from '@/features/profile/types'
-import type { User } from '@praxis/shared'
+import { staggerContainer, fadeUp } from '@/lib/animations'
 import { formatDate } from '@/lib/praxis-format'
 import { VERDICT_CLASS } from '../constants'
+import type { ProfileReport } from '@/features/profile/types'
+import type { User } from '@praxis/shared'
 
 type Props = {
   reports: ProfileReport[]
@@ -63,11 +65,20 @@ function Section({ label, reports, profileUsername, viewingUser, emptyText, mute
           </div>
         ) : null
       ) : (
-        <div className="flex flex-col gap-3">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="flex flex-col gap-3"
+        >
           {reports.map((report) => {
             const reportLink = resolveReportLink(report, profileUsername, viewingUser)
             return (
-              <div key={report.id} className={`rounded-lg border bg-card ${muted ? 'opacity-70' : ''}`}>
+              <motion.div
+                key={report.id}
+                variants={fadeUp}
+                className={`rounded-lg border bg-card ${muted ? 'opacity-70' : ''}`}
+              >
                 <div className="px-4 py-3 flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <p className="text-sm font-medium font-mono truncate">{report.repositoryName}</p>
@@ -91,10 +102,10 @@ function Section({ label, reports, profileUsername, viewingUser, emptyText, mute
                     </Button>
                   )}
                 </div>
-              </div>
+              </motion.div>
             )
           })}
-        </div>
+        </motion.div>
       )}
     </div>
   )

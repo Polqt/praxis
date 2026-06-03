@@ -21,6 +21,11 @@ import { User } from '@praxis/shared'
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
+  @Get('leaderboard')
+  getLeaderboard() {
+    return this.usersService.getLeaderboard()
+  }
+
   @Get('check-username')
   async checkUsername(@Query('username') username: string) {
     if (!username) throw new BadRequestException('username query param is required')

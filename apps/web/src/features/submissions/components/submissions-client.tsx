@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { IconSend } from '@tabler/icons-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -10,6 +11,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatDate, repoName, statusLabel } from '@/lib/praxis-format'
 import { IN_PROGRESS_STATUSES, TERMINAL_STATUSES } from '@/features/submissions/constants'
+import { fadeUp, staggerContainer } from '@/lib/animations'
 import type { ProjectSubmission, SubmissionStatus } from '@praxis/shared'
 
 function StatusBadge({ status }: { status: SubmissionStatus }) {
@@ -52,13 +54,14 @@ function filterSubmissions(submissions: ProjectSubmission[], tab: FilterTab): Pr
   return submissions
 }
 
-function SubmissionCard({ submission, index }: { submission: ProjectSubmission; index: number }) {
+function SubmissionCard({ submission }: { submission: ProjectSubmission }) {
   const router = useRouter()
   const isActive = IN_PROGRESS_STATUSES.includes(submission.status)
   const isTerminal = TERMINAL_STATUSES.includes(submission.status)
 
   return (
-    <div
+    <motion.div
+      variants={fadeUp}
       role="button"
       tabIndex={0}
       onClick={() => router.push(`/submissions/${submission.id}`)}
@@ -66,10 +69,8 @@ function SubmissionCard({ submission, index }: { submission: ProjectSubmission; 
       className={[
         'rounded-lg border bg-card px-5 py-4',
         'hover:bg-accent/30 transition-colors duration-150 cursor-pointer',
-        'animate-in fade-in-0 slide-in-from-bottom-1 duration-200',
         isActive ? 'border-l-2 border-l-primary' : '',
       ].join(' ')}
-      style={{ animationDelay: `${Math.min(index * 50, 400)}ms` }}
     >
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
@@ -86,7 +87,7 @@ function SubmissionCard({ submission, index }: { submission: ProjectSubmission; 
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -128,21 +129,26 @@ export function SubmissionsClient({ submissions }: { submissions: ProjectSubmiss
         <Separator className="mt-0" />
       </Tabs>
 
-      <div className="mt-4 flex flex-col gap-2">
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="mt-4 flex flex-col gap-2"
+      >
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <motion.div variants={fadeUp} className="flex flex-col items-center justify-center py-16 gap-3">
             <IconSend size={20} className="text-muted-foreground" />
             <p className="text-sm text-muted-foreground">No submissions yet.</p>
             <Button variant="ghost" size="sm" asChild>
               <Link href="/challenges">Browse challenges</Link>
             </Button>
-          </div>
+          </motion.div>
         ) : (
-          filtered.map((submission, i) => (
-            <SubmissionCard key={submission.id} submission={submission} index={i} />
+          filtered.map((submission) => (
+            <SubmissionCard key={submission.id} submission={submission} />
           ))
         )}
-      </div>
+      </motion.div>
     </div>
   )
 }
