@@ -3,24 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiClient, ApiError } from '@/lib/api'
-
-const COMMIT_SHA_RE = /^[0-9a-f]{7,40}$/i
-
-function parseGitHubUrl(input: string): string | null {
-  const trimmed = input.trim().replace(/\/+$/, '') // strip trailing slashes
-  try {
-    const url = new URL(trimmed)
-    if (url.hostname !== 'github.com') return null
-    // Take only the first two path segments (owner/repo), ignoring /tree/main, /issues, etc.
-    const segments = url.pathname.replace(/^\//, '').split('/').filter(Boolean)
-    if (segments.length < 2 || !segments[0] || !segments[1]) return null
-    return `${segments[0]}/${segments[1]}`
-  } catch {
-    const parts = trimmed.split('/')
-    if (parts.length === 2 && parts[0] && parts[1]) return trimmed
-    return null
-  }
-}
+import { parseGitHubUrl, COMMIT_SHA_RE } from '@/features/submissions/utils/github-url'
+import { SUBMIT_ERRORS } from '@/features/submissions/constants/error-messages'
 
 export type UseSubmitFormReturn = {
   repoUrl: string
@@ -50,13 +34,13 @@ export function useSubmitForm(challengeId: string): UseSubmitFormReturn {
 
     const githubRepoFullName = parseGitHubUrl(repoUrl)
     if (!githubRepoFullName) {
-      setError('Enter a valid GitHub URL — e.g. https://github.com/owner/repo')
+      setError(SUBMIT_ERRORS.invalidUrl)
       return
     }
 
     const sha = commitSha.trim()
     if (sha && !COMMIT_SHA_RE.test(sha)) {
-      setError('Commit SHA must be a 7–40 character hex string (e.g. a1b2c3d). Leave blank to use the latest commit.')
+      setError(SUBMIT_ERRORS.invalidSha)
       return
     }
 
@@ -65,24 +49,20 @@ export function useSubmitForm(challengeId: string): UseSubmitFormReturn {
       const submission = await apiClient.createSubmission({
         challengeId,
         githubRepoFullName,
-        commitSha: commitSha.trim() || undefined,
+        commitSha: sha || undefined,
       })
       router.push(`/submissions/${submission.id}`)
     } catch (err) {
       if (err instanceof ApiError) {
-        if (err.status === 429) {
-          setError('Submission limit reached. Please wait a few minutes before submitting again.')
-        } else if (err.status === 404) {
-          setError('Repository not found. Make sure it exists and you have access to it.')
-        } else if (err.status === 403) {
-          setError('You must own or have write access to submit this repository.')
-        } else if (err.status === 409) {
-          setError("You've already submitted this exact commit. Try a different commit SHA or repository.")
-        } else {
-          setError(err.message || 'Something went wrong. Please try again.')
+        const API_ERRORS: Partial<Record<number, string>> = {
+          429: SUBMIT_ERRORS.rateLimit,
+          404: SUBMIT_ERRORS.repoNotFound,
+          403: SUBMIT_ERRORS.forbidden,
+          409: SUBMIT_ERRORS.duplicate,
         }
+        setError(API_ERRORS[err.status] ?? err.message ?? SUBMIT_ERRORS.generic)
       } else {
-        setError('Something went wrong. Please try again.')
+        setError(SUBMIT_ERRORS.generic)
       }
     } finally {
       setSubmitting(false)

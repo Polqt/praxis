@@ -1,36 +1,26 @@
 'use client'
 
-import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { IconAlertTriangle, IconChevronDown, IconChevronRight } from '@tabler/icons-react'
-import { scoreBarColor, CATEGORY_STATUS_CLASS, CATEGORY_FIX_INSTRUCTIONS } from '@/features/reports/constants'
+import { Progress } from '@/components/ui/progress'
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
+import { CATEGORY_STATUS_CLASS, CATEGORY_FIX_INSTRUCTIONS } from '@/features/reports/constants'
+import { formatSignalKey } from '@/features/reports/utils/format-signal-key'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import type { ScoreItem } from '@/features/reports/types'
 
-function formatSignalKey(key: string): string {
-  return key
-    .replace(/^has/, '')
-    .replace(/([A-Z])/g, ' $1')
-    .trim()
-}
-
 function SignalsPanel({ signals }: { signals: Record<string, unknown> }) {
-  const [open, setOpen] = useState(false)
   const entries = Object.entries(signals).filter(([, v]) => typeof v === 'boolean' || typeof v === 'number')
   if (entries.length === 0) return null
 
   return (
-    <div className="mt-3">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-        aria-expanded={open}
-      >
-        {open ? <IconChevronDown size={11} /> : <IconChevronRight size={11} />}
+    <Collapsible className="mt-3">
+      <CollapsibleTrigger className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors group">
+        <IconChevronRight size={11} className="group-data-[state=open]:hidden" />
+        <IconChevronDown size={11} className="hidden group-data-[state=open]:block" />
         What was checked
-      </button>
-      {open && (
+      </CollapsibleTrigger>
+      <CollapsibleContent>
         <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
           {entries.map(([key, val]) => (
             <div key={key} className="flex items-center gap-2">
@@ -39,8 +29,8 @@ function SignalsPanel({ signals }: { signals: Record<string, unknown> }) {
             </div>
           ))}
         </div>
-      )}
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   )
 }
 
@@ -54,6 +44,17 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
   function citationUrl(filePath: string): string | null {
     if (!repositoryName || !commitSha) return null
     return `https://github.com/${repositoryName}/blob/${commitSha}/${filePath}`
+  }
+
+  if (scores.length === 0) {
+    return (
+      <div>
+        <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-6">Rubric results</p>
+        <div className="rounded-lg border p-8 text-center">
+          <p className="text-sm text-muted-foreground">No category scores available.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -70,6 +71,7 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
             && item.minimumScore !== undefined
             && item.score < item.minimumScore
           const fixSteps = CATEGORY_FIX_INSTRUCTIONS[item.category] ?? []
+          const scorePercent = (item.score / 10) * 100
 
           return (
             <motion.div key={item.category} variants={fadeUp} className="p-5">
@@ -85,12 +87,16 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
                 </span>
               </div>
 
-              <div className="h-1 rounded-full bg-muted overflow-hidden mb-3">
-                <motion.div
-                  className={`h-full rounded-full ${scoreBarColor(item.score)}`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${(item.score / 10) * 100}%` }}
-                  transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
+              <div className="mb-3">
+                <Progress
+                  value={scorePercent}
+                  className={`h-1 [&>[data-slot=progress-indicator]]:transition-none ${
+                    item.score >= 8
+                      ? '[&>[data-slot=progress-indicator]]:bg-green-500'
+                      : item.score >= 6
+                        ? '[&>[data-slot=progress-indicator]]:bg-amber-500'
+                        : '[&>[data-slot=progress-indicator]]:bg-red-500'
+                  }`}
                 />
               </div>
 

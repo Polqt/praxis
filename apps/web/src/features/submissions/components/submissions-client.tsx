@@ -2,15 +2,15 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { IconSend } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { repoName } from '@/lib/praxis-format'
 import { fadeUp, staggerContainer } from '@/lib/animations'
-import { IN_PROGRESS_STATUSES } from '@/features/submissions/constants'
+import { IN_PROGRESS_STATUSES, FAILED_STATUSES } from '@/features/submissions/constants'
 import { StatusBadge } from '@/features/submissions/components/status-badge'
 import { FormattedDate } from '@/components/ui/formatted-date'
 import type { ProjectSubmission } from '@praxis/shared'
@@ -20,30 +20,24 @@ type FilterTab = 'all' | 'verified' | 'in-progress' | 'failed'
 function filterSubmissions(submissions: ProjectSubmission[], tab: FilterTab): ProjectSubmission[] {
   if (tab === 'verified') return submissions.filter((s) => s.status === 'verified')
   if (tab === 'in-progress') return submissions.filter((s) => IN_PROGRESS_STATUSES.includes(s.status))
-  if (tab === 'failed') return submissions.filter((s) =>
-    ['failed', 'insufficient', 'ingestion_failed', 'analysis_failed', 'report_generation_failed'].includes(s.status)
-  )
+  if (tab === 'failed') return submissions.filter((s) => FAILED_STATUSES.includes(s.status))
   return submissions
 }
 
 function SubmissionCard({ submission }: { submission: ProjectSubmission }) {
-  const router = useRouter()
   const isActive = IN_PROGRESS_STATUSES.includes(submission.status)
+  const hasReport = submission.status === 'verified' || submission.status === 'insufficient'
 
   return (
-    <motion.div
-      variants={fadeUp}
-      role="button"
-      tabIndex={0}
-      onClick={() => router.push(`/submissions/${submission.id}`)}
-      onKeyDown={(e) => e.key === 'Enter' && router.push(`/submissions/${submission.id}`)}
-      className={[
-        'rounded-lg border bg-card px-5 py-4',
-        'hover:bg-accent/30 transition-colors duration-150 cursor-pointer',
-        isActive ? 'border-l-2 border-l-primary' : '',
-      ].join(' ')}
-    >
-      <div className="flex items-center justify-between gap-4">
+    <motion.div variants={fadeUp}>
+      <Link
+        href={`/submissions/${submission.id}`}
+        className={[
+          'flex items-center justify-between gap-4 rounded-lg border bg-card px-5 py-4',
+          'hover:bg-accent/30 transition-colors duration-150',
+          isActive ? 'border-l-2 border-l-primary' : '',
+        ].join(' ')}
+      >
         <div className="min-w-0">
           <p className="font-mono text-sm font-medium truncate">{repoName(submission.githubRepoFullName)}</p>
           <p className="text-xs text-muted-foreground mt-0.5">{submission.githubRepoFullName}</p>
@@ -51,23 +45,27 @@ function SubmissionCard({ submission }: { submission: ProjectSubmission }) {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <StatusBadge status={submission.status} />
-          {(submission.status === 'verified' || submission.status === 'insufficient') && (
+          {hasReport && (
             <Button variant="ghost" size="sm" asChild onClick={(e) => e.stopPropagation()}>
               <Link href={`/reports/${submission.id}`}>View report</Link>
             </Button>
           )}
         </div>
-      </div>
+      </Link>
     </motion.div>
   )
 }
 
-const TABS: { value: FilterTab; label: string }[] = [
+const TAB_DEFS: { value: FilterTab; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'verified', label: 'Verified' },
   { value: 'in-progress', label: 'In Progress' },
   { value: 'failed', label: 'Failed' },
 ]
+
+function tabCount(submissions: ProjectSubmission[], tab: FilterTab): number {
+  return filterSubmissions(submissions, tab).length
+}
 
 export function SubmissionsClient({ submissions }: { submissions: ProjectSubmission[] }) {
   const [tab, setTab] = useState<FilterTab>('all')
@@ -87,15 +85,23 @@ export function SubmissionsClient({ submissions }: { submissions: ProjectSubmiss
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as FilterTab)}>
         <TabsList className="bg-transparent p-0 h-auto gap-0 border-0">
-          {TABS.map(({ value, label }) => (
-            <TabsTrigger
-              key={value}
-              value={value}
-              className="px-4 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:text-foreground text-muted-foreground bg-transparent shadow-none"
-            >
-              {label}
-            </TabsTrigger>
-          ))}
+          {TAB_DEFS.map(({ value, label }) => {
+            const count = tabCount(submissions, value)
+            return (
+              <TabsTrigger
+                key={value}
+                value={value}
+                className="px-4 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:text-foreground text-muted-foreground bg-transparent shadow-none"
+              >
+                {label}
+                {count > 0 && (
+                  <Badge variant="secondary" className="ml-1.5 h-4 min-w-4 px-1 text-[10px] rounded-sm">
+                    {count}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            )
+          })}
         </TabsList>
         <Separator className="mt-0" />
       </Tabs>

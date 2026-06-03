@@ -8,14 +8,8 @@ export const REPORT_DISCLAIMER_LINK_LABEL = 'Learn about our methodology'
 export const REPORT_DISCLAIMER_LINK_HREF =
   'https://github.com/Polqt/praxis/blob/main/docs/LIMITATIONS.md'
 
-export const SCORE_HIGH_THRESHOLD = 8
-export const SCORE_MID_THRESHOLD = 6
-
-export function scoreBarColor(score: number): string {
-  if (score >= SCORE_HIGH_THRESHOLD) return 'bg-green-500'
-  if (score >= SCORE_MID_THRESHOLD) return 'bg-amber-500'
-  return 'bg-red-500'
-}
+// Re-exported from utils for backward compatibility
+export { scoreBarColor, SCORE_HIGH_THRESHOLD, SCORE_MID_THRESHOLD } from '@/features/reports/utils/score-color'
 
 export const STATUS_CONFIG: Record<ReportStatus, { label: string; className: string }> = {
   verified: { label: 'Verified', className: 'bg-green-100 text-green-800 border-green-200' },

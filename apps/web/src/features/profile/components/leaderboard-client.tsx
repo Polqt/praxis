@@ -14,13 +14,9 @@ function SectionLabel({ text, light = false }: { text: string; light?: boolean }
   return (
     <div className="inline-flex items-center gap-2.5 mb-6">
       <div
-        className="rounded-[1px] shrink-0"
-        style={{ width: '8px', height: '10px', background: light ? 'rgba(255,255,255,0.4)' : 'var(--primary)' }}
+        className={`w-2 h-2.5 rounded-[1px] shrink-0 ${light ? 'bg-white/40' : 'bg-primary'}`}
       />
-      <span
-        className="text-[13px] uppercase tracking-widest"
-        style={{ color: light ? 'rgba(255,255,255,0.4)' : 'var(--muted-foreground)' }}
-      >
+      <span className={`text-[13px] uppercase tracking-widest ${light ? 'text-white/40' : 'text-muted-foreground'}`}>
         {text}
       </span>
     </div>
@@ -30,20 +26,13 @@ function SectionLabel({ text, light = false }: { text: string; light?: boolean }
 function MarqueeBand({ text }: { text: string }) {
   const repeated = text.repeat(6)
   return (
-    <div
-      className="w-full overflow-hidden flex items-center border-t border-b border-border"
-      style={{ background: 'var(--foreground)', height: '80px' }}
-    >
+    <div className="w-full h-20 overflow-hidden flex items-center border-t border-b border-border bg-foreground">
       <div
-        className="flex whitespace-nowrap"
+        className="flex whitespace-nowrap text-white/20"
         style={{ animation: 'marquee 22s linear infinite', willChange: 'transform' }}
       >
-        <span className="text-[13px] uppercase tracking-widest font-medium px-4" style={{ color: 'rgba(255,255,255,0.2)' }}>
-          {repeated}
-        </span>
-        <span className="text-[13px] uppercase tracking-widest font-medium px-4" style={{ color: 'rgba(255,255,255,0.2)' }}>
-          {repeated}
-        </span>
+        <span className="text-[13px] uppercase tracking-widest font-medium px-4">{repeated}</span>
+        <span className="text-[13px] uppercase tracking-widest font-medium px-4">{repeated}</span>
       </div>
       <style>{`@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }`}</style>
     </div>
@@ -124,8 +113,7 @@ export function LeaderboardClient({ entries }: Props) {
           <div className="flex items-center justify-center gap-3">
             <Link
               href="/sign-in"
-              className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none hover:opacity-90 transition-opacity"
-              style={{ background: 'var(--foreground)', color: 'var(--background)' }}
+              className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none bg-foreground text-background hover:opacity-90 transition-opacity"
             >
               Get verified
             </Link>
@@ -183,16 +171,10 @@ export function LeaderboardClient({ entries }: Props) {
         </div>
       </section>
 
-      <section
-        className="min-h-screen flex flex-col justify-center px-6 py-24 border-t border-border"
-        style={{ background: 'var(--foreground)' }}
-      >
+      <section className="min-h-screen flex flex-col justify-center px-6 py-24 border-t border-border bg-foreground">
         <div className="max-w-4xl mx-auto w-full">
           <SectionLabel text="Your turn" light />
-          <h2
-            className="text-5xl md:text-7xl font-bold tracking-tight leading-tight mb-10 max-w-3xl"
-            style={{ color: 'var(--background)' }}
-          >
+          <h2 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight mb-10 max-w-3xl text-background">
             Submit a real project.
             <br />
             Earn your place.
@@ -200,20 +182,18 @@ export function LeaderboardClient({ entries }: Props) {
           <div className="flex items-center gap-3 mb-6">
             <Link
               href="/sign-in"
-              className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none hover:opacity-90 transition-opacity"
-              style={{ background: 'var(--background)', color: 'var(--foreground)' }}
+              className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none bg-background text-foreground hover:opacity-90 transition-opacity"
             >
               Get started
             </Link>
             <Link
               href="/example-report"
-              className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none border hover:bg-white/10 transition-colors"
-              style={{ borderColor: 'rgba(255,255,255,0.3)', color: 'var(--background)' }}
+              className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none border border-white/30 text-background hover:bg-white/10 transition-colors"
             >
               See an example report
             </Link>
           </div>
-          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          <p className="text-sm text-white/50">
             Free to start. No credit card required.
           </p>
         </div>

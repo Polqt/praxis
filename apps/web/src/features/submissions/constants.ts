@@ -1,5 +1,22 @@
 import type { SubmissionStatus } from '@praxis/shared'
 
+/** Typed constant map for all submission statuses — avoids raw string comparisons. */
+export const SUBMISSION_STATUS = {
+  created: 'created',
+  queued: 'queued',
+  ingesting: 'ingesting',
+  ingestionFailed: 'ingestion_failed',
+  analyzing: 'analyzing',
+  analysisFailed: 'analysis_failed',
+  generatingReport: 'generating_report',
+  reportGenerationFailed: 'report_generation_failed',
+  verified: 'verified',
+  insufficient: 'insufficient',
+  failed: 'failed',
+  expired: 'expired',
+  cancelled: 'cancelled',
+} as const satisfies Record<string, SubmissionStatus>
+
 export const IN_PROGRESS_STATUSES: SubmissionStatus[] = [
   'created', 'queued', 'ingesting', 'analyzing', 'generating_report',
 ]
@@ -34,6 +51,11 @@ export const TERMINAL_STAGE_LABELS: Partial<Record<SubmissionStatus, string>> = 
 export const TERMINAL_STATUSES: SubmissionStatus[] = [
   'verified', 'insufficient', 'failed', 'expired', 'cancelled',
   'ingestion_failed', 'analysis_failed', 'report_generation_failed',
+]
+
+// Statuses that indicate a verification error or incomplete result
+export const FAILED_STATUSES: SubmissionStatus[] = [
+  'failed', 'insufficient', 'ingestion_failed', 'analysis_failed', 'report_generation_failed',
 ]
 
 export const STAGE_DESCRIPTION: Partial<Record<SubmissionStatus, string>> = {

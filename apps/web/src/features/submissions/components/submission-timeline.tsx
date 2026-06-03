@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { IconCheck, IconX, IconRefresh } from '@tabler/icons-react'
-import { PIPELINE_STAGES, TERMINAL_STAGE_LABELS, TERMINAL_STATUSES } from '../constants'
+import { PIPELINE_STAGES, TERMINAL_STAGE_LABELS, TERMINAL_STATUSES, FAILED_STATUSES } from '../constants'
 import { formatDate, statusLabel } from '@/lib/praxis-format'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import type { ProjectSubmission, ProjectSubmissionEvent, SubmissionStatus } from '@praxis/shared'
@@ -27,12 +27,12 @@ function getTimestamp(stageIndex: number, events: ProjectSubmissionEvent[]): str
   return events.find((e) => e.toStatus === stage.toStatus)?.createdAt ?? null
 }
 
-const FAILED_STATUSES = ['failed', 'ingestion_failed', 'analysis_failed', 'report_generation_failed', 'expired']
+const TIMELINE_FAILED_STATUSES = [...FAILED_STATUSES, 'expired'] as const
 
 export function SubmissionTimeline({ submission, events }: Props) {
   const status = submission.status
   const isTerminal = TERMINAL_STATUSES.includes(status)
-  const isFailed = FAILED_STATUSES.includes(status)
+  const isFailed = TIMELINE_FAILED_STATUSES.includes(status as typeof TIMELINE_FAILED_STATUSES[number])
   const pipelineStatusIndex = PIPELINE_STAGES.findIndex((s) => s.toStatus === status)
   const terminalLabel = TERMINAL_STAGE_LABELS[status as SubmissionStatus] ?? statusLabel(status)
 

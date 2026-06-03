@@ -5,6 +5,8 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { IconCheck, IconStar } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Label } from '@/components/ui/label'
 import { apiClient } from '@/lib/api'
 import { fadeUp } from '@/lib/animations'
 
@@ -18,7 +20,7 @@ export function ReportFeedbackForm({ submissionId, challengeId }: Props) {
   const [hover, setHover] = useState<number | null>(null)
   const [missedEvidence, setMissedEvidence] = useState('')
   const [notes, setNotes] = useState('')
-  const [wouldShare, setWouldShare] = useState<boolean | null>(null)
+  const [wouldShare, setWouldShare] = useState<string | undefined>(undefined)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -32,7 +34,7 @@ export function ReportFeedbackForm({ submissionId, challengeId }: Props) {
         accuracyRating: rating,
         missedEvidence: missedEvidence.trim() || undefined,
         notes: notes.trim() || undefined,
-        wouldShare: wouldShare ?? undefined,
+        wouldShare: wouldShare === 'yes' ? true : wouldShare === 'no' ? false : undefined,
       })
       setSubmitted(true)
     } catch {
@@ -95,27 +97,27 @@ export function ReportFeedbackForm({ submissionId, challengeId }: Props) {
               </span>
             )}
           </div>
+          {rating === null && (
+            <p className="text-xs text-muted-foreground mt-1.5">Select a star rating to submit</p>
+          )}
         </div>
 
         <div>
           <p className="text-sm font-medium mb-2">Would you share this report with an employer?</p>
-          <div className="flex gap-2">
-            {[{ label: 'Yes', value: true }, { label: 'No', value: false }].map(({ label, value }) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => setWouldShare(value)}
-                className={[
-                  'h-8 px-4 text-xs font-medium border rounded-md transition-colors',
-                  wouldShare === value
-                    ? 'bg-foreground text-background border-foreground'
-                    : 'border-border text-muted-foreground hover:bg-muted',
-                ].join(' ')}
-              >
-                {label}
-              </button>
+          <RadioGroup
+            value={wouldShare}
+            onValueChange={setWouldShare}
+            className="flex gap-3 flex-row"
+          >
+            {[{ label: 'Yes', value: 'yes' }, { label: 'No', value: 'no' }].map(({ label, value }) => (
+              <div key={value} className="flex items-center gap-2">
+                <RadioGroupItem value={value} id={`would-share-${value}`} />
+                <Label htmlFor={`would-share-${value}`} className="text-sm font-normal cursor-pointer">
+                  {label}
+                </Label>
+              </div>
             ))}
-          </div>
+          </RadioGroup>
         </div>
 
         <div>

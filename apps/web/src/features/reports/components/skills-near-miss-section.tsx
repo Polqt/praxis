@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { IconTargetArrow } from '@tabler/icons-react'
 import { fadeUp } from '@/lib/animations'
+import { SCORE_MID_THRESHOLD } from '@/features/reports/utils/score-color'
 import type { ScoreItem } from '@/features/reports/types'
 
 type Props = {
@@ -11,8 +12,8 @@ type Props = {
 
 // Near floor miss: scored below the minimum but within this many points
 const NEAR_FLOOR_GAP = 2
-// Low score threshold for floor-0 categories — anything at or below this is surfaced
-const LOW_SCORE_THRESHOLD = 4
+// Reuse the scoring mid threshold — scores at or below this are "low"
+const LOW_SCORE_THRESHOLD = SCORE_MID_THRESHOLD - 2
 
 type NearMissItem = { score: ScoreItem; reason: 'near-floor' | 'low-score' }
 
