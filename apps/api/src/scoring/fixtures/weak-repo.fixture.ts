@@ -16,6 +16,7 @@ export const weakTesting: TestingSignals = {
 
 export const weakDocumentation: DocumentationSignals = {
   hasReadme: true,
+  readmeWordCount: 10,
   hasSetupInstructions: false,
   hasApiDocs: false,
   hasArchitectureDocs: false,

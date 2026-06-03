@@ -22,6 +22,7 @@ export const strongTesting: TestingSignals = {
 
 export const strongDocumentation: DocumentationSignals = {
   hasReadme: true,
+  readmeWordCount: 500,
   hasSetupInstructions: true,
   hasApiDocs: true,
   hasArchitectureDocs: true,

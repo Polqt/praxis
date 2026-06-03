@@ -10,9 +10,14 @@ export class ProfileReportDto {
   compositeScore: number | null
 }
 
+export class VerifiedSkillDto {
+  name: string
+  awardedAt: string
+}
+
 export class PublicProfileDto {
   username: string
-  verifiedSkills: string[]
+  verifiedSkills: VerifiedSkillDto[]
   reportsCount: number
   verificationsCount: number
   challengesCompleted: number

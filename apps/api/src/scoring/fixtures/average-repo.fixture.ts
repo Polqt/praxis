@@ -16,6 +16,7 @@ export const averageTesting: TestingSignals = {
 
 export const averageDocumentation: DocumentationSignals = {
   hasReadme: true,
+  readmeWordCount: 200,
   hasSetupInstructions: true,
   hasApiDocs: false,
   hasArchitectureDocs: false,
