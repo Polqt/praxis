@@ -69,7 +69,7 @@ export function buildDocumentationNarrative(s: DocumentationSignals): string {
 
 export function buildDeploymentNarrative(s: DeploymentSignals): string {
   if (!s.hasDockerfile && !s.hasCiWorkflow) {
-    return 'No Dockerfile or CI workflow was detected. At least one of these is required to demonstrate deployment readiness.'
+    return 'No deployment configuration was detected — no Dockerfile or CI workflow is present. At least one of these is required to demonstrate deployment readiness.'
   }
 
   const found: string[] = []
