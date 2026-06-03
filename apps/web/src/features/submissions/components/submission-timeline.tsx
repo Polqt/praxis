@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import { IconCheck, IconX } from '@tabler/icons-react'
 import { PIPELINE_STAGES, TERMINAL_STAGE_LABELS, TERMINAL_STATUSES } from '../constants'
-import { formatDate } from '@/lib/praxis-format'
+import { formatDate, statusLabel } from '@/lib/praxis-format'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import type { ProjectSubmission, ProjectSubmissionEvent, SubmissionStatus } from '@praxis/shared'
 
@@ -113,8 +113,4 @@ export function SubmissionTimeline({ submission, events }: Props) {
       })}
     </motion.div>
   )
-}
-
-function statusLabel(status: string): string {
-  return status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }

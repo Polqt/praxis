@@ -21,7 +21,6 @@ type SubmissionStats = {
 type Props = {
   displayName: string
   githubAccount: GitHubAccount | null
-  challenges: ProjectChallenge[]
   activeSubmission: ProjectSubmission | null
   activeChallenge: ProjectChallenge | null
   latestTerminalSubmission: ProjectSubmission | null
@@ -100,7 +99,7 @@ export function StudioClient({
       </motion.div>
 
       <motion.div variants={fadeUp} className="mt-4 flex items-center gap-4">
-        <Progress value={progress} className="h-[2px] flex-1" />
+        <Progress value={progress} className="h-0.5 flex-1" />
         <span className="text-xs text-muted-foreground shrink-0">{completed} of {total} challenges</span>
       </motion.div>
 

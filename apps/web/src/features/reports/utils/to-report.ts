@@ -5,7 +5,7 @@ import type { Report, ReportStatus, ScoreItem } from '@/features/reports/types'
 
 const VALID_STATUSES: ReportStatus[] = ['verified', 'insufficient', 'failed']
 
-export function toReportStatus(verdict: string): ReportStatus {
+function toReportStatus(verdict: string): ReportStatus {
   return VALID_STATUSES.includes(verdict as ReportStatus)
     ? (verdict as ReportStatus)
     : 'insufficient'

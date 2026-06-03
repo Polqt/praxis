@@ -53,7 +53,6 @@ export default async function StudioPage() {
     <StudioClient
       displayName={user.username ?? user.email.split('@')[0]}
       githubAccount={githubAccount}
-      challenges={challenges}
       activeSubmission={activeSubmission}
       activeChallenge={activeChallenge}
       latestTerminalSubmission={latestTerminalSubmission}

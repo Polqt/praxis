@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
-import { and, count, desc, eq, inArray, max, sql } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, max } from 'drizzle-orm'
 import { DatabaseService } from '../database/database.service'
 import {
   projectChallenges,
