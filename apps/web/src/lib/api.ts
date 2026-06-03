@@ -92,6 +92,13 @@ export const apiClient = {
   checkUsernameAvailability: (username: string) =>
     apiFetch<{ available: boolean }>(`/users/check-username?username=${encodeURIComponent(username)}`),
   getLeaderboard: () => apiFetch<LeaderboardEntry[]>('/users/leaderboard'),
+  submitReportFeedback: (
+    submissionId: string,
+    data: { accuracyRating: number; missedEvidence?: string; notes?: string; wouldShare?: boolean },
+  ) => apiFetch<void>(`/reports/submissions/${submissionId}/feedback`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
 }
 
 export interface LeaderboardEntry {

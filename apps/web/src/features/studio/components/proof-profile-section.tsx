@@ -19,7 +19,7 @@ export function ProofProfileSection({ username, skillsCount, reportsCount, proof
 
   function handleCopy() {
     if (!username) return
-    void navigator.clipboard.writeText(`https://praxis.dev/p/${username}`)
+    void navigator.clipboard.writeText(`${window.location.origin}/p/${username}`)
     setCopied(true)
     if (copyTimer.current) clearTimeout(copyTimer.current)
     copyTimer.current = setTimeout(() => setCopied(false), 1500)

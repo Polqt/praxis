@@ -48,7 +48,7 @@ export function ProfileClient({ profile, viewingUser }: Props) {
 
       <motion.div variants={fadeUp}>
         <ProofStatisticsSection
-          reportsCount={profile.reportsCount}
+          verifiedCount={profile.reportsCount}
           skillsCount={profile.verifiedSkills.length}
           challengesCompleted={profile.challengesCompleted}
         />

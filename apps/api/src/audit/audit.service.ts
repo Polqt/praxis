@@ -10,6 +10,7 @@ export type AuditEventType =
   | 'report_generated'
   | 'report_published'
   | 'report_unpublished'
+  | 'report_feedback_submitted'
 
 type AuditContext = {
   ipAddress?: string

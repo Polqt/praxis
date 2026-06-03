@@ -178,6 +178,19 @@ export const projectVerificationReports = pgTable('project_verification_reports'
   publicToken: text('public_token').unique(),
 })
 
+export const reportFeedback = pgTable('report_feedback', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  reportId: text('report_id').notNull().references(() => projectVerificationReports.id),
+  userId: text('user_id').notNull().references(() => users.id),
+  accuracyRating: integer('accuracy_rating').notNull(),
+  missedEvidence: text('missed_evidence'),
+  notes: text('notes'),
+  wouldShare: boolean('would_share'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex('report_feedback_report_user_idx').on(t.reportId, t.userId),
+])
+
 export const auditLogs = pgTable('audit_logs', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: text('user_id'),

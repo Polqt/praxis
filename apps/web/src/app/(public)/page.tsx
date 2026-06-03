@@ -378,12 +378,12 @@ export default function LandingPage() {
               {
                 value: 'what',
                 q: 'What exactly does Praxis verify?',
-                a: 'Praxis analyzes your GitHub repository for original authorship through commit history, production-grade architecture patterns, real-world complexity, and evidence that the code was written over time by a human rather than generated in bulk.',
+                a: 'Praxis analyzes your GitHub repository using deterministic signals: folder structure, test file presence, migration files, authentication patterns, CI configuration, documentation, and deployment evidence. The result is a scored report based on what is actually in the repository — not subjective judgment.',
               },
               {
                 value: 'time',
                 q: 'How long does verification take?',
-                a: 'Most verifications complete within 5 to 10 minutes. Complex repositories with extensive commit histories may take up to 20 minutes.',
+                a: 'Most verifications complete within 2 to 5 minutes. Larger repositories may take slightly longer.',
               },
               {
                 value: 'junior',
@@ -407,13 +407,13 @@ export default function LandingPage() {
               },
               {
                 value: 'ai',
-                q: 'Can AI-generated code pass verification?',
-                a: 'No. The verification engine is specifically trained to detect bulk-generated code patterns, suspiciously uniform commit histories, and boilerplate repositories. This is the core problem Praxis was built to solve.',
+                q: 'Does Praxis detect AI-generated code?',
+                a: 'Praxis does not make claims about authorship or AI usage. It evaluates what is present in the repository: structure, tests, migrations, authentication, deployment configuration. A well-structured repository with real evidence of engineering practice scores well regardless of how it was written.',
               },
               {
                 value: 'free',
                 q: 'Is Praxis free?',
-                a: 'Verification of one public project is free. Additional verifications and private repository support are available on paid plans. Your proof page stays live permanently regardless of your plan.',
+                a: 'Praxis is free to use during the current beta. Submit repositories, generate reports, and share your proof page at no cost.',
               },
             ].map(({ value, q, a }) => (
               <AccordionItem key={value} value={value} className="border-b border-border">

@@ -8,11 +8,52 @@ import { useLeaderboard } from '../hooks/use-leaderboard-query'
 import { fadeUp, staggerContainer } from '@/lib/animations'
 import type { LeaderboardEntry } from '@/lib/api'
 
+
+function SectionLabel({ text, light = false }: { text: string; light?: boolean }) {
+  return (
+    <div className="inline-flex items-center gap-2.5 mb-6">
+      <div
+        className="rounded-[1px] shrink-0"
+        style={{ width: '8px', height: '10px', background: light ? 'rgba(255,255,255,0.4)' : 'var(--primary)' }}
+      />
+      <span
+        className="text-[13px] uppercase tracking-widest"
+        style={{ color: light ? 'rgba(255,255,255,0.4)' : 'var(--muted-foreground)' }}
+      >
+        {text}
+      </span>
+    </div>
+  )
+}
+
+function MarqueeBand({ text }: { text: string }) {
+  const repeated = text.repeat(6)
+  return (
+    <div
+      className="w-full overflow-hidden flex items-center border-t border-b border-border"
+      style={{ background: 'var(--foreground)', height: '80px' }}
+    >
+      <div
+        className="flex whitespace-nowrap"
+        style={{ animation: 'marquee 22s linear infinite', willChange: 'transform' }}
+      >
+        <span className="text-[13px] uppercase tracking-widest font-medium px-4" style={{ color: 'rgba(255,255,255,0.2)' }}>
+          {repeated}
+        </span>
+        <span className="text-[13px] uppercase tracking-widest font-medium px-4" style={{ color: 'rgba(255,255,255,0.2)' }}>
+          {repeated}
+        </span>
+      </div>
+      <style>{`@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }`}</style>
+    </div>
+  )
+}
+
 function RankIcon({ rank }: { rank: number }) {
-  if (rank === 1) return <IconTrophy size={16} className="text-amber-400 shrink-0" />
-  if (rank === 2) return <IconMedal size={16} className="text-slate-400 shrink-0" />
-  if (rank === 3) return <IconAward size={16} className="text-amber-700 shrink-0" />
-  return <span className="text-xs font-mono text-muted-foreground w-4 text-center shrink-0">{rank}</span>
+  if (rank === 1) return <IconTrophy size={18} className="text-amber-400 shrink-0" />
+  if (rank === 2) return <IconMedal size={18} className="text-slate-400 shrink-0" />
+  if (rank === 3) return <IconAward size={18} className="text-amber-700 shrink-0" />
+  return <span className="text-sm font-mono text-muted-foreground w-5 text-center shrink-0">{rank}</span>
 }
 
 function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
@@ -23,23 +64,25 @@ function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
       <Link
         href={`/p/${entry.username}`}
         className={[
-          'flex items-center gap-4 px-5 py-4 rounded-lg border bg-card',
-          'hover:bg-accent/30 transition-colors duration-150',
-          isTopThree ? 'border-amber-200/50 dark:border-amber-800/30' : '',
+          'flex items-center gap-5 px-6 py-4 border-b border-border',
+          'hover:bg-muted/40 transition-colors duration-150',
+          isTopThree ? 'bg-muted/20' : '',
         ].join(' ')}
       >
-        <RankIcon rank={entry.rank} />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">@{entry.username}</p>
+        <div className="w-8 flex justify-center shrink-0">
+          <RankIcon rank={entry.rank} />
         </div>
-        <div className="flex items-center gap-6 shrink-0">
+        <div className="flex-1 min-w-0">
+          <p className="text-[15px] font-medium truncate">@{entry.username}</p>
+        </div>
+        <div className="flex items-center gap-10 shrink-0">
           <div className="text-right">
-            <p className="text-sm font-semibold tabular-nums">{entry.verifiedCount}</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">verified</p>
+            <p className="text-[15px] font-semibold tabular-nums">{entry.verifiedCount}</p>
+            <p className="text-[11px] text-muted-foreground uppercase tracking-widest">verified</p>
           </div>
           <div className="text-right">
-            <p className="text-sm font-semibold tabular-nums">{entry.bestScore}</p>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest">best score</p>
+            <p className="text-[15px] font-semibold tabular-nums">{entry.bestScore}<span className="text-xs font-normal text-muted-foreground">/100</span></p>
+            <p className="text-[11px] text-muted-foreground uppercase tracking-widest">best score</p>
           </div>
         </div>
       </Link>
@@ -49,9 +92,9 @@ function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
 
 function LeaderboardSkeleton() {
   return (
-    <div className="flex flex-col gap-2">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <Skeleton key={i} className="h-16 w-full rounded-lg" />
+    <div className="flex flex-col">
+      {Array.from({ length: 10 }).map((_, i) => (
+        <Skeleton key={i} className="h-16 w-full rounded-none border-b border-border" />
       ))}
     </div>
   )
@@ -61,40 +104,127 @@ export function LeaderboardClient() {
   const { data, isLoading, isError } = useLeaderboard()
 
   return (
-    <div className="px-10 py-10 w-full max-w-2xl mx-auto">
-      <motion.div variants={fadeUp} initial="hidden" animate="visible" className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Leaderboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Top verified developers ranked by completed challenges and best score.
-        </p>
-      </motion.div>
+    <div className="bg-background">
+      <section className="min-h-screen bg-muted flex flex-col items-center justify-center text-center px-6 pt-14 border-b border-border">
+        <div className="max-w-4xl mx-auto">
+          <SectionLabel text="Leaderboard" />
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight text-foreground mb-6">
+            Developers who prove
+            <br />
+            what they built.
+          </h1>
+          <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
+            Ranked by verified challenges completed. Scores are earned through deterministic
+            repository analysis — not self-reported.
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <Link
+              href="/sign-in"
+              className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none hover:opacity-90 transition-opacity"
+              style={{ background: 'var(--foreground)', color: 'var(--background)' }}
+            >
+              Get verified
+            </Link>
+            <Link
+              href="/challenges"
+              className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none border border-border hover:bg-muted transition-colors"
+            >
+              Browse challenges
+            </Link>
+          </div>
+        </div>
+      </section>
 
-      {isLoading && <LeaderboardSkeleton />}
+      <MarqueeBand text="VERIFIED · DETERMINISTIC · PROOF OF WORK · REPOSITORY ANALYSIS · " />
 
-      {isError && (
-        <p className="text-sm text-muted-foreground text-center py-16">
-          Failed to load leaderboard. Please try again.
-        </p>
-      )}
+      <section className="min-h-screen bg-background flex flex-col justify-center border-b border-border py-24">
+        <div className="max-w-4xl mx-auto px-6 w-full">
+          <SectionLabel text="Rankings" />
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-2 mb-4 text-foreground">
+            Every entry is earned. Nothing is self-reported.
+          </h2>
+          <p className="text-base text-muted-foreground mb-10 max-w-2xl leading-relaxed">
+            Rankings update automatically when a new verification completes. Primary sort by
+            verified challenges, tiebreak by best composite score.
+          </p>
 
-      {data && data.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-16">
-          No verified developers yet. Be the first.
-        </p>
-      )}
+          <div className="flex items-center gap-5 px-6 py-3 border border-b-0 border-border bg-muted/50">
+            <div className="w-8 shrink-0" />
+            <div className="flex-1">
+              <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Developer</span>
+            </div>
+            <div className="flex items-center gap-10 shrink-0">
+              <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium w-16 text-right">Verified</span>
+              <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium w-20 text-right">Best score</span>
+            </div>
+          </div>
 
-      {data && data.length > 0 && (
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-          className="flex flex-col gap-2"
-        >
-          {data.map((entry) => (
-            <LeaderboardRow key={entry.username} entry={entry} />
-          ))}
-        </motion.div>
-      )}
+          <div className="border border-border">
+            {isLoading && <LeaderboardSkeleton />}
+
+            {isError && (
+              <p className="text-sm text-muted-foreground text-center py-16">
+                Failed to load leaderboard. Please try again.
+              </p>
+            )}
+
+            {data && data.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-16">
+                No verified developers yet. Be the first.
+              </p>
+            )}
+
+            {data && data.length > 0 && (
+              <motion.div
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+              >
+                {data.map((entry) => (
+                  <LeaderboardRow key={entry.username} entry={entry} />
+                ))}
+              </motion.div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section
+        className="min-h-screen flex flex-col justify-center px-6 py-24 border-t border-border"
+        style={{ background: 'var(--foreground)' }}
+      >
+        <div className="max-w-4xl mx-auto w-full">
+          <SectionLabel text="Your turn" light />
+          <h2
+            className="text-5xl md:text-7xl font-bold tracking-tight leading-tight mb-10 max-w-3xl"
+            style={{ color: 'var(--background)' }}
+          >
+            Submit a real project.
+            <br />
+            Earn your place.
+          </h2>
+          <div className="flex items-center gap-3 mb-6">
+            <Link
+              href="/sign-in"
+              className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none hover:opacity-90 transition-opacity"
+              style={{ background: 'var(--background)', color: 'var(--foreground)' }}
+            >
+              Get started
+            </Link>
+            <Link
+              href="/example-report"
+              className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none border hover:bg-white/10 transition-colors"
+              style={{ borderColor: 'rgba(255,255,255,0.3)', color: 'var(--background)' }}
+            >
+              See an example report
+            </Link>
+          </div>
+          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            Free to start. No credit card required.
+          </p>
+        </div>
+      </section>
+
     </div>
   )
 }

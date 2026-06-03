@@ -9,6 +9,7 @@ import { VerifiedSkillsSection } from './verified-skills-section'
 import { StrengthsImprovementsSection } from './strengths-improvements-section'
 import { ReportFooter } from './report-footer'
 import { ShareProofButton } from './share-proof-button'
+import { ReportClaritySection } from './report-clarity-section'
 import { REPORT_DISCLAIMER_TEXT, REPORT_DISCLAIMER_LINK_LABEL, REPORT_DISCLAIMER_LINK_HREF } from '@/features/reports/constants'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import type { Report } from '@/features/reports/types'
@@ -18,9 +19,11 @@ type Props = {
   backHref?: string
   backLabel?: string
   actions?: React.ReactNode
+  challengeId?: string
+  feedbackSlot?: React.ReactNode
 }
 
-export function ReportClient({ report, backHref = '/submissions', backLabel = 'Back to submissions', actions }: Props) {
+export function ReportClient({ report, backHref = '/submissions', backLabel = 'Back to submissions', actions, challengeId, feedbackSlot }: Props) {
   return (
     <motion.div
       variants={staggerContainer}
@@ -80,6 +83,20 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
           derived={report.derivedStrengthsAndImprovements}
         />
       </motion.div>
+
+      <ReportClaritySection
+        status={report.status}
+        scores={report.scores}
+        allCitedFiles={report.allCitedFiles}
+        submissionId={report.submissionId}
+        challengeId={challengeId}
+      />
+
+      {feedbackSlot && (
+        <motion.div variants={fadeUp} className="mt-6">
+          {feedbackSlot}
+        </motion.div>
+      )}
 
       <hr className="border-border mt-12 mb-6" />
 

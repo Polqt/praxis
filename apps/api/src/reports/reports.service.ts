@@ -10,6 +10,7 @@ import {
   projectVerificationReports,
   repositoryAnalyses,
   repositoryIngestions,
+  reportFeedback,
   skills,
   userSkills,
 } from '../database/schema'
@@ -257,5 +258,39 @@ export class ReportsService {
       generatedAt: report.generatedAt,
       publicToken: report.publicToken,
     }
+  }
+
+  async submitFeedback(
+    userId: string,
+    submissionId: string,
+    dto: { accuracyRating: number; missedEvidence?: string; notes?: string; wouldShare?: boolean },
+  ) {
+    const report = await this.getReportBySubmission(submissionId)
+    const submission = await this.getSubmission(submissionId)
+    if (submission.userId !== userId) throw new NotFoundException('Report not found')
+
+    const rows = await this.db.db
+      .insert(reportFeedback)
+      .values({
+        reportId: report.id,
+        userId,
+        accuracyRating: dto.accuracyRating,
+        missedEvidence: dto.missedEvidence ?? null,
+        notes: dto.notes ?? null,
+        wouldShare: dto.wouldShare ?? null,
+      })
+      .onConflictDoUpdate({
+        target: [reportFeedback.reportId, reportFeedback.userId],
+        set: {
+          accuracyRating: dto.accuracyRating,
+          missedEvidence: dto.missedEvidence ?? null,
+          notes: dto.notes ?? null,
+          wouldShare: dto.wouldShare ?? null,
+        },
+      })
+      .returning()
+
+    this.audit.log(userId, 'report_feedback_submitted', { reportId: report.id, rating: dto.accuracyRating })
+    return rows[0]
   }
 }

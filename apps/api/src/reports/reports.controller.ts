@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
 import { User } from '@praxis/shared'
 import { GetUser } from '../auth/get-user.decorator'
 import { SupabaseGuard } from '../auth/supabase.guard'
 import { ReportVisibilityDto } from './dto/report-visibility.dto'
+import { ReportFeedbackDto } from './dto/report-feedback.dto'
 import { ReportsService } from './reports.service'
 
 @Controller('reports')
@@ -22,5 +23,14 @@ export class ReportsController {
     @Body() dto: ReportVisibilityDto,
   ) {
     return this.reports.setVisibility(user.id, submissionId, dto.isPublic)
+  }
+
+  @Post('submissions/:submissionId/feedback')
+  submitFeedback(
+    @GetUser() user: User,
+    @Param('submissionId') submissionId: string,
+    @Body() dto: ReportFeedbackDto,
+  ) {
+    return this.reports.submitFeedback(user.id, submissionId, dto)
   }
 }
