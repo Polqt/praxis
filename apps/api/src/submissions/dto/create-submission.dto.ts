@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator'
+import { IsNotEmpty, IsOptional, IsString, Matches, MaxLength } from 'class-validator'
 
 export class CreateSubmissionDto {
   @IsString()
@@ -7,6 +7,7 @@ export class CreateSubmissionDto {
 
   @IsString()
   @Matches(/^[^/]+\/[^/]+$/)
+  @MaxLength(200)
   githubRepoFullName: string
 
   @IsString()
