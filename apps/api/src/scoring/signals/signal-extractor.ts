@@ -1,5 +1,5 @@
 import type { RepositoryIngestionData, IngestedFile } from '../../verification/ingestion/repository-ingestion.types'
-import type { TestingSignals } from './testing.signals'
+import type { TestingSignals, TestExecutionResult } from './testing.signals'
 import type { DocumentationSignals } from './documentation.signals'
 import type { DeploymentSignals } from './deployment.signals'
 import type { SecuritySignals } from './security.signals'
@@ -62,7 +62,10 @@ function top(paths: string[], n: number) {
   return paths.slice(0, n)
 }
 
-export function extractTestingSignals(data: RepositoryIngestionData): TestingSignals {
+export function extractTestingSignals(
+  data: RepositoryIngestionData,
+  executionResult: TestExecutionResult | null = null,
+): TestingSignals {
   const testFiles = byKind(data.files, 'test')
   const testDirs = new Set(testFiles.map((f) => f.path.split('/').slice(0, -1).join('/')))
 
@@ -77,6 +80,7 @@ export function extractTestingSignals(data: RepositoryIngestionData): TestingSig
     hasCoverageConfig: COVERAGE_CONFIG_PATHS.test(data.files.map((f) => f.path).join('\n')) ||
       COVERAGE_CONFIG_PATHS.test(allContent),
     testFilePaths: top(allPaths, 5),
+    executionResult,
   }
 }
 

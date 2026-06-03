@@ -28,6 +28,7 @@ import {
   extractFrontendPerformanceSignals,
   extractFrontendTestingSignals,
 } from '../scoring/signals/signal-extractor'
+import type { TestExecutionResult } from '../scoring/signals/testing.signals'
 
 interface RubricCategory {
   name: string
@@ -53,11 +54,15 @@ const stylingScorer = new StylingScorer()
 const frontendPerformanceScorer = new FrontendPerformanceScorer()
 const frontendTestingScorer = new FrontendTestingScorer()
 
-function scoreCategoryByName(categoryName: string, ingestionData: RepositoryIngestionData) {
+function scoreCategoryByName(
+  categoryName: string,
+  ingestionData: RepositoryIngestionData,
+  executionResult: TestExecutionResult | null = null,
+) {
   const name = categoryName.toLowerCase()
 
   if (name.includes('testing')) {
-    return testingScorer.score(extractTestingSignals(ingestionData))
+    return testingScorer.score(extractTestingSignals(ingestionData, executionResult))
   }
   if (name.includes('documentation')) {
     return documentationScorer.score(extractDocumentationSignals(ingestionData))
@@ -122,6 +127,7 @@ export function scoreReport(
   rubric: Rubric,
   ingestionData: RepositoryIngestionData,
   passingThreshold: number,
+  executionResult: TestExecutionResult | null = null,
 ) {
   const categoryScores: Record<string, {
     score: number
@@ -135,7 +141,7 @@ export function scoreReport(
   let floorFailed = false
 
   for (const category of rubric.categories) {
-    const result = scoreCategoryByName(category.name, ingestionData)
+    const result = scoreCategoryByName(category.name, ingestionData, executionResult)
 
     const isFloor = result.status === 'floor'
     if (isFloor || result.score < category.floor) floorFailed = true

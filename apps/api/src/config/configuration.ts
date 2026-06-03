@@ -10,6 +10,7 @@ export default () => ({
   },
   anthropic: {
     apiKey: process.env.ANTHROPIC_API_KEY,
+    model: process.env.ANTHROPIC_MODEL ?? 'claude-haiku-4-5-20251001',
   },
   github: {
     tokenEncryptionKey: process.env.GITHUB_TOKEN_ENCRYPTION_KEY,

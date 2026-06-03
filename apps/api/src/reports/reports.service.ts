@@ -9,6 +9,7 @@ import {
   projectSubmissions,
   projectVerificationReports,
   repositoryAnalyses,
+  repositoryExecutions,
   repositoryIngestions,
   reportFeedback,
   skills,
@@ -16,9 +17,7 @@ import {
 } from '../database/schema'
 import { AuditService } from '../audit/audit.service'
 import { scoreReport } from './report-scoring'
-
-const SCORE_HIGH_THRESHOLD = 8
-const SCORE_MID_THRESHOLD = 6
+import { ReportEnrichmentService } from './report-enrichment.service'
 
 type StoredCategoryScore = {
   score: number
@@ -30,7 +29,7 @@ type StoredCategoryScore = {
 
 function deriveStrengths(scores: Record<string, StoredCategoryScore>): string[] {
   return Object.entries(scores)
-    .filter(([, v]) => v.score >= SCORE_HIGH_THRESHOLD)
+    .filter(([, v]) => v.score >= 8)
     .sort(([, a], [, b]) => b.score - a.score)
     .slice(0, 4)
     .map(([name]) => `Strong result in ${name}`)
@@ -38,7 +37,7 @@ function deriveStrengths(scores: Record<string, StoredCategoryScore>): string[] 
 
 function deriveImprovements(scores: Record<string, StoredCategoryScore>): string[] {
   return Object.entries(scores)
-    .filter(([, v]) => v.score <= SCORE_MID_THRESHOLD)
+    .filter(([, v]) => v.score <= 6)
     .sort(([, a], [, b]) => a.score - b.score)
     .slice(0, 4)
     .map(([name]) => `Improve coverage in ${name}`)
@@ -49,6 +48,7 @@ export class ReportsService {
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
+    private readonly enrichment: ReportEnrichmentService,
   ) {}
 
   async generateForSubmission(submissionId: string, repositoryAnalysisId: string) {
@@ -56,18 +56,43 @@ export class ReportsService {
     const challenge = await this.getChallenge(submission.challengeId)
     const analysis = await this.getAnalysis(repositoryAnalysisId)
     const ingestion = await this.getIngestion(analysis.repositoryIngestionId)
+    const executionRows = await this.db.db
+      .select()
+      .from(repositoryExecutions)
+      .where(eq(repositoryExecutions.repositoryIngestionId, analysis.repositoryIngestionId))
+      .limit(1)
+
+    const executionResult = executionRows[0]
+      ? {
+          passed: executionRows[0].passed,
+          failed: executionRows[0].failed,
+          skipped: executionRows[0].skipped,
+          timedOut: executionRows[0].timedOut,
+          language: executionRows[0].language,
+        }
+      : null
+
     const scored = scoreReport(
       challenge.rubric as { categories: { name: string; weight: number; floor: number }[] },
       ingestion.ingestedData as RepositoryIngestionData,
       challenge.passingThreshold,
+      executionResult,
     )
+
+    const enriched = await this.enrichment.enrich({
+      categoryScores: scored.categoryScores,
+      verdict: scored.verdict,
+      compositeScore: scored.compositeScore,
+      repositoryName: submission.githubRepoFullName,
+      challengeTitle: challenge.title,
+    })
 
     const inserted = await this.db.db.insert(projectVerificationReports).values({
       submissionId,
       compositeScore: scored.compositeScore,
       verdict: scored.verdict,
-      categoryScores: scored.categoryScores,
-      publicSummary: scored.publicSummary,
+      categoryScores: enriched.categoryScores,
+      publicSummary: enriched.publicSummary,
       analyzerVersion: ANALYZER_VERSION,
       scoringVersion: SCORING_VERSION,
       reportGeneratorVersion: REPORT_GENERATOR_VERSION,
@@ -78,8 +103,8 @@ export class ReportsService {
       set: {
         compositeScore: scored.compositeScore,
         verdict: scored.verdict,
-        categoryScores: scored.categoryScores,
-        publicSummary: scored.publicSummary,
+        categoryScores: enriched.categoryScores,
+        publicSummary: enriched.publicSummary,
         analyzerVersion: ANALYZER_VERSION,
         scoringVersion: SCORING_VERSION,
         reportGeneratorVersion: REPORT_GENERATOR_VERSION,

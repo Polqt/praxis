@@ -13,17 +13,50 @@ function baseScoreFromCount(count: number): number {
 
 export class TestingScorer implements CategoryScorer<TestingSignals> {
   score(signals: TestingSignals): CategoryScore {
-    const isFloor = FLOOR_CONDITION(signals)
+    const exec = signals.executionResult
 
+    // When execution result is available, use real pass/fail as primary signal
+    if (exec && !exec.timedOut) {
+      const total = exec.passed + exec.failed + exec.skipped
+      // Floor condition is consistent: no test files detected (same as deterministic path)
+      const isFloor = signals.testFileCount === 0
+
+      let execScore: number
+      if (total === 0) {
+        execScore = baseScoreFromCount(signals.testFileCount)
+      } else if (exec.failed === 0) {
+        execScore = exec.passed >= 10 ? 10 : exec.passed >= 5 ? 9 : 8
+      } else {
+        const passRate = exec.passed / (exec.passed + exec.failed)
+        execScore = Math.round(passRate * 8)
+      }
+
+      const coverageBonus = signals.hasCoverageConfig ? 1 : 0
+      const finalScore = Math.min(10, execScore + coverageBonus)
+      const status = isFloor ? 'floor' : finalScore >= 5 ? 'pass' : 'fail'
+
+      return {
+        score: finalScore,
+        narrative: buildTestingNarrative(signals),
+        citations: signals.testFilePaths,
+        status,
+        signals: {
+          testFileCount: signals.testFileCount,
+          hasIntegrationTests: signals.hasIntegrationTests,
+          hasE2eTests: signals.hasE2eTests,
+          hasCoverageConfig: signals.hasCoverageConfig,
+          execution: { passed: exec.passed, failed: exec.failed, skipped: exec.skipped, language: exec.language },
+        },
+      }
+    }
+
+    // Fallback: deterministic file-detection scoring
+    const isFloor = FLOOR_CONDITION(signals)
     const baseScore = baseScoreFromCount(signals.testFileCount)
     const integrationBonus = signals.hasIntegrationTests ? 1 : 0
     const e2eBonus = signals.hasE2eTests ? 1 : 0
     const coverageBonus = signals.hasCoverageConfig ? 1 : 0
-    const totalBonus = integrationBonus + e2eBonus + coverageBonus
-
-    const rawScore = baseScore + totalBonus
-    const finalScore = Math.min(10, rawScore)
-
+    const finalScore = Math.min(10, baseScore + integrationBonus + e2eBonus + coverageBonus)
     const status = isFloor ? 'floor' : finalScore >= 5 ? 'pass' : 'fail'
 
     return {
@@ -37,6 +70,7 @@ export class TestingScorer implements CategoryScorer<TestingSignals> {
         hasIntegrationTests: signals.hasIntegrationTests,
         hasE2eTests: signals.hasE2eTests,
         hasCoverageConfig: signals.hasCoverageConfig,
+        execution: null,
       },
     }
   }

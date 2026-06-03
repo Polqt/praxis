@@ -7,27 +7,37 @@ import type { AuthenticationSignals } from '../signals/authentication.signals'
 import type { DatabaseSignals } from '../signals/database.signals'
 
 export function buildTestingNarrative(s: TestingSignals): string {
+  const exec = s.executionResult
+
+  if (exec && !exec.timedOut) {
+    const total = exec.passed + exec.failed + exec.skipped
+    if (total > 0) {
+      const langLabel = exec.language === 'javascript' ? 'JS' : exec.language
+      const passRate = exec.failed === 0
+        ? 'all passing'
+        : `${exec.passed} passed, ${exec.failed} failed`
+      const coverageClause = s.hasCoverageConfig ? ' Coverage configuration is present.' : ''
+      return `${langLabel} test suite executed: ${total} test${total === 1 ? '' : 's'} found, ${passRate}.${coverageClause}`
+    }
+  }
+
+  if (exec?.timedOut) {
+    return `Test suite timed out during sandbox execution. Scoring based on ${s.testFileCount} detected test file${s.testFileCount === 1 ? '' : 's'}.`
+  }
+
   if (s.testFileCount === 0) {
     return 'No test files were found. Testing evidence is required for verification.'
   }
 
   const examples = s.testFilePaths.slice(0, 2)
-  const exampleClause = examples.length > 0
-    ? ` including ${examples.join(' and ')}`
-    : ''
+  const exampleClause = examples.length > 0 ? ` including ${examples.join(' and ')}` : ''
 
   const suiteTypes: string[] = []
   if (s.hasIntegrationTests) suiteTypes.push('integration')
   if (s.hasE2eTests) suiteTypes.push('end-to-end')
 
-  const suiteClause = suiteTypes.length > 0
-    ? ` across unit and ${suiteTypes.join(' and ')} suites`
-    : ''
-
-  const noSuiteClause = !s.hasIntegrationTests && !s.hasE2eTests
-    ? ' No integration or end-to-end test suites were found.'
-    : ''
-
+  const suiteClause = suiteTypes.length > 0 ? ` across unit and ${suiteTypes.join(' and ')} suites` : ''
+  const noSuiteClause = !s.hasIntegrationTests && !s.hasE2eTests ? ' No integration or end-to-end test suites were found.' : ''
   const coverageClause = s.hasCoverageConfig ? ' Coverage configuration is present.' : ''
 
   return `Detected ${s.testFileCount} test file${s.testFileCount === 1 ? '' : 's'}${suiteClause}${exampleClause}.${noSuiteClause}${coverageClause}`

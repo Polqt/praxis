@@ -11,6 +11,7 @@ export const averageTesting: TestingSignals = {
   hasE2eTests: false,
   hasCoverageConfig: false,
   testFilePaths: ['tests/auth.spec.ts', 'tests/users.spec.ts', 'tests/orders.spec.ts', 'tests/health.spec.ts'],
+  executionResult: null,
 }
 
 export const averageDocumentation: DocumentationSignals = {

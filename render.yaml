@@ -33,31 +33,9 @@ services:
         value: 6
       - key: SUBMISSION_RATE_LIMIT_PER_HOUR
         value: 5
-
-  - type: worker
-    name: praxis-worker
-    runtime: node
-    region: oregon
-    plan: free
-    rootDir: .
-    buildCommand: npx --yes pnpm@9 install --frozen-lockfile --prod=false && npx --yes pnpm@9 --filter @praxis/api build
-    startCommand: node apps/api/dist/apps/api/src/worker.js
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
+      - key: ANTHROPIC_API_KEY
         sync: false
-      - key: DATABASE_DIRECT_URL
+      - key: ANTHROPIC_MODEL
+        value: claude-haiku-4-5-20251001
+      - key: E2B_API_KEY
         sync: false
-      - key: SUPABASE_JWKS_URL
-        sync: false
-      - key: GITHUB_TOKEN_ENCRYPTION_KEY
-        sync: false
-      - key: REDIS_URL
-        sync: false
-      - key: WORKER_HEARTBEAT_KEY
-        value: praxis:worker:heartbeat
-      - key: WORKER_HEARTBEAT_TTL_SECONDS
-        value: 30
-      - key: SUBMISSION_EXPIRY_HOURS
-        value: 6

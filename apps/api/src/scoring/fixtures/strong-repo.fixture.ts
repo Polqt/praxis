@@ -17,6 +17,7 @@ export const strongTesting: TestingSignals = {
     'tests/orders.spec.ts',
     'tests/health.spec.ts',
   ],
+  executionResult: null,
 }
 
 export const strongDocumentation: DocumentationSignals = {
