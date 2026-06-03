@@ -36,11 +36,13 @@ type Props = {
 
 function StatusBadge({ status }: { status: string }) {
   const label = statusLabel(status as Parameters<typeof statusLabel>[0])
-  const isActive = !['verified', 'insufficient', 'failed', 'expired', 'cancelled'].includes(status)
+  const TERMINAL = ['verified', 'insufficient', 'failed', 'expired', 'cancelled', 'ingestion_failed', 'analysis_failed', 'report_generation_failed']
+  const isActive = !TERMINAL.includes(status)
 
   if (status === 'verified') return <Badge className="rounded bg-green-50 text-green-700 border border-green-200 text-[11px] font-medium">{label}</Badge>
   if (status === 'insufficient') return <Badge className="rounded bg-amber-50 text-amber-700 border border-amber-200 text-[11px] font-medium">{label}</Badge>
-  if (status === 'failed' || status === 'expired') return <Badge variant="destructive" className="rounded text-[11px] font-medium">{label}</Badge>
+  if (['failed', 'expired', 'ingestion_failed', 'analysis_failed', 'report_generation_failed'].includes(status)) return <Badge variant="destructive" className="rounded text-[11px] font-medium">{label}</Badge>
+  if (status === 'cancelled') return <Badge variant="outline" className="rounded text-[11px] font-medium text-muted-foreground">{label}</Badge>
   if (isActive) return (
     <Badge variant="secondary" className="rounded text-[11px] font-medium gap-1.5">
       <span className="size-1.5 rounded-full bg-current inline-block animate-pulse" />
@@ -64,7 +66,7 @@ export function StudioClient({
     >
       <motion.section variants={fadeUp} className="flex items-start justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">
+          <h1 className="text-3xl font-semibold tracking-tight" suppressHydrationWarning>
             {(() => {
               const hour = new Date().getHours()
               const period = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'
@@ -78,7 +80,7 @@ export function StudioClient({
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Button asChild><Link href="/challenges">Browse Challenges</Link></Button>
-            <Button variant="outline" asChild><Link href="/challenges">Submit Repository</Link></Button>
+            <Button variant="outline" asChild><Link href="/submit">Submit Repository</Link></Button>
           </div>
         </div>
       </motion.section>
