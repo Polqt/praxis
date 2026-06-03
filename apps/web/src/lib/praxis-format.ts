@@ -20,7 +20,7 @@ export function githubRepoUrl(fullName: string) {
 }
 
 export function formatDate(value: string | Date) {
-  return new Date(value).toLocaleString('en-US', {
+  return new Date(value).toLocaleString(undefined, {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',

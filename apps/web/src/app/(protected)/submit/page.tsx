@@ -30,7 +30,7 @@ export default async function SubmitPage(props: Props) {
   const githubHasScopes = github.connected && hasRequiredScopes(github.scopes)
 
   return (
-    <div className="px-10 py-10 w-full">
+    <div className="px-4 py-6 sm:px-6 md:px-10 md:py-10 w-full">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">Submit repository</h1>
         <p className="text-sm text-muted-foreground mt-1">

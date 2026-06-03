@@ -6,6 +6,7 @@ import { IconArrowLeft, IconInfoCircle } from '@tabler/icons-react'
 import { ReportHero } from './report-hero'
 import { ScoreOverview } from './score-overview'
 import { ScoreErrorBoundary } from './score-error-boundary'
+import { SkillsNearMissSection } from './skills-near-miss-section'
 import { VerifiedSkillsSection } from './verified-skills-section'
 import { StrengthsImprovementsSection } from './strengths-improvements-section'
 import { ReportFooter } from './report-footer'
@@ -21,18 +22,19 @@ type Props = {
   backLabel?: string
   actions?: React.ReactNode
   challengeId?: string
+  executionSlot?: React.ReactNode
   feedbackSlot?: React.ReactNode
   twitterSlot?: React.ReactNode
   viewCount?: number
 }
 
-export function ReportClient({ report, backHref = '/submissions', backLabel = 'Back to submissions', actions, challengeId, feedbackSlot, twitterSlot, viewCount }: Props) {
+export function ReportClient({ report, backHref = '/submissions', backLabel = 'Back to submissions', actions, challengeId, executionSlot, feedbackSlot, twitterSlot, viewCount }: Props) {
   return (
     <motion.div
       variants={staggerContainer}
       initial="hidden"
       animate="visible"
-      className="px-10 py-10 w-full"
+      className="px-4 py-6 sm:px-6 md:px-10 md:py-10 w-full"
     >
       <div className="flex items-center justify-between mb-8">
         <Link
@@ -101,6 +103,16 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
         submissionId={report.submissionId}
         challengeId={challengeId}
       />
+
+      {report.status === 'insufficient' && (
+        <SkillsNearMissSection scores={report.scores} />
+      )}
+
+      {executionSlot && (
+        <motion.div variants={fadeUp} className="mt-6">
+          {executionSlot}
+        </motion.div>
+      )}
 
       {feedbackSlot && (
         <motion.div variants={fadeUp} className="mt-6">

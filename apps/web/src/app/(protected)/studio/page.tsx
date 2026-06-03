@@ -44,7 +44,10 @@ export default async function StudioPage() {
     ? await serverApiFetch<VerificationReport>(`/reports/submissions/${latestTerminalSubmission.id}`).catch(() => null)
     : null
 
-  const total = challenges.length
+  // Separate standard (threshold ≥ 70) from easy (threshold < 70) so easy challenges
+  // don't inflate the progress bar shown to the user
+  const standardChallenges = challenges.filter((c) => (c.passingThreshold ?? 70) >= 70)
+  const total = standardChallenges.length
   const completed = submissionStats.verifiedCount
   const progress = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0
   const proofReady = Boolean(user.username && dashboard.verifiedSkills.length > 0)

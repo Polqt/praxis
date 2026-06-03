@@ -91,8 +91,13 @@ export function extractDocumentationSignals(data: RepositoryIngestionData): Docu
 
   const readmeContent = readmeFile?.content ?? ''
 
+  const readmeWordCount = readmeContent.trim()
+    ? readmeContent.trim().split(/\s+/).length
+    : 0
+
   return {
     hasReadme: !!readmeFile,
+    readmeWordCount,
     hasSetupInstructions: SETUP_KEYWORDS.test(readmeContent),
     hasApiDocs: API_DOC_PATHS.test(docPaths.join('\n')) ||
       API_DOC_PATHS.test(data.files.map((f) => f.path).join('\n')),

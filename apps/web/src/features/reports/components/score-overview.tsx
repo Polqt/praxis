@@ -1,10 +1,48 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { IconAlertTriangle } from '@tabler/icons-react'
+import { IconAlertTriangle, IconChevronDown, IconChevronRight } from '@tabler/icons-react'
 import { scoreBarColor, CATEGORY_STATUS_CLASS, CATEGORY_FIX_INSTRUCTIONS } from '@/features/reports/constants'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import type { ScoreItem } from '@/features/reports/types'
+
+function formatSignalKey(key: string): string {
+  return key
+    .replace(/^has/, '')
+    .replace(/([A-Z])/g, ' $1')
+    .trim()
+}
+
+function SignalsPanel({ signals }: { signals: Record<string, unknown> }) {
+  const [open, setOpen] = useState(false)
+  const entries = Object.entries(signals).filter(([, v]) => typeof v === 'boolean' || typeof v === 'number')
+  if (entries.length === 0) return null
+
+  return (
+    <div className="mt-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+        aria-expanded={open}
+      >
+        {open ? <IconChevronDown size={11} /> : <IconChevronRight size={11} />}
+        What was checked
+      </button>
+      {open && (
+        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+          {entries.map(([key, val]) => (
+            <div key={key} className="flex items-center gap-2">
+              <span className={`size-1.5 rounded-full shrink-0 ${val ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
+              <span className="text-[11px] text-muted-foreground">{formatSignalKey(key)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 type Props = {
   scores: ScoreItem[]
@@ -94,6 +132,8 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
                   )}
                 </div>
               )}
+
+              {item.signals && <SignalsPanel signals={item.signals} />}
 
               {item.citations.length > 0 && (
                 <div className="rounded-md bg-muted/50 px-3 py-2.5">

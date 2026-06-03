@@ -11,6 +11,7 @@ import { RetrySubmissionButton } from '@/features/submissions/components/retry-s
 import { StatusBadge } from '@/features/submissions/components/status-badge'
 import { IN_PROGRESS_STATUSES } from '@/features/submissions/constants'
 import { IconArrowLeft, IconBrandGithub, IconAlertCircle, IconClock, IconExternalLink } from '@tabler/icons-react'
+import { ElapsedTime } from '@/features/submissions/components/elapsed-time'
 
 type Props = {
   params: Promise<{ id: string }>
@@ -36,7 +37,7 @@ export default async function SubmissionDetailPage(props: Props) {
   const isQueued = submission.status === 'queued'
 
   return (
-    <div className="px-10 py-10 w-full">
+    <div className="px-4 py-6 sm:px-6 md:px-10 md:py-10 w-full">
       <SubmissionPoller isInProgress={isInProgress} />
 
       <div className="mb-8">
@@ -48,9 +49,9 @@ export default async function SubmissionDetailPage(props: Props) {
           Back to submissions
         </Link>
 
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight font-mono">
+        <div className="flex items-start justify-between gap-4 flex-wrap sm:flex-nowrap">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight font-mono truncate">
               {repoName(submission.githubRepoFullName)}
             </h1>
             <a
@@ -101,9 +102,14 @@ export default async function SubmissionDetailPage(props: Props) {
 
           {isInProgress && (
             <div className="rounded-lg border bg-card p-5">
-              <div className="flex items-center gap-2">
-                <span className="size-2 rounded-full bg-primary animate-pulse shrink-0" />
-                <p className="text-sm font-medium">Verification running</p>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="size-2 rounded-full bg-primary animate-pulse shrink-0" />
+                  <p className="text-sm font-medium">Verification running</p>
+                </div>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  <ElapsedTime since={submission.submittedAt} />
+                </span>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
                 Results will appear here when complete. This typically takes 2–5 minutes.

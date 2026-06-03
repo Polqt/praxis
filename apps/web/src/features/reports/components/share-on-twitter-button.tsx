@@ -20,18 +20,24 @@ type Props = {
   compositeScore: number
   challengeTitle: string
   publicToken: string | null
+  bestCategory?: { name: string; score: number } | null
 }
 
-export function ShareOnTwitterButton({ verdict, compositeScore, challengeTitle, publicToken }: Props) {
+export function ShareOnTwitterButton({ verdict, compositeScore, challengeTitle, publicToken, bestCategory }: Props) {
   const proofUrl = publicToken ? `https://praxis.dev/proof/${publicToken}` : null
 
   const intro = verdict === 'verified'
     ? `I just got my ${challengeTitle} verified on Praxis.`
     : `I just submitted my ${challengeTitle} for verification on Praxis.`
 
+  const bestCatLine = bestCategory && bestCategory.score >= 8
+    ? `Top category: ${bestCategory.name} ${bestCategory.score}/10.`
+    : null
+
   const shareText = [
     intro,
     `Score: ${compositeScore}/100. Verdict: ${verdict}.`,
+    bestCatLine,
     proofUrl ?? '',
     '#ProofOfWork #Praxis',
   ].filter(Boolean).join(' ')

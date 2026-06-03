@@ -95,7 +95,7 @@ function ChallengesAppView({ challenges, isAuthenticated }: Props) {
   const backend = challenges.filter((c) => c.category === 'backend')
 
   return (
-    <div className="px-10 py-10 w-full">
+    <div className="px-4 py-6 sm:px-6 md:px-10 md:py-10 w-full">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">Challenges</h1>
         <p className="text-sm text-muted-foreground mt-1">

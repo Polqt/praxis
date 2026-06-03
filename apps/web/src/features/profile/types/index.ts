@@ -11,9 +11,14 @@ export interface ProfileReport {
   compositeScore: number | null
 }
 
+export interface VerifiedSkill {
+  name: string
+  awardedAt: string
+}
+
 export interface PublicProfile {
   username: string
-  verifiedSkills: string[]
+  verifiedSkills: VerifiedSkill[]
   reportsCount: number
   verificationsCount: number
   challengesCompleted: number

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common'
 import { randomBytes } from 'node:crypto'
 import { eq, inArray } from 'drizzle-orm'
 import { ANALYZER_VERSION, REPORT_GENERATOR_VERSION, SCORING_VERSION } from '../scoring/versions'
@@ -29,12 +29,40 @@ type StoredCategoryScore = {
 }
 
 @Injectable()
-export class ReportsService {
+export class ReportsService implements OnModuleInit {
+  private readonly logger = new Logger(ReportsService.name)
+
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
     private readonly enrichment: ReportEnrichmentService,
   ) {}
+
+  async onModuleInit() {
+    // Verify every active rubric category has a matching skill row.
+    // Mismatches mean verified users silently earn zero skills.
+    try {
+      const [challenges, skillRows] = await Promise.all([
+        this.db.db.select({ rubric: projectChallenges.rubric, title: projectChallenges.title })
+          .from(projectChallenges)
+          .where(eq(projectChallenges.isActive, true)),
+        this.db.db.select({ name: skills.name }).from(skills),
+      ])
+      const skillNames = new Set(skillRows.map((s) => s.name))
+      for (const challenge of challenges) {
+        const rubric = challenge.rubric as { categories: { name: string }[] }
+        for (const cat of rubric.categories) {
+          if (!skillNames.has(cat.name)) {
+            this.logger.warn(
+              `Rubric category "${cat.name}" in challenge "${challenge.title}" has no matching skill — run seed to fix`,
+            )
+          }
+        }
+      }
+    } catch {
+      // Non-fatal — don't block startup
+    }
+  }
 
   async generateForSubmission(submissionId: string, repositoryAnalysisId: string) {
     const submission = await this.getSubmission(submissionId)
@@ -204,6 +232,39 @@ export class ReportsService {
       .returning()
 
     return inserted
+  }
+
+  async getExecutionForSubmission(userId: string, submissionId: string) {
+    const submission = await this.getSubmission(submissionId)
+    if (submission.userId !== userId) throw new NotFoundException('Report not found')
+
+    // Find the ingestion for this submission's commit SHA
+    const ingestionRows = await this.db.db
+      .select({ id: repositoryIngestions.id })
+      .from(repositoryIngestions)
+      .where(eq(repositoryIngestions.commitSha, submission.commitSha))
+      .limit(1)
+
+    if (!ingestionRows[0]) return null
+
+    const execRows = await this.db.db
+      .select({
+        language: repositoryExecutions.language,
+        testCommand: repositoryExecutions.testCommand,
+        exitCode: repositoryExecutions.exitCode,
+        passed: repositoryExecutions.passed,
+        failed: repositoryExecutions.failed,
+        skipped: repositoryExecutions.skipped,
+        durationMs: repositoryExecutions.durationMs,
+        stdout: repositoryExecutions.stdout,
+        stderr: repositoryExecutions.stderr,
+        timedOut: repositoryExecutions.timedOut,
+      })
+      .from(repositoryExecutions)
+      .where(eq(repositoryExecutions.repositoryIngestionId, ingestionRows[0].id))
+      .limit(1)
+
+    return execRows[0] ?? null
   }
 
   private async getSubmission(submissionId: string) {

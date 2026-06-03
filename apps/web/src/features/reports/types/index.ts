@@ -15,6 +15,7 @@ export interface ScoreItem {
   status?: 'pass' | 'fail' | 'floor'
   minimumScore?: number
   executionEvidence?: ExecutionEvidence | null
+  signals?: Record<string, unknown>
 }
 
 export interface Report {

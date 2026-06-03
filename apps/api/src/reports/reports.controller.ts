@@ -25,6 +25,11 @@ export class ReportsController {
     return this.reports.setVisibility(user.id, submissionId, dto.isPublic)
   }
 
+  @Get('submissions/:submissionId/execution')
+  getExecution(@GetUser() user: User, @Param('submissionId') submissionId: string) {
+    return this.reports.getExecutionForSubmission(user.id, submissionId)
+  }
+
   @Post('submissions/:submissionId/feedback')
   submitFeedback(
     @GetUser() user: User,

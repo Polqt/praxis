@@ -109,4 +109,6 @@ export interface LeaderboardEntry {
   username: string
   verifiedCount: number
   bestScore: number
+  lastVerifiedAt: string | null
+  recentlyActive: boolean
 }

@@ -48,7 +48,7 @@ export function StudioClient({
       variants={staggerContainer}
       initial="hidden"
       animate="visible"
-      className="px-10 py-10 w-full"
+      className="px-4 py-6 sm:px-6 md:px-10 md:py-10 w-full"
     >
       <motion.section variants={fadeUp} className="flex items-start justify-between gap-6">
         <div>
@@ -65,27 +65,27 @@ export function StudioClient({
         </div>
       </motion.section>
 
-      <motion.div variants={fadeUp} className="mt-10 flex divide-x divide-border">
-        <div className="pr-8">
-          <p className="text-2xl font-semibold tabular-nums">{completed}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Challenges completed</p>
+      <motion.div variants={fadeUp} className="mt-8 grid grid-cols-3 divide-x divide-border rounded-lg border bg-card">
+        <div className="p-4">
+          <p className="text-xl sm:text-2xl font-semibold tabular-nums">{completed}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Completed</p>
         </div>
-        <div className="px-8">
-          <p className="text-2xl font-semibold tabular-nums">{dashboard.verifiedSkills.length}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Verified skills</p>
+        <div className="p-4">
+          <p className="text-xl sm:text-2xl font-semibold tabular-nums">{dashboard.verifiedSkills.length}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Skills</p>
         </div>
-        <div className="pl-8">
-          <p className="text-2xl font-semibold tabular-nums">{submissionStats.reportsGenerated}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Reports generated</p>
+        <div className="p-4">
+          <p className="text-xl sm:text-2xl font-semibold tabular-nums">{submissionStats.reportsGenerated}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Reports</p>
         </div>
       </motion.div>
 
       <motion.div variants={fadeUp} className="mt-4 flex items-center gap-4">
         <Progress value={progress} className="h-0.5 flex-1" />
-        <span className="text-xs text-muted-foreground shrink-0">{completed} of {total} challenges</span>
+        <span className="text-xs text-muted-foreground shrink-0">{completed} of {total} standard challenges</span>
       </motion.div>
 
-      <motion.div variants={staggerContainer} className="mt-8 grid grid-cols-2 gap-4">
+      <motion.div variants={staggerContainer} className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
         <motion.div variants={fadeUp}>
           <div className="rounded-lg border bg-card p-5 flex flex-col h-full">
             <p className={CARD_LABEL_CLASS}>Latest submission</p>

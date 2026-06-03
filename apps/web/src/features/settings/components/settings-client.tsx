@@ -82,8 +82,8 @@ export function SettingsClient({ initialGithub }: Props) {
   const { title, subtitle } = SECTION_HEADER[activeSection]
 
   return (
-    <div className="flex h-full">
-      <aside className="w-55 shrink-0 border-r border-border flex flex-col pt-4">
+    <div className="flex flex-col sm:flex-row h-full">
+      <aside className="w-full sm:w-55 shrink-0 border-b sm:border-b-0 sm:border-r border-border flex flex-col pt-4">
         <p className="px-3 mb-2 text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Settings</p>
         <nav className="hidden md:flex flex-col gap-1 px-2">
           {NAV.map(({ id, label, icon }) => (
@@ -107,12 +107,12 @@ export function SettingsClient({ initialGithub }: Props) {
             </button>
           ))}
         </div>
-        <div className="px-8 pt-6 pb-4 shrink-0">
+        <div className="px-4 sm:px-8 pt-5 pb-4 shrink-0">
           <h1 className="text-[20px] font-medium text-foreground">{title}</h1>
           <p className="text-[14px] text-muted-foreground mt-0.5">{subtitle}</p>
           <Separator className="mt-4" />
         </div>
-        <div className="px-8 py-2 overflow-y-auto">
+        <div className="px-4 sm:px-8 py-2 overflow-y-auto">
           <AnimatePresence mode="wait">
           {activeSection === 'account' && (
             <motion.div key="account" variants={fadeUp} initial="hidden" animate="visible" className="space-y-6 max-w-md">

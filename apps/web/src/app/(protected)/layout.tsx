@@ -26,7 +26,8 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     <UserProvider user={localUser!}>
       <div className="h-screen flex bg-background overflow-hidden">
         <Sidebar user={localUser!} githubAccount={githubAccount} />
-        <main className="flex-1 min-w-0 overflow-y-auto">{children}</main>
+        {/* pt-14 on mobile offsets the fixed top bar; removed on md+ where sidebar is visible */}
+        <main className="flex-1 min-w-0 overflow-y-auto pt-14 md:pt-0">{children}</main>
       </div>
     </UserProvider>
   )

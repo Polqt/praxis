@@ -25,7 +25,11 @@ interface DetectedRuntime {
   installCommand: string | null
 }
 
-const EXECUTION_TIMEOUT_MS = 120_000
+// Total sandbox lifetime budget
+const SANDBOX_TIMEOUT_MS = 180_000
+// Per-phase budgets (seconds, passed to Python subprocess timeout arg)
+const INSTALL_TIMEOUT_S = 90
+const TEST_TIMEOUT_S = 60
 
 function detectRuntime(ingestionData: RepositoryIngestionData): DetectedRuntime | null {
   const filePaths = ingestionData.files.map((f) => f.path)
@@ -85,14 +89,15 @@ function detectRuntime(ingestionData: RepositoryIngestionData): DetectedRuntime 
   return null
 }
 
-function parseTestOutput(stdout: string, language: string): { passed: number; failed: number; skipped: number } {
+interface ParsedCounts { passed: number; failed: number; skipped: number }
+
+function parseTestOutput(stdout: string, language: string, exitCode: number): ParsedCounts {
   let passed = 0
   let failed = 0
   let skipped = 0
+  let parsed = false
 
   if (language === 'javascript') {
-    // Jest summary line — fields appear in any order, extract by label
-    // e.g. "Tests: 3 passed, 1 failed, 4 total" or "Tests: 1 failed, 3 passed, 4 total"
     if (/Tests:/i.test(stdout)) {
       const passedMatch = stdout.match(/(\d+)\s+passed/i)
       const failedMatch = stdout.match(/(\d+)\s+failed/i)
@@ -101,44 +106,51 @@ function parseTestOutput(stdout: string, language: string): { passed: number; fa
         passed = passedMatch ? parseInt(passedMatch[1], 10) : 0
         failed = failedMatch ? parseInt(failedMatch[1], 10) : 0
         skipped = skippedMatch ? parseInt(skippedMatch[1], 10) : 0
-        return { passed, failed, skipped }
+        parsed = true
       }
     }
-    // Vitest / Mocha: "5 passing (123ms)" / "2 failing"
-    const passMatch = stdout.match(/(\d+)\s+passing/i)
-    const failMatch = stdout.match(/(\d+)\s+failing/i)
-    const pendingMatch = stdout.match(/(\d+)\s+pending/i)
-    if (passMatch) passed = parseInt(passMatch[1], 10)
-    if (failMatch) failed = parseInt(failMatch[1], 10)
-    if (pendingMatch) skipped = parseInt(pendingMatch[1], 10)
-  }
-
-  if (language === 'python') {
-    // pytest: "5 passed, 1 failed, 2 skipped"
+    if (!parsed) {
+      // Vitest / Mocha: "5 passing (123ms)" / "2 failing"
+      const passMatch = stdout.match(/(\d+)\s+passing/i)
+      const failMatch = stdout.match(/(\d+)\s+failing/i)
+      const pendingMatch = stdout.match(/(\d+)\s+pending/i)
+      if (passMatch || failMatch) {
+        passed = passMatch ? parseInt(passMatch[1], 10) : 0
+        failed = failMatch ? parseInt(failMatch[1], 10) : 0
+        skipped = pendingMatch ? parseInt(pendingMatch[1], 10) : 0
+        parsed = true
+      }
+    }
+  } else if (language === 'python') {
     const pytestMatch = stdout.match(/(\d+)\s+passed(?:,\s+(\d+)\s+failed)?(?:,\s+(\d+)\s+(?:skipped|warning))?/)
     if (pytestMatch) {
       passed = parseInt(pytestMatch[1] ?? '0', 10)
       failed = parseInt(pytestMatch[2] ?? '0', 10)
       skipped = parseInt(pytestMatch[3] ?? '0', 10)
+      parsed = true
     }
-  }
-
-  if (language === 'go') {
-    // go test: "ok package 0.123s" / "FAIL package 0.123s"
+  } else if (language === 'go') {
     const okLines = (stdout.match(/^ok\s+/gm) ?? []).length
     const failLines = (stdout.match(/^FAIL\s+/gm) ?? []).length
-    passed = okLines
-    failed = failLines
-  }
-
-  if (language === 'rust') {
-    // cargo test: "test result: ok. 5 passed; 1 failed; 0 ignored"
+    if (okLines > 0 || failLines > 0) {
+      passed = okLines
+      failed = failLines
+      parsed = true
+    }
+  } else if (language === 'rust') {
     const cargoMatch = stdout.match(/test result:.*?(\d+)\s+passed;\s+(\d+)\s+failed;\s+(\d+)\s+ignored/i)
     if (cargoMatch) {
       passed = parseInt(cargoMatch[1], 10)
       failed = parseInt(cargoMatch[2], 10)
       skipped = parseInt(cargoMatch[3], 10)
+      parsed = true
     }
+  }
+
+  // Fallback: if the parser produced 0/0 and we have a non-zero exit code, treat as at least 1 failure
+  // so the score reflects reality instead of looking like "no tests ran"
+  if (!parsed && exitCode !== 0) {
+    failed = 1
   }
 
   return { passed, failed, skipped }
@@ -163,7 +175,7 @@ export class RepositoryExecutionService {
     return this.apiKey !== null
   }
 
-  async executeForIngestion(ingestionId: string): Promise<ExecutionResult | null> {
+  async executeForIngestion(ingestionId: string, githubToken?: string): Promise<ExecutionResult | null> {
     if (!this.apiKey) return null
 
     // Return cached result if already executed for this ingestion
@@ -207,7 +219,7 @@ export class RepositoryExecutionService {
     }
 
     try {
-      return await this.runInSandbox(ingestionId, ingestion.repoFullName, runtime)
+      return await this.runInSandbox(ingestionId, ingestion.repoFullName, runtime, githubToken)
     } catch (err) {
       this.logger.error(`E2B: sandbox execution failed for ${ingestion.repoFullName}`, {
         error: err instanceof Error ? err.message : String(err),
@@ -220,6 +232,7 @@ export class RepositoryExecutionService {
     ingestionId: string,
     repoFullName: string,
     runtime: DetectedRuntime,
+    githubToken?: string,
   ): Promise<ExecutionResult | null> {
     // Sanitize owner/repo to prevent injection into Python subprocess args
     const parts = repoFullName.split('/')
@@ -227,52 +240,58 @@ export class RepositoryExecutionService {
     const repo = (parts[1] ?? '').replace(/[^a-zA-Z0-9._-]/g, '')
     if (!owner || !repo) return null
 
+    // Build clone URL — authenticated for private repos, public fallback
+    const cloneUrl = githubToken
+      ? `https://x-access-token:${githubToken}@github.com/${owner}/${repo}.git`
+      : `https://github.com/${owner}/${repo}.git`
+
     const start = Date.now()
     let sandbox: Sandbox | null = null
 
     try {
-      sandbox = await Sandbox.create({ apiKey: this.apiKey!, timeoutMs: EXECUTION_TIMEOUT_MS })
+      sandbox = await Sandbox.create({ apiKey: this.apiKey!, timeoutMs: SANDBOX_TIMEOUT_MS })
       this.logger.log(`E2B: sandbox created for ${repoFullName} (${runtime.language})`)
 
-      // Clone repo — only works for public repos (no auth token passed to sandbox)
       const cloneResult = await sandbox.runCode(`
 import subprocess
 result = subprocess.run(
-  ['git', 'clone', '--depth', '1', 'https://github.com/${owner}/${repo}.git', '/repo'],
+  ['git', 'clone', '--depth', '1', '${cloneUrl}', '/repo'],
   capture_output=True, text=True, timeout=60
 )
 print('CLONE_EXIT:' + str(result.returncode))
-print(result.stderr)
+if result.returncode != 0:
+  # Redact any token from error output before logging
+  print(result.stderr.replace('${githubToken ?? ''}', '<token>'))
 `)
       const cloneOutput = cloneResult.logs.stdout.join('\n')
       const cloneExitMatch = cloneOutput.match(/CLONE_EXIT:(\d+)/)
       if (cloneExitMatch && parseInt(cloneExitMatch[1], 10) !== 0) {
-        this.logger.warn(`E2B: clone failed for ${repoFullName} — likely private or not found`)
+        this.logger.warn(`E2B: clone failed for ${repoFullName} — private/not found`)
         return null
       }
 
-      // Install dependencies if needed
+      // Install dependencies with a dedicated time budget
       if (runtime.installCommand) {
         const installCmd = runtime.installCommand
         await sandbox.runCode(`
 import subprocess
 result = subprocess.run(
   '${installCmd}',
-  shell=True, capture_output=True, text=True, cwd='/repo', timeout=90
+  shell=True, capture_output=True, text=True, cwd='/repo', timeout=${INSTALL_TIMEOUT_S}
 )
 print(result.stdout[-3000:] if result.stdout else '')
 print(result.stderr[-1000:] if result.stderr else '')
 `)
       }
 
-      // Run tests
+      // Run tests with a separate time budget
       const testCmd = runtime.testCommand
       const testResult = await sandbox.runCode(`
 import subprocess, time
 start = time.time()
 result = subprocess.run(
   '${testCmd}',
-  shell=True, capture_output=True, text=True, cwd='/repo', timeout=60
+  shell=True, capture_output=True, text=True, cwd='/repo', timeout=${TEST_TIMEOUT_S}
 )
 elapsed = int((time.time() - start) * 1000)
 print('EXIT_CODE:' + str(result.returncode))
@@ -296,7 +315,7 @@ print('STDERR_END')
       const stdout = stdoutMatch?.[1] ?? ''
       const stderr = stderrMatch?.[1] ?? ''
 
-      const { passed, failed, skipped } = parseTestOutput(stdout, runtime.language)
+      const { passed, failed, skipped } = parseTestOutput(stdout, runtime.language, exitCode)
 
       const result: ExecutionResult = {
         language: runtime.language,

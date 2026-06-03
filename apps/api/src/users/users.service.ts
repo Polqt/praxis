@@ -140,6 +140,7 @@ export class UsersService {
         username: users.username,
         verifiedCount: count(projectSubmissions.id),
         bestScore: max(projectVerificationReports.compositeScore),
+        lastVerifiedAt: max(projectSubmissions.completedAt),
       })
       .from(projectSubmissions)
       .innerJoin(users, eq(projectSubmissions.userId, users.id))
@@ -150,6 +151,8 @@ export class UsersService {
       .limit(limit)
       .offset(offset)
 
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+
     return rows
       .filter((r) => r.username !== null)
       .map((r, i) => ({
@@ -157,6 +160,8 @@ export class UsersService {
         username: r.username as string,
         verifiedCount: r.verifiedCount,
         bestScore: r.bestScore ?? 0,
+        lastVerifiedAt: r.lastVerifiedAt?.toISOString() ?? null,
+        recentlyActive: r.lastVerifiedAt ? r.lastVerifiedAt >= thirtyDaysAgo : false,
       }))
   }
 
@@ -171,10 +176,11 @@ export class UsersService {
     if (!user) return null
 
     const earnedSkills = await this.db.db
-      .select({ name: skills.name })
+      .select({ name: skills.name, awardedAt: userSkills.awardedAt })
       .from(userSkills)
       .innerJoin(skills, eq(userSkills.skillId, skills.id))
       .where(eq(userSkills.userId, user.id))
+      .orderBy(desc(userSkills.awardedAt))
 
     // Count verified submissions separately so it isn't capped by the display limit
     const verifiedCountRows = await this.db.db
@@ -225,7 +231,7 @@ export class UsersService {
 
     return {
       username: user.username as string,
-      verifiedSkills: earnedSkills.map((s) => s.name),
+      verifiedSkills: earnedSkills.map((s) => ({ name: s.name, awardedAt: s.awardedAt.toISOString() })),
       reportsCount: verifiedCount,
       verificationsCount: verifiedCount,
       challengesCompleted: verifiedCount,

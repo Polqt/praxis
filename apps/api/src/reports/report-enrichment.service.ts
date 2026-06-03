@@ -75,7 +75,7 @@ export class ReportEnrichmentService {
   constructor(private readonly config: ConfigService) {
     const apiKey = this.config.get<string>('anthropic.apiKey')
     this.model = this.config.get<string>('anthropic.model') ?? 'claude-haiku-4-5-20251001'
-    this.client = apiKey ? new Anthropic({ apiKey }) : null
+    this.client = apiKey ? new Anthropic({ apiKey, defaultHeaders: { 'anthropic-beta': 'prompt-caching-2024-07-31' } }) : null
 
     if (!this.client) {
       this.logger.warn('ANTHROPIC_API_KEY not set — AI narrative enrichment disabled')
@@ -157,7 +157,15 @@ export class ReportEnrichmentService {
     const message = await this.client!.messages.create({
       model: this.model,
       max_tokens: 200,
-      system: SYSTEM_PROMPT,
+      system: [
+        {
+          type: 'text',
+          text: SYSTEM_PROMPT,
+          // Cache the system prompt — it's identical across all calls in a report batch.
+          // Reduces token cost by ~80% on repeated calls within the 5-minute cache window.
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
       messages: [{ role: 'user', content: userPrompt }],
     })
 

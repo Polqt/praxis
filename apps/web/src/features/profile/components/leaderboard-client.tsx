@@ -59,12 +59,16 @@ function RankIcon({ rank }: { rank: number }) {
 
 function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
   const isTopThree = entry.rank <= 3
+  const lastVerified = entry.lastVerifiedAt
+    ? new Date(entry.lastVerifiedAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+    : null
+
   return (
     <motion.div variants={fadeUp}>
       <Link
         href={`/p/${entry.username}`}
         className={[
-          'flex items-center gap-5 px-6 py-4 border-b border-border',
+          'flex items-center gap-3 sm:gap-5 px-4 sm:px-6 py-4 border-b border-border',
           'hover:bg-muted/40 transition-colors duration-150',
           isTopThree ? 'bg-muted/20' : '',
         ].join(' ')}
@@ -73,16 +77,28 @@ function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
           <RankIcon rank={entry.rank} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[15px] font-medium truncate">@{entry.username}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-[15px] font-medium truncate">@{entry.username}</p>
+            {entry.recentlyActive && (
+              <span className="text-[9px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded-sm bg-green-100 text-green-700 border border-green-200 shrink-0">
+                Active
+              </span>
+            )}
+          </div>
+          {lastVerified && (
+            <p className="text-[11px] text-muted-foreground mt-0.5" suppressHydrationWarning>
+              Last verified {lastVerified}
+            </p>
+          )}
         </div>
-        <div className="flex items-center gap-10 shrink-0">
-          <div className="text-right">
+        <div className="flex items-center gap-4 sm:gap-10 shrink-0">
+          <div className="text-right hidden sm:block">
             <p className="text-[15px] font-semibold tabular-nums">{entry.verifiedCount}</p>
             <p className="text-[11px] text-muted-foreground uppercase tracking-widest">verified</p>
           </div>
           <div className="text-right">
             <p className="text-[15px] font-semibold tabular-nums">{entry.bestScore}<span className="text-xs font-normal text-muted-foreground">/100</span></p>
-            <p className="text-[11px] text-muted-foreground uppercase tracking-widest">best score</p>
+            <p className="text-[11px] text-muted-foreground uppercase tracking-widest hidden sm:block">best score</p>
           </div>
         </div>
       </Link>

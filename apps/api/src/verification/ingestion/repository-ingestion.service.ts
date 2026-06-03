@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, gte } from 'drizzle-orm'
 import { DatabaseService } from '../../database/database.service'
 import { projectSubmissions, repositoryIngestions } from '../../database/schema'
 import { GitHubApiService } from '../../github/github-api.service'
@@ -73,9 +73,11 @@ export class RepositoryIngestionService {
   }
 
   private async findCached(githubRepoId: number, commitSha: string) {
+    const ttlCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 7-day TTL
     const rows = await this.db.db.select().from(repositoryIngestions).where(and(
       eq(repositoryIngestions.githubRepoId, githubRepoId),
       eq(repositoryIngestions.commitSha, commitSha),
+      gte(repositoryIngestions.createdAt, ttlCutoff),
     )).limit(1)
     return rows[0]
   }

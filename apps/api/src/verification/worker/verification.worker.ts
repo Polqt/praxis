@@ -18,6 +18,7 @@ import { StaleSubmissionService } from '../../submissions/stale-submission.servi
 import { AuditService } from '../../audit/audit.service'
 import { NotificationsService } from '../../notifications/notifications.service'
 import { DatabaseService } from '../../database/database.service'
+import { GitHubService } from '../../github/github.service'
 import { users, projectSubmissions, projectVerificationReports, projectChallenges, repositoryIngestions } from '../../database/schema'
 
 @Injectable()
@@ -37,6 +38,7 @@ export class VerificationWorker implements OnModuleDestroy {
     private readonly notifications: NotificationsService,
     private readonly db: DatabaseService,
     private readonly execution: RepositoryExecutionService,
+    private readonly github: GitHubService,
   ) {}
 
   start() {
@@ -119,7 +121,7 @@ export class VerificationWorker implements OnModuleDestroy {
       }
       case VERIFICATION_JOB_NAMES.executeTests: {
         const submissionRows = await this.db.db
-          .select({ commitSha: projectSubmissions.commitSha, githubRepoId: projectSubmissions.githubRepoId })
+          .select({ commitSha: projectSubmissions.commitSha, userId: projectSubmissions.userId })
           .from(projectSubmissions)
           .where(eq(projectSubmissions.id, submissionId))
           .limit(1)
@@ -131,7 +133,11 @@ export class VerificationWorker implements OnModuleDestroy {
             .where(eq(repositoryIngestions.commitSha, submission.commitSha))
             .limit(1)
           if (ingestionRows[0]) {
-            await this.execution.executeForIngestion(ingestionRows[0].id)
+            // Resolve GitHub token so E2B can clone private repos
+            const githubToken = await this.github.getActiveToken(submission.userId)
+              .then((r) => r.accessToken)
+              .catch(() => undefined)
+            await this.execution.executeForIngestion(ingestionRows[0].id, githubToken)
           }
         }
         await this.statuses.transition({ submissionId, toStatus: 'analyzing', reason: 'ingestion_complete' })

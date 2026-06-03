@@ -1,16 +1,17 @@
 'use client'
 
 import { deriveEngineerTitle } from '../utils/derive-engineer-title'
+import type { VerifiedSkill } from '../types'
 
 type Props = {
   username: string
-  verifiedSkills: string[]
+  verifiedSkills: VerifiedSkill[]
   reportsCount: number
   verificationsCount: number
 }
 
 export function ProfileHero({ username, verifiedSkills, reportsCount, verificationsCount }: Props) {
-  const title = deriveEngineerTitle(verifiedSkills)
+  const title = deriveEngineerTitle(verifiedSkills.map((s) => s.name))
 
   return (
     <div>

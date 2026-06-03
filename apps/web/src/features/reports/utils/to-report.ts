@@ -22,6 +22,10 @@ export function toReport(raw: VerificationReport, overrides?: { isPublic?: boole
       ? { passed: exec.passed, failed: exec.failed, skipped: exec.skipped, language: exec.language }
       : null
 
+    // Strip the execution sub-object from signals before passing to UI — it's shown separately
+    const rawSignals = (data.signals ?? {}) as Record<string, unknown>
+    const { execution: _exec, ...displaySignals } = rawSignals
+
     return {
       category,
       score: data.score,
@@ -30,6 +34,7 @@ export function toReport(raw: VerificationReport, overrides?: { isPublic?: boole
       status: data.status as ScoreItem['status'],
       minimumScore: data.minimumScore,
       executionEvidence,
+      signals: Object.keys(displaySignals).length > 0 ? displaySignals : undefined,
     }
   })
 
