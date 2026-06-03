@@ -31,6 +31,7 @@ async function seed() {
       { trackId: backendTrack.id, name: 'Testing', category: 'Testing' },
       { trackId: backendTrack.id, name: 'Documentation', category: 'Documentation' },
       { trackId: backendTrack.id, name: 'Deployment', category: 'Deployment' },
+      { trackId: backendTrack.id, name: 'Code Architecture', category: 'Code Architecture' },
     ])
     .onConflictDoNothing()
 
@@ -128,6 +129,90 @@ async function seed() {
     await db.update(projectChallenges).set(frontendChallenge).where(eq(projectChallenges.id, existingFrontend[0].id))
   } else {
     await db.insert(projectChallenges).values([frontendChallenge])
+  }
+
+  // ── Easy backend challenge ───────────────────────────────────────────────────
+  const easyBackendChallenge = {
+    trackId: backendTrack.id,
+    title: 'Build a Basic CRUD API',
+    description: `## Build a Basic CRUD API
+
+Submit any backend repository that exposes a working CRUD API — no need for production-grade auth, test suites, or deployment pipelines. This challenge is designed for real projects that are earlier-stage or side projects.
+
+Accepted examples include note-taking APIs, task managers, blog backends, contact list APIs, inventory managers, or any project with clear REST routes and a real database. You need working endpoints, a database, and a README — that is enough to pass.`,
+    projectType: 'backend' as const,
+    rubric: {
+      categories: [
+        // Architecture: just needs some folder structure — floor 0 means any score passes
+        { name: 'Code Architecture', weight: 25, floor: 0 },
+        // Authentication: floor 0 — auth is optional for a basic CRUD project
+        { name: 'Authentication', weight: 10, floor: 0 },
+        // Database Design: floor 3 — needs an ORM or schema file at minimum
+        { name: 'Database Design', weight: 30, floor: 3 },
+        // Testing: floor 0 — not required for an easy challenge
+        { name: 'Testing', weight: 10, floor: 0 },
+        // Documentation: floor 2 — just needs a README
+        { name: 'Documentation', weight: 15, floor: 2 },
+        // API Design: floor 0
+        { name: 'API Design', weight: 10, floor: 0 },
+      ],
+    },
+    passingThreshold: 50,
+    version: 1,
+    isActive: true,
+  }
+
+  const existingEasyBackend = await db
+    .select()
+    .from(projectChallenges)
+    .where(eq(projectChallenges.title, easyBackendChallenge.title))
+    .limit(1)
+
+  if (existingEasyBackend[0]) {
+    await db.update(projectChallenges).set(easyBackendChallenge).where(eq(projectChallenges.id, existingEasyBackend[0].id))
+  } else {
+    await db.insert(projectChallenges).values([easyBackendChallenge])
+  }
+
+  // ── Easy frontend challenge ──────────────────────────────────────────────────
+  const easyFrontendChallenge = {
+    trackId: frontendTrack.id,
+    title: 'Build a React App',
+    description: `## Build a React App
+
+Submit any React or Next.js application — a portfolio, dashboard, landing page, side project, or personal tool. This challenge does not require a test suite, accessibility tooling, or performance optimizations. It is designed for real projects you have actually built and shipped.
+
+Accepted examples include portfolio sites, landing pages, CRUD frontends, admin dashboards, personal tools, and e-commerce UIs. You need real component structure, some styling, and a README — that is enough to pass.`,
+    projectType: 'frontend' as const,
+    rubric: {
+      categories: [
+        // Component Architecture: floor 0 — just needs component files (.tsx/.jsx)
+        { name: 'Component Architecture', weight: 35, floor: 3 },
+        // Styling: floor 0 — any CSS or styling library passes
+        { name: 'Styling', weight: 25, floor: 0 },
+        // State Management: floor 0 — useState counts
+        { name: 'State Management', weight: 20, floor: 0 },
+        // Documentation: floor 2 — just needs a README
+        { name: 'Documentation', weight: 10, floor: 2 },
+        // Accessibility: floor 0 — baseline 2pts always given
+        { name: 'Accessibility', weight: 10, floor: 0 },
+      ],
+    },
+    passingThreshold: 50,
+    version: 1,
+    isActive: true,
+  }
+
+  const existingEasyFrontend = await db
+    .select()
+    .from(projectChallenges)
+    .where(eq(projectChallenges.title, easyFrontendChallenge.title))
+    .limit(1)
+
+  if (existingEasyFrontend[0]) {
+    await db.update(projectChallenges).set(easyFrontendChallenge).where(eq(projectChallenges.id, existingEasyFrontend[0].id))
+  } else {
+    await db.insert(projectChallenges).values([easyFrontendChallenge])
   }
 
   console.log('Seed complete')
