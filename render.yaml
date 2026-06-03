@@ -61,3 +61,9 @@ services:
         value: 30
       - key: SUBMISSION_EXPIRY_HOURS
         value: 6
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-haiku-4-5-20251001
+      - key: E2B_API_KEY
+        sync: false
