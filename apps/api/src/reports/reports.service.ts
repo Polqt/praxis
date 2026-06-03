@@ -119,7 +119,10 @@ export class ReportsService {
     const submission = await this.getSubmission(submissionId)
     if (submission.userId !== userId) throw new NotFoundException('Report not found')
     const challenge = await this.getChallenge(submission.challengeId)
-    const token = isPublic ? randomBytes(24).toString('base64url') : null
+    const existing = await this.getReportBySubmission(submissionId)
+    const token = isPublic
+      ? (existing.publicToken ?? randomBytes(24).toString('base64url'))
+      : null
     const rows = await this.db.db.update(projectVerificationReports)
       .set({ isPublic, publicToken: token })
       .where(eq(projectVerificationReports.submissionId, submissionId))

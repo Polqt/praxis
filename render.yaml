@@ -41,3 +41,5 @@ services:
         value: claude-haiku-4-5-20251001
       - key: E2B_API_KEY
         sync: false
+      - key: WEB_BASE_URL
+        sync: false
