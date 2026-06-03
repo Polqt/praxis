@@ -93,16 +93,23 @@ export class UsersService {
 
   async getDashboardStats(userId: string) {
     const verifiedSkills = await this.getUserSkills(userId)
-    const submissions = await this.db.db
-      .select()
-      .from(projectSubmissions)
-      .where(eq(projectSubmissions.userId, userId))
-      .orderBy(desc(projectSubmissions.submittedAt))
+    const [countResult, recentSubmissions] = await Promise.all([
+      this.db.db
+        .select({ value: count() })
+        .from(projectSubmissions)
+        .where(eq(projectSubmissions.userId, userId)),
+      this.db.db
+        .select()
+        .from(projectSubmissions)
+        .where(eq(projectSubmissions.userId, userId))
+        .orderBy(desc(projectSubmissions.submittedAt))
+        .limit(5),
+    ])
     return {
       totalVerified: verifiedSkills.length,
-      totalAttempts: submissions.length,
+      totalAttempts: countResult[0]?.value ?? 0,
       verifiedSkills,
-      recentSubmissions: submissions.slice(0, 5),
+      recentSubmissions,
     }
   }
 
