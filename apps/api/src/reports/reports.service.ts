@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common'
 import { randomBytes } from 'node:crypto'
-import { eq, inArray } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { ANALYZER_VERSION, REPORT_GENERATOR_VERSION, SCORING_VERSION } from '../scoring/versions'
 import { RepositoryIngestionData } from '../verification/ingestion/repository-ingestion.types'
 import { DatabaseService } from '../database/database.service'
@@ -205,25 +205,27 @@ export class ReportsService implements OnModuleInit {
     const rubric = challenge.rubric as { categories: { name: string; floor: number }[] }
     const categoryScores = report.categoryScores as Record<string, { score: number }>
 
-    // Collect category names that passed their floor in one pass
+    // Collect category names that passed their floor
     const eligibleNames = rubric.categories
       .filter((cat) => (categoryScores[cat.name]?.score ?? 0) >= cat.floor)
       .map((cat) => cat.name)
 
     if (eligibleNames.length === 0) return []
 
-    // Single query for all matching skills
-    const skillRows = await this.db.db
-      .select()
-      .from(skills)
-      .where(inArray(skills.name, eligibleNames))
+    // Fetch all skills and match case-insensitively so minor casing differences don't silently break awards
+    const eligibleLower = new Set(eligibleNames.map((n) => n.toLowerCase()))
+    const allSkills = await this.db.db.select().from(skills)
+    const matchedSkills = allSkills.filter((s) => eligibleLower.has(s.name.toLowerCase()))
 
-    if (skillRows.length === 0) return []
+    if (matchedSkills.length === 0) {
+      this.logger.warn(`awardSkillsForSubmission: no skills matched for categories [${eligibleNames.join(', ')}]`)
+      return []
+    }
 
     // Bulk insert all awards, ignoring conflicts
     const inserted = await this.db.db
       .insert(userSkills)
-      .values(skillRows.map((skill) => ({
+      .values(matchedSkills.map((skill) => ({
         userId: submission.userId,
         skillId: skill.id,
         sourceType: 'project' as const,

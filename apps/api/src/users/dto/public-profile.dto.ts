@@ -19,7 +19,6 @@ export class PublicProfileDto {
   username: string
   verifiedSkills: VerifiedSkillDto[]
   reportsCount: number
-  verificationsCount: number
   challengesCompleted: number
   latestReports: ProfileReportDto[]
 }

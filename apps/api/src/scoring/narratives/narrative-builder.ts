@@ -45,60 +45,49 @@ export function buildTestingNarrative(s: TestingSignals): string {
 
 export function buildDocumentationNarrative(s: DocumentationSignals): string {
   if (!s.hasReadme) {
-    return 'No README was detected. A README is required as a baseline documentation signal.'
+    return 'No README file was found in this repository. A README is the baseline documentation signal and is required for any documentation score.'
   }
 
-  const detected: string[] = ['README']
-  const missing: string[] = []
+  const depthNote = s.readmeWordCount >= 150
+    ? 'The README is substantial and contains meaningful content.'
+    : s.readmeWordCount >= 30
+    ? 'The README exists but is brief — consider expanding it with more detail.'
+    : 'The README exists but appears nearly empty.'
 
-  if (s.hasSetupInstructions) detected.push('setup instructions')
-  else missing.push('setup instructions')
+  const extras: string[] = []
+  if (s.hasSetupInstructions) extras.push('setup instructions')
+  if (s.hasApiDocs) extras.push('API documentation')
+  if (s.hasArchitectureDocs) extras.push('architecture docs')
+  if (s.hasContributionDocs) extras.push('contribution guidelines')
 
-  if (s.hasApiDocs) detected.push('API documentation')
-  else missing.push('API documentation')
+  const extrasNote = extras.length > 0
+    ? ` Additional documentation found: ${extras.join(', ')}.`
+    : ' No additional documentation files (API docs, architecture notes, or contribution guide) were detected.'
 
-  if (s.hasArchitectureDocs) detected.push('architecture documentation')
-  else missing.push('architecture documentation')
-
-  if (s.hasContributionDocs) detected.push('contribution guidelines')
-  else missing.push('contribution guidelines')
-
-  const detectedClause = `Detected: ${detected.join(', ')}.`
-  const missingClause = missing.length > 0 ? ` Not found: ${missing.join(', ')}.` : ''
-
-  return `${detectedClause}${missingClause}`
+  return `${depthNote}${extrasNote}`
 }
 
 export function buildDeploymentNarrative(s: DeploymentSignals): string {
-  const detected: string[] = []
-  const missing: string[] = []
-
-  if (s.hasDockerfile) detected.push('Dockerfile')
-  else missing.push('Dockerfile')
-
-  if (s.hasDockerCompose) detected.push('Docker Compose')
-
-  if (s.hasCiWorkflow) detected.push('CI workflow')
-  else missing.push('CI workflow')
-
-  if (s.hasDeploymentWorkflow) detected.push('deployment workflow')
-  else missing.push('deployment workflow')
-
-  if (s.hasInfrastructureConfig) detected.push('infrastructure configuration')
-
-  if (detected.length === 0) {
-    return 'No deployment or CI configuration was detected. A Dockerfile or CI workflow is required for verification.'
+  if (!s.hasDockerfile && !s.hasCiWorkflow) {
+    return 'No Dockerfile or CI workflow was detected. At least one of these is required to demonstrate deployment readiness.'
   }
 
-  const detectedClause = `Detected deployment assets: ${detected.join(', ')}.`
-  const missingClause = missing.length > 0 ? ` Not detected: ${missing.join(', ')}.` : ''
+  const found: string[] = []
+  if (s.hasDockerfile) found.push('a Dockerfile')
+  if (s.hasDockerCompose) found.push('Docker Compose')
+  if (s.hasCiWorkflow) found.push('a CI workflow')
+  if (s.hasDeploymentWorkflow) found.push('a deployment workflow')
+  if (s.hasInfrastructureConfig) found.push('infrastructure configuration')
 
-  const exampleFiles = s.detectedDeploymentFiles.slice(0, 3)
-  const fileClause = exampleFiles.length > 0
-    ? ` Representative files: ${exampleFiles.join(', ')}.`
-    : ''
+  const foundClause = `This repository includes ${found.join(', ')}.`
 
-  return `${detectedClause}${missingClause}${fileClause}`
+  const missing: string[] = []
+  if (!s.hasDockerfile) missing.push('a Dockerfile')
+  if (!s.hasCiWorkflow) missing.push('CI configuration')
+
+  const missingClause = missing.length > 0 ? ` Missing: ${missing.join(' and ')}.` : ''
+
+  return `${foundClause}${missingClause}`
 }
 
 export function buildSecurityNarrative(s: SecuritySignals): string {
@@ -162,32 +151,30 @@ export function buildApiDesignNarrative(s: SecuritySignals): string {
 
 export function buildAuthenticationNarrative(s: AuthenticationSignals): string {
   if (!s.hasAuthFiles && !s.hasJwtLibrary && !s.hasSessionOrTokenPattern) {
-    return 'No authentication implementation was detected. Auth files, JWT libraries, and token patterns are all absent.'
+    return 'No authentication implementation was detected — no auth files, JWT libraries, or token patterns were found. Authentication is required for this verification standard.'
   }
 
   const parts: string[] = []
 
   if (s.hasAuthFiles) {
     const examples = s.authFilePaths.slice(0, 2).join(', ')
-    parts.push(`Authentication files detected${examples ? ` (${examples})` : ''}.`)
-  } else {
-    parts.push('No dedicated auth files were detected.')
+    parts.push(`Authentication logic is present${examples ? ` in ${examples}` : ''}.`)
   }
 
   if (s.detectedAuthLibraries.length > 0) {
-    parts.push(`Auth libraries in use: ${s.detectedAuthLibraries.join(', ')}.`)
-  } else {
-    parts.push('No JWT or password-hashing library was detected in package dependencies.')
+    parts.push(`Using ${s.detectedAuthLibraries.join(' and ')} for auth.`)
+  } else if (s.hasSessionOrTokenPattern) {
+    parts.push('Token or session handling code detected in source files.')
   }
 
   if (s.hasGuardOrMiddleware) {
-    parts.push('Guard or middleware patterns detected for route protection.')
+    parts.push('Route protection via guards or middleware is in place.')
   } else {
-    parts.push('No guard or middleware pattern detected for route protection.')
+    parts.push('No route guard or middleware was detected — endpoints may be unprotected.')
   }
 
-  if (s.hasSessionOrTokenPattern) {
-    parts.push('Token signing or session management code found in source files.')
+  if (!s.hasPasswordHashingLibrary) {
+    parts.push('No password hashing library was found.')
   }
 
   return parts.join(' ')
@@ -195,28 +182,31 @@ export function buildAuthenticationNarrative(s: AuthenticationSignals): string {
 
 export function buildDatabaseNarrative(s: DatabaseSignals): string {
   if (!s.hasOrmLibrary && !s.hasMigrationFiles && !s.hasSchemaDefinitions) {
-    return 'No database design evidence detected. No ORM, migration files, or schema definitions were found.'
+    return 'No database design evidence was found — no ORM, migration files, or schema definitions are present. A real persistence layer is required for this category.'
   }
 
   const parts: string[] = []
 
-  if (s.hasOrmLibrary && s.detectedOrmLibrary) {
-    parts.push(`ORM detected: ${s.detectedOrmLibrary}.`)
+  if (s.detectedOrmLibrary) {
+    parts.push(`${s.detectedOrmLibrary} is used for database access.`)
   } else {
-    parts.push('No ORM library found in package dependencies.')
+    parts.push('No ORM library was detected.')
   }
 
   if (s.hasMigrationFiles) {
-    const examples = s.detectedMigrationPaths.slice(0, 2).join(', ')
-    parts.push(`${s.migrationFileCount} migration file${s.migrationFileCount === 1 ? '' : 's'} found${examples ? ` (${examples})` : ''}.`)
+    parts.push(`${s.migrationFileCount} migration file${s.migrationFileCount === 1 ? '' : 's'} found — schema changes are version-controlled.`)
   } else {
-    parts.push('No migration files detected.')
+    parts.push('No migration files were found.')
   }
 
-  if (s.hasSchemaDefinitions) parts.push('Schema or entity definitions present.')
-  if (s.hasRelationPatterns) parts.push('Relational patterns (foreign keys, associations) detected.')
-  if (s.hasTransactionPatterns) parts.push('Transaction usage detected in service layer.')
-  if (s.hasSeedData) parts.push('Seed data files present.')
+  const extras: string[] = []
+  if (s.hasRelationPatterns) extras.push('relational patterns')
+  if (s.hasTransactionPatterns) extras.push('transaction handling')
+  if (s.hasSeedData) extras.push('seed data')
+
+  if (extras.length > 0) {
+    parts.push(`Also detected: ${extras.join(', ')}.`)
+  }
 
   return parts.join(' ')
 }

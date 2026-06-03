@@ -11,6 +11,7 @@ import {
   IconMenu2,
   IconX,
 } from '@tabler/icons-react'
+import { UnreadBadge } from '@/features/submissions/components/unread-badge'
 import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import {
@@ -55,6 +56,7 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
           >
             <Icon size={16} />
             {label}
+            {href === '/submissions' && <UnreadBadge />}
           </Link>
         )
       })}

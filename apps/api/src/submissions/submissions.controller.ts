@@ -20,6 +20,11 @@ export class SubmissionsController {
     return this.submissionsService.getStats(user.id)
   }
 
+  @Get('unread')
+  getUnreadCount(@GetUser() user: User) {
+    return this.submissionsService.getUnreadCount(user.id)
+  }
+
   @Post()
   create(@GetUser() user: User, @Body() dto: CreateSubmissionDto) {
     return this.submissionsService.create(user.id, dto)
@@ -51,5 +56,11 @@ export class SubmissionsController {
   @HttpCode(HttpStatus.OK)
   retrySubmission(@GetUser() user: User, @Param('id') id: string) {
     return this.submissionsService.retrySubmission(user.id, id)
+  }
+
+  @Patch(':id/viewed')
+  @HttpCode(HttpStatus.OK)
+  markViewed(@GetUser() user: User, @Param('id') id: string) {
+    return this.submissionsService.markViewed(user.id, id)
   }
 }

@@ -37,6 +37,12 @@ export const projectTypeEnum = pgEnum('project_type', [
   'frontend',
 ])
 
+export const challengeDifficultyEnum = pgEnum('challenge_difficulty', [
+  'beginner',
+  'intermediate',
+  'advanced',
+])
+
 export const verdictEnum = pgEnum('verdict', [
   'verified',
   'insufficient',
@@ -91,6 +97,7 @@ export const projectChallenges = pgTable('project_challenges', {
   title: text('title').notNull(),
   description: text('description').notNull(),
   projectType: projectTypeEnum('project_type').notNull(),
+  difficulty: challengeDifficultyEnum('difficulty').notNull().default('intermediate'),
   rubric: jsonb('rubric').notNull(),
   passingThreshold: integer('passing_threshold').notNull().default(70),
   version: integer('version').notNull().default(1),
@@ -126,6 +133,7 @@ export const projectSubmissions = pgTable('project_submissions', {
   attempts: integer('attempts').notNull().default(1),
   failureReason: text('failure_reason'),
   rubricVersion: integer('rubric_version').notNull(),
+  viewedAt: timestamp('viewed_at'),
 }, (t) => [
   uniqueIndex('project_submissions_user_challenge_commit_idx').on(
     t.userId, t.challengeId, t.commitSha,

@@ -20,7 +20,6 @@ export interface PublicProfile {
   username: string
   verifiedSkills: VerifiedSkill[]
   reportsCount: number
-  verificationsCount: number
   challengesCompleted: number
   latestReports: ProfileReport[]
 }

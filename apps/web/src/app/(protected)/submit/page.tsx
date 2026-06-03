@@ -58,6 +58,10 @@ export default async function SubmitPage(props: Props) {
                 </div>
               ))}
             </div>
+            <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Passing score</span>
+              <span className="text-xs font-semibold tabular-nums">{challenge.passingThreshold}/100</span>
+            </div>
           </div>
 
           <div className="rounded-lg border bg-card p-5">

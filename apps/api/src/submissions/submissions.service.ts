@@ -251,6 +251,34 @@ export class SubmissionsService {
     return updated
   }
 
+  async markViewed(userId: string, submissionId: string) {
+    const submission = await this.getForUser(userId, submissionId)
+    // Only mark as viewed if the submission has a terminal result (report ready or failed)
+    const isTerminal = ['verified', 'insufficient', 'failed',
+      'ingestion_failed', 'analysis_failed', 'report_generation_failed', 'expired', 'cancelled'].includes(submission.status)
+    if (!isTerminal || submission.viewedAt) return submission
+
+    const updated = await this.db.db
+      .update(projectSubmissions)
+      .set({ viewedAt: new Date() })
+      .where(eq(projectSubmissions.id, submissionId))
+      .returning()
+    return updated[0] ?? submission
+  }
+
+  async getUnreadCount(userId: string): Promise<number> {
+    const rows = await this.db.db
+      .select({ value: count() })
+      .from(projectSubmissions)
+      .where(and(
+        eq(projectSubmissions.userId, userId),
+        inArray(projectSubmissions.status, ['verified', 'insufficient', 'failed',
+          'ingestion_failed', 'analysis_failed', 'report_generation_failed']),
+        eq(projectSubmissions.viewedAt, null as unknown as Date),
+      ))
+    return rows[0]?.value ?? 0
+  }
+
   private async findDuplicate(userId: string, challengeId: string, commitSha: string) {
     const rows = await this.db.db
       .select()

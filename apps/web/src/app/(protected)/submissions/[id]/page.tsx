@@ -9,7 +9,7 @@ import { CancelSubmissionButton } from '@/features/submissions/components/cancel
 import { RequeueSubmissionButton } from '@/features/submissions/components/requeue-submission-button'
 import { RetrySubmissionButton } from '@/features/submissions/components/retry-submission-button'
 import { StatusBadge } from '@/features/submissions/components/status-badge'
-import { IN_PROGRESS_STATUSES } from '@/features/submissions/constants'
+import { IN_PROGRESS_STATUSES, STAGE_DESCRIPTION } from '@/features/submissions/constants'
 import { IconArrowLeft, IconBrandGithub, IconAlertCircle, IconClock, IconExternalLink } from '@tabler/icons-react'
 import { ElapsedTime } from '@/features/submissions/components/elapsed-time'
 
@@ -25,16 +25,26 @@ export default async function SubmissionDetailPage(props: Props) {
     serverApiFetch<ProjectSubmissionEvent[]>(`/submissions/${id}/events`).catch(() => []),
   ])
 
+  // Fire-and-forget: mark this submission as viewed so the nav badge clears
+  serverApiFetch(`/submissions/${id}/viewed`, { method: 'PATCH' }).catch(() => {})
+
   const isInProgress = IN_PROGRESS_STATUSES.includes(submission.status)
   const statusHasReport = submission.status === 'verified' || submission.status === 'insufficient'
-  // Verify the report actually exists before showing the button — there's a brief window
-  // between the status transition and report generation completing where the link would 404.
-  const reportExists = statusHasReport
-    ? await serverApiFetch(`/reports/${id}`).then(() => true).catch(() => false)
-    : false
-  const hasReport = statusHasReport && reportExists
   const isFailed = ['failed', 'ingestion_failed', 'analysis_failed', 'report_generation_failed'].includes(submission.status)
   const isQueued = submission.status === 'queued'
+
+  // Fetch report existence and execution result in parallel — only when submission is terminal
+  type ExecutionSummary = { passed: number; failed: number; skipped: number; timedOut: boolean; language: string } | null
+  const [reportExists, execution] = statusHasReport || isFailed
+    ? await Promise.all([
+        statusHasReport
+          ? serverApiFetch(`/reports/submissions/${id}`).then(() => true).catch(() => false)
+          : Promise.resolve(false),
+        serverApiFetch<ExecutionSummary>(`/reports/submissions/${id}/execution`).catch(() => null),
+      ])
+    : [false, null] as const
+
+  const hasReport = statusHasReport && reportExists
 
   return (
     <div className="px-4 py-6 sm:px-6 md:px-10 md:py-10 w-full">
@@ -97,22 +107,41 @@ export default async function SubmissionDetailPage(props: Props) {
                 <span className="text-xs text-muted-foreground">Status</span>
                 <StatusBadge status={submission.status} />
               </div>
+              {execution && (
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-xs text-muted-foreground">Tests ran</span>
+                  <span className="text-xs tabular-nums">
+                    {execution.timedOut ? (
+                      <span className="text-amber-600">Timed out</span>
+                    ) : (
+                      <>
+                        {execution.passed > 0 && <span className="text-green-600">{execution.passed} passed</span>}
+                        {execution.passed > 0 && execution.failed > 0 && <span className="text-muted-foreground"> · </span>}
+                        {execution.failed > 0 && <span className="text-destructive">{execution.failed} failed</span>}
+                        {execution.passed === 0 && execution.failed === 0 && <span className="text-muted-foreground">0 tests</span>}
+                      </>
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
           {isInProgress && (
             <div className="rounded-lg border bg-card p-5">
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0">
                   <span className="size-2 rounded-full bg-primary animate-pulse shrink-0" />
-                  <p className="text-sm font-medium">Verification running</p>
+                  <p className="text-sm font-medium truncate">
+                    {STAGE_DESCRIPTION[submission.status] ?? 'Verification running…'}
+                  </p>
                 </div>
-                <span className="text-xs text-muted-foreground tabular-nums">
+                <span className="text-xs text-muted-foreground tabular-nums shrink-0">
                   <ElapsedTime since={submission.submittedAt} />
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Results will appear here when complete. This typically takes 2–5 minutes.
+                This typically takes 2–5 minutes. The page updates automatically.
               </p>
             </div>
           )}
@@ -160,6 +189,9 @@ export default async function SubmissionDetailPage(props: Props) {
               </div>
               <div className="mt-4 space-y-2">
                 <RequeueSubmissionButton submissionId={submission.id} />
+                <p className="text-[11px] text-muted-foreground text-center">
+                  Re-queuing will restart verification. Usually takes 2–5 minutes.
+                </p>
                 <Button variant="ghost" size="sm" className="w-full text-muted-foreground" asChild>
                   <Link href={`/submit?challengeId=${submission.challengeId}`}>Submit a different commit</Link>
                 </Button>

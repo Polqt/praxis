@@ -113,6 +113,20 @@
       "when": 1780485395249,
       "tag": "0016_lively_living_tribunal",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1780900000000,
+      "tag": "0017_submission_viewed_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1780900001000,
+      "tag": "0018_challenge_difficulty",
+      "breakpoints": true
     }
   ]
 }

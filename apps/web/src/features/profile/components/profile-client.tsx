@@ -27,7 +27,6 @@ export function ProfileClient({ profile, viewingUser }: Props) {
         <ProfileHero
           username={profile.username}
           verifiedSkills={profile.verifiedSkills}
-          verificationsCount={profile.verificationsCount}
           reportsCount={profile.reportsCount}
         />
       </motion.div>
@@ -50,7 +49,6 @@ export function ProfileClient({ profile, viewingUser }: Props) {
         <ProofStatisticsSection
           verifiedCount={profile.reportsCount}
           skillsCount={profile.verifiedSkills.length}
-          challengesCompleted={profile.challengesCompleted}
         />
       </motion.div>
 

@@ -112,8 +112,25 @@ export class UsersService {
   }
 
   async getDashboardStats(userId: string) {
-    const verifiedSkills = await this.getUserSkills(userId)
-    const [countResult, recentSubmissions] = await Promise.all([
+    // Two parallel queries: skills join + submissions (count + recent in one query via window or two selects)
+    const [skillRows, countResult, recentSubmissions] = await Promise.all([
+      this.db.db
+        .select({
+          id: userSkills.id,
+          userId: userSkills.userId,
+          skill: {
+            id: skills.id,
+            trackId: skills.trackId,
+            name: skills.name,
+            category: skills.category,
+            createdAt: skills.createdAt,
+          },
+          sourceType: userSkills.sourceType,
+          awardedAt: userSkills.awardedAt,
+        })
+        .from(userSkills)
+        .innerJoin(skills, eq(userSkills.skillId, skills.id))
+        .where(eq(userSkills.userId, userId)),
       this.db.db
         .select({ value: count() })
         .from(projectSubmissions)
@@ -126,9 +143,9 @@ export class UsersService {
         .limit(5),
     ])
     return {
-      totalVerified: verifiedSkills.length,
+      totalVerified: skillRows.length,
       totalAttempts: countResult[0]?.value ?? 0,
-      verifiedSkills,
+      verifiedSkills: skillRows,
       recentSubmissions,
     }
   }
@@ -233,7 +250,6 @@ export class UsersService {
       username: user.username as string,
       verifiedSkills: earnedSkills.map((s) => ({ name: s.name, awardedAt: s.awardedAt.toISOString() })),
       reportsCount: verifiedCount,
-      verificationsCount: verifiedCount,
       challengesCompleted: verifiedCount,
       latestReports,
     }

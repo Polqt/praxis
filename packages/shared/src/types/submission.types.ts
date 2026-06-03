@@ -36,12 +36,15 @@ export interface RubricCategory {
   citations?: string[]
 }
 
+export type ChallengeDifficulty = 'beginner' | 'intermediate' | 'advanced'
+
 export interface ProjectChallenge {
   id: string
   trackId: string
   title: string
   description: string
   projectType: ProjectType
+  difficulty: ChallengeDifficulty
   rubric: { categories: RubricCategory[] }
   passingThreshold: number
   version: number
@@ -64,6 +67,7 @@ export interface ProjectSubmission {
   attempts: number
   failureReason: string | null
   rubricVersion: number
+  viewedAt: string | null
 }
 
 export interface ProjectSubmissionEvent {

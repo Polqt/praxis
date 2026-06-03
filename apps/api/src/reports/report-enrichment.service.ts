@@ -26,7 +26,7 @@ interface EnrichmentResult {
   improvements: string[]
 }
 
-const SYSTEM_PROMPT = `You are a senior engineer writing concise, honest verification report narratives for a developer skill platform. You receive deterministic signal data extracted from a real GitHub repository and write clear prose that explains what was found and why it matters. Be direct and specific. Never invent signals that aren't in the data. Never pad with filler. Max 2 sentences per category narrative.`
+const SYSTEM_PROMPT = `You are a senior engineer writing concise, honest verification report narratives for a developer skill platform. You receive deterministic signal data extracted from a real GitHub repository and write clear prose that explains what was found and why it matters. Be direct and specific. Never invent signals that aren't in the data. Never pad with filler. Max 2 sentences per category narrative. When asked for JSON, respond with only the raw JSON object — no markdown fences, no explanation.`
 
 function buildCategoryPrompt(
   categoryName: string,
@@ -103,42 +103,18 @@ export class ReportEnrichmentService {
   }
 
   private async runEnrichment(input: EnrichmentInput): Promise<EnrichmentResult> {
-    const enrichedScores = { ...input.categoryScores }
-    const strengths: string[] = []
-    const improvements: string[] = []
-
-    // Cap concurrent Anthropic calls to avoid rate limits when upgrading models
-    const CONCURRENCY = 3
     const categoryEntries = Object.entries(input.categoryScores)
-    const narrativeResults: { name: string; narrative: string }[] = []
-    for (let i = 0; i < categoryEntries.length; i += CONCURRENCY) {
-      const batch = categoryEntries.slice(i, i + CONCURRENCY)
-      const batchResults = await Promise.all(
-        batch.map(async ([name, entry]) => {
-          const prompt = buildCategoryPrompt(
-            name,
-            entry.score,
-            entry.minimumScore,
-            entry.status,
-            entry.citations,
-            entry.signals,
-          )
-          const narrative = await this.callClaude(prompt)
-          return { name, narrative }
-        }),
-      )
-      narrativeResults.push(...batchResults)
-    }
 
-    for (const { name, narrative } of narrativeResults) {
-      enrichedScores[name] = { ...enrichedScores[name], narrative }
+    // Build a single user message containing all categories + summary request.
+    // One call with prompt caching is far cheaper than N+1 separate calls.
+    const categoryBlocks = categoryEntries.map(([name, entry]) =>
+      buildCategoryPrompt(name, entry.score, entry.minimumScore, entry.status, entry.citations, entry.signals)
+    ).join('\n\n---\n\n')
 
-      const entry = enrichedScores[name]
-      if (entry.score >= 8) strengths.push(name)
-      if (entry.score <= 5 || entry.status === 'floor') improvements.push(name)
-    }
+    const strengths = categoryEntries.filter(([, v]) => v.score >= 8).map(([n]) => n)
+    const improvements = categoryEntries.filter(([, v]) => v.score <= 5 || v.status === 'floor').map(([n]) => n)
 
-    const summaryPrompt = buildSummaryPrompt(
+    const summaryBlock = buildSummaryPrompt(
       input.verdict,
       input.compositeScore,
       input.challengeTitle,
@@ -146,17 +122,51 @@ export class ReportEnrichmentService {
       strengths,
       improvements,
     )
-    const publicSummary = await this.callClaude(summaryPrompt)
 
-    this.logger.log(`AI enrichment complete for ${input.repositoryName} — ${categoryEntries.length} categories`)
+    const combinedPrompt = `${categoryBlocks}
 
-    return { categoryScores: enrichedScores, publicSummary, strengths, improvements }
+---
+
+${summaryBlock}
+
+Respond with a JSON object in exactly this shape (no markdown, no extra text):
+{"narratives":{"<categoryName>":"<1-2 sentence narrative>"},"publicSummary":"<single sentence>"}`
+
+    const raw = await this.callClaude(combinedPrompt, 1500)
+
+    let parsed: { narratives: Record<string, string>; publicSummary: string } | null = null
+    try {
+      // Extract the JSON from the response (Claude may include minor framing)
+      const jsonMatch = raw.match(/\{[\s\S]*\}/)
+      if (jsonMatch) parsed = JSON.parse(jsonMatch[0])
+    } catch {
+      this.logger.warn(`AI enrichment: failed to parse JSON response, falling back to passthrough`)
+    }
+
+    if (!parsed) return this.passthrough(input)
+
+    const enrichedScores = { ...input.categoryScores }
+    for (const [name] of categoryEntries) {
+      const narrative = parsed.narratives?.[name]
+      if (narrative) {
+        enrichedScores[name] = { ...enrichedScores[name], narrative }
+      }
+    }
+
+    this.logger.log(`AI enrichment complete for ${input.repositoryName} — ${categoryEntries.length} categories (1 call)`)
+
+    return {
+      categoryScores: enrichedScores,
+      publicSummary: parsed.publicSummary || this.passthrough(input).publicSummary,
+      strengths,
+      improvements,
+    }
   }
 
-  private async callClaude(userPrompt: string): Promise<string> {
+  private async callClaude(userPrompt: string, maxTokens = 200): Promise<string> {
     const message = await this.client!.messages.create({
       model: this.model,
-      max_tokens: 200,
+      max_tokens: maxTokens,
       system: [
         {
           type: 'text',

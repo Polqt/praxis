@@ -1,8 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { IconChevronDown, IconChevronRight, IconTerminal2 } from '@tabler/icons-react'
+import { IconChevronDown, IconChevronRight, IconTerminal2, IconAlertTriangle } from '@tabler/icons-react'
 import { motion, AnimatePresence } from 'framer-motion'
+
+// Mirrors the caps in repository-execution.service.ts
+const STDOUT_CAP = 5000
+const STDERR_CAP = 2000
 
 interface ExecutionOutput {
   language: string
@@ -24,8 +28,12 @@ type Props = {
 export function TestExecutionOutput({ execution }: Props) {
   const [open, setOpen] = useState(false)
 
-  const hasOutput = execution.stdout?.trim() || execution.stderr?.trim()
-  const statusColor = execution.exitCode === 0 ? 'text-green-600' : 'text-destructive'
+  const stdout = execution.stdout?.trim() ?? ''
+  const stderr = execution.stderr?.trim() ?? ''
+  const hasOutput = stdout || stderr
+  const stdoutTruncated = (execution.stdout?.length ?? 0) >= STDOUT_CAP
+  const stderrTruncated = (execution.stderr?.length ?? 0) >= STDERR_CAP
+  const statusColor = execution.timedOut || execution.exitCode !== 0 ? 'text-destructive' : 'text-green-600'
   const durationLabel = execution.durationMs ? `${(execution.durationMs / 1000).toFixed(1)}s` : null
 
   return (
@@ -60,25 +68,44 @@ export function TestExecutionOutput({ execution }: Props) {
             className="overflow-hidden"
           >
             <div className="px-5 pb-4 border-t border-border space-y-3">
-              <div className="flex gap-4 pt-3 text-xs text-muted-foreground">
-                <span className="font-mono">{execution.testCommand}</span>
+              {/* Timeout banner — shown prominently when execution was killed */}
+              {execution.timedOut && (
+                <div className="flex items-center gap-2 mt-3 rounded-md bg-amber-50 border border-amber-200 px-3 py-2">
+                  <IconAlertTriangle size={13} className="text-amber-600 shrink-0" />
+                  <p className="text-xs text-amber-700">
+                    Test execution timed out. The test runner exceeded the time limit — scores are based on file detection only.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-4 pt-3 text-xs text-muted-foreground">
+                <span className="font-mono break-all">{execution.testCommand}</span>
                 {execution.passed > 0 && <span className="text-green-600">{execution.passed} passed</span>}
                 {execution.failed > 0 && <span className="text-destructive">{execution.failed} failed</span>}
                 {execution.skipped > 0 && <span>{execution.skipped} skipped</span>}
               </div>
+
               {hasOutput ? (
                 <>
-                  {execution.stdout?.trim() && (
-                    <pre className="text-[11px] font-mono bg-muted/60 rounded-md p-3 overflow-x-auto max-h-64 whitespace-pre-wrap leading-relaxed">
-                      {execution.stdout.trim()}
-                    </pre>
+                  {stdout && (
+                    <div>
+                      <pre className="text-[11px] font-mono bg-muted/60 rounded-md p-3 overflow-x-auto max-h-64 whitespace-pre-wrap leading-relaxed">
+                        {stdout}
+                      </pre>
+                      {stdoutTruncated && (
+                        <p className="text-[10px] text-muted-foreground mt-1 italic">… output truncated at 5000 characters</p>
+                      )}
+                    </div>
                   )}
-                  {execution.stderr?.trim() && (
+                  {stderr && (
                     <div>
                       <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">stderr</p>
                       <pre className="text-[11px] font-mono bg-destructive/5 border border-destructive/20 rounded-md p-3 overflow-x-auto max-h-32 whitespace-pre-wrap leading-relaxed text-destructive/80">
-                        {execution.stderr.trim()}
+                        {stderr}
                       </pre>
+                      {stderrTruncated && (
+                        <p className="text-[10px] text-muted-foreground mt-1 italic">… output truncated at 2000 characters</p>
+                      )}
                     </div>
                   )}
                 </>

@@ -7,10 +7,9 @@ type Props = {
   username: string
   verifiedSkills: VerifiedSkill[]
   reportsCount: number
-  verificationsCount: number
 }
 
-export function ProfileHero({ username, verifiedSkills, reportsCount, verificationsCount }: Props) {
+export function ProfileHero({ username, verifiedSkills, reportsCount }: Props) {
   const title = deriveEngineerTitle(verifiedSkills.map((s) => s.name))
 
   return (
@@ -19,8 +18,7 @@ export function ProfileHero({ username, verifiedSkills, reportsCount, verificati
       <p className="text-sm text-muted-foreground mt-1">{title}</p>
       <div className="flex items-center gap-3 mt-4">
         <StatPill value={verifiedSkills.length} label="Skills" />
-        <StatPill value={verificationsCount} label="Verifications" />
-        <StatPill value={reportsCount} label="Reports" />
+        <StatPill value={reportsCount} label="Verified" />
       </div>
     </div>
   )

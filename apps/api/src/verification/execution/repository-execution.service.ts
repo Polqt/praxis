@@ -41,20 +41,41 @@ function detectRuntime(ingestionData: RepositoryIngestionData): DetectedRuntime 
     const manifest = ingestionData.files.find(
       (f) => f.path === 'package.json' || f.path.endsWith('/package.json'),
     )
-    let testScript = 'test'
+
+    let testCommand = 'npm test -- --passWithNoTests 2>&1 || true'
+
     if (manifest?.content) {
       try {
-        const pkg = JSON.parse(manifest.content) as { scripts?: Record<string, string> }
-        if (pkg.scripts?.test && !pkg.scripts.test.includes('no test specified')) {
-          testScript = 'test'
+        const pkg = JSON.parse(manifest.content) as {
+          scripts?: Record<string, string>
+          devDependencies?: Record<string, string>
+          dependencies?: Record<string, string>
+        }
+        const testScript = pkg.scripts?.test ?? ''
+        const hasNoTestScript = !testScript || testScript.includes('no test specified') || testScript.includes('echo')
+
+        if (hasNoTestScript) {
+          // No test script defined — probe for common frameworks installed as dev deps
+          const allDeps = { ...pkg.devDependencies, ...pkg.dependencies }
+          if (allDeps['vitest']) {
+            testCommand = 'npx vitest run --passWithNoTests 2>&1 || true'
+          } else if (allDeps['jest'] || allDeps['ts-jest'] || allDeps['babel-jest']) {
+            testCommand = 'npx jest --passWithNoTests 2>&1 || true'
+          } else if (allDeps['mocha']) {
+            testCommand = 'npx mocha 2>&1 || true'
+          } else if (allDeps['bun']) {
+            testCommand = 'bun test 2>&1 || true'
+          }
+          // else: fall through to the default npm test which will fail gracefully
         }
       } catch {
-        // use default
+        // malformed package.json — use default
       }
     }
+
     return {
       language: 'javascript',
-      testCommand: `npm run ${testScript} -- --passWithNoTests 2>&1 || true`,
+      testCommand,
       installCommand: 'npm install --prefer-offline 2>&1',
     }
   }
@@ -317,6 +338,9 @@ print('STDERR_END')
 
       const { passed, failed, skipped } = parseTestOutput(stdout, runtime.language, exitCode)
 
+      const STDOUT_CAP = 5000
+      const STDERR_CAP = 2000
+
       const result: ExecutionResult = {
         language: runtime.language,
         testCommand: runtime.testCommand,
@@ -325,8 +349,9 @@ print('STDERR_END')
         failed,
         skipped,
         durationMs,
-        stdout: stdout.slice(0, 5000),
-        stderr: stderr.slice(0, 2000),
+        // Store at exactly the cap length so the UI can detect truncation by checking length === cap
+        stdout: stdout.length > STDOUT_CAP ? stdout.slice(0, STDOUT_CAP) : stdout,
+        stderr: stderr.length > STDERR_CAP ? stderr.slice(0, STDERR_CAP) : stderr,
         timedOut: false,
       }
 

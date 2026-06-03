@@ -4,13 +4,19 @@ import { ChallengesPublicPage } from '@/features/challenges/components/challenge
 import type { ProjectChallenge } from '@praxis/shared'
 import type { Challenge } from '@/features/challenges/types'
 
+const DIFFICULTY_MAP: Record<string, Challenge['difficulty']> = {
+  beginner: 'junior',
+  intermediate: 'intermediate',
+  advanced: 'senior',
+}
+
 function toChallenge(raw: ProjectChallenge): Challenge {
   return {
     id: raw.id,
     title: raw.title,
     description: raw.description,
     category: raw.projectType === 'frontend' ? 'frontend' : 'backend',
-    difficulty: 'intermediate',
+    difficulty: DIFFICULTY_MAP[raw.difficulty] ?? 'intermediate',
     skills: raw.rubric.categories.map((c) => c.name),
   }
 }

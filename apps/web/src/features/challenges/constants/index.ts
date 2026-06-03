@@ -7,9 +7,9 @@ export const DIFFICULTY_CLASS: Record<ChallengeDifficulty, string> = {
 }
 
 export const DIFFICULTY_LABEL: Record<ChallengeDifficulty, string> = {
-  junior: 'Junior',
+  junior: 'Beginner',
   intermediate: 'Intermediate',
-  senior: 'Senior',
+  senior: 'Advanced',
 }
 
 export const MARQUEE_TEXT =

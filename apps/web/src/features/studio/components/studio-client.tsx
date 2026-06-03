@@ -157,6 +157,10 @@ export function StudioClient({
                   </Badge>
                 ))}
               </div>
+            ) : submissionStats.verifiedCount > 0 ? (
+              <p className="text-sm text-muted-foreground mt-2">
+                No skills were awarded yet. This may be a configuration issue — contact support if you believe this is wrong.
+              </p>
             ) : (
               <p className="text-sm text-muted-foreground mt-2">
                 Skills appear here after your first verified submission.

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 import { DatabaseService } from '../../database/database.service'
 import { projectSubmissions, repositoryAnalyses, repositoryIngestions } from '../../database/schema'
 import { RepositoryIngestionData } from '../ingestion/repository-ingestion.types'
@@ -48,6 +48,16 @@ export class RepositoryAnalysisService {
     if (!ingestions[0]) throw new Error('Repository ingestion not found')
 
     const analysisData = this.analyzeData(ingestions[0].ingestedData as RepositoryIngestionData)
+
+    // Delete stale rows for this ingestion before inserting the new one.
+    // This prevents unbounded table growth when ANALYZER_VERSION is bumped.
+    await this.db.db.delete(repositoryAnalyses).where(
+      and(
+        eq(repositoryAnalyses.repositoryIngestionId, repositoryIngestionId),
+        ne(repositoryAnalyses.analyzerVersion, ANALYZER_VERSION),
+      ),
+    )
+
     const inserted = await this.db.db.insert(repositoryAnalyses).values({
       repositoryIngestionId,
       analyzerVersion: ANALYZER_VERSION,

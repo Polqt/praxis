@@ -44,6 +44,7 @@ async function seed() {
       Submit any backend repository that demonstrates production REST API engineering.
       Accepted examples include inventory APIs, booking APIs, CRM backends, auth services, and internal tools APIs. The repository must show a complete backend system with API routes, authentication, persistence, tests, documentation, and deployment evidence.`,
     projectType: 'backend' as const,
+    difficulty: 'advanced' as const,
     rubric: {
       categories: [
         { name: 'API Design', weight: 20, floor: 5 },
@@ -104,6 +105,7 @@ async function seed() {
     title: 'Build a Production Frontend App',
     description: `## Build a Production Frontend App\nSubmit any React or Next.js repository that demonstrates production frontend engineering.\nAccepted examples include dashboards, SaaS UIs, portfolio sites, e-commerce frontends, and internal tools. The repository must show a complete frontend with component architecture, state management, styling, accessibility, performance awareness, and tests.`,
     projectType: 'frontend' as const,
+    difficulty: 'advanced' as const,
     rubric: {
       categories: [
         { name: 'Component Architecture', weight: 25, floor: 5 },
@@ -134,6 +136,7 @@ async function seed() {
   // ── Easy backend challenge ───────────────────────────────────────────────────
   const easyBackendChallenge = {
     trackId: backendTrack.id,
+    difficulty: 'beginner' as const,
     title: 'Build a Basic CRUD API',
     description: `## Build a Basic CRUD API
 
@@ -177,6 +180,7 @@ Accepted examples include note-taking APIs, task managers, blog backends, contac
   // ── Easy frontend challenge ──────────────────────────────────────────────────
   const easyFrontendChallenge = {
     trackId: frontendTrack.id,
+    difficulty: 'beginner' as const,
     title: 'Build a React App',
     description: `## Build a React App
 
