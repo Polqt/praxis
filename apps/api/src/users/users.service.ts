@@ -12,6 +12,18 @@ import {
 
 @Injectable()
 export class UsersService {
+  private static readonly RESERVED_USERNAMES = new Set([
+    'admin', 'administrator', 'api', 'app', 'auth',
+    'billing', 'blog', 'cdn', 'dashboard', 'dev',
+    'docs', 'email', 'ftp', 'git', 'github',
+    'help', 'home', 'hostname', 'legal', 'mail',
+    'marketing', 'me', 'mobile', 'null', 'ops',
+    'portal', 'praxis', 'privacy', 'root', 'sales',
+    'security', 'server', 'settings', 'signup', 'signin',
+    'status', 'support', 'system', 'team', 'terms',
+    'undefined', 'user', 'username', 'www', 'www1', 'www2',
+  ])
+
   constructor(private db: DatabaseService) {}
 
   async getOrCreateUser(supabaseUid: string, email: string) {
@@ -53,6 +65,9 @@ export class UsersService {
   }
 
   async updateUser(userId: string, data: { username: string }) {
+    if (UsersService.RESERVED_USERNAMES.has(data.username.toLowerCase())) {
+      throw new ConflictException('This username is not available.')
+    }
     try {
       const updated = await this.db.db
         .update(users)
