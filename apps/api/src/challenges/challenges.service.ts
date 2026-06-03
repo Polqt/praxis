@@ -7,12 +7,14 @@ import { projectChallenges } from '../database/schema'
 export class ChallengesService {
   constructor(private readonly db: DatabaseService) {}
 
-  listActive() {
+  listActive(limit = 50, offset = 0) {
     return this.db.db
       .select()
       .from(projectChallenges)
       .where(eq(projectChallenges.isActive, true))
       .orderBy(asc(projectChallenges.createdAt))
+      .limit(limit)
+      .offset(offset)
   }
 
   async getActive(id: string) {
