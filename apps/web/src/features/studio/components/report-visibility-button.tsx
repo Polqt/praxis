@@ -5,8 +5,6 @@ import { IconCheck, IconCopy } from '@tabler/icons-react'
 import { apiClient } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 
-const APP_BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://praxis.dev'
-
 type Props = {
   submissionId: string
   isPublic: boolean
@@ -22,7 +20,8 @@ export function ReportVisibilityButton({ submissionId, isPublic, initialPublicTo
   const [copied, setCopied] = useState(false)
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const proofUrl = publicToken ? `${APP_BASE_URL}/proof/${publicToken}` : null
+  // Build the URL lazily so it always uses the actual deployed origin, not a build-time fallback
+  const proofUrl = publicToken ? `${window.location.origin}/proof/${publicToken}` : null
 
   async function publish() {
     setPending(true)
