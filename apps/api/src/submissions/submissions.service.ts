@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { and, count, desc, eq, gte, ne } from 'drizzle-orm'
+import { and, count, desc, eq, gte, inArray, min, ne } from 'drizzle-orm'
 import { ChallengesService } from '../challenges/challenges.service'
 import { DatabaseService } from '../database/database.service'
 import { projectSubmissionEvents, projectSubmissions } from '../database/schema'
@@ -38,10 +38,27 @@ export class SubmissionsService {
       ))
     const recentCount = recentCountRows[0]?.value ?? 0
     if (recentCount >= rateLimitPerHour) {
-      throw new HttpException(
-        { message: 'You have reached the submission limit. Please wait before submitting again.' },
+      const oldestSubmissionRows = await this.db.db
+        .select({ oldestTime: min(projectSubmissions.submittedAt) })
+        .from(projectSubmissions)
+        .where(and(
+          eq(projectSubmissions.userId, userId),
+          gte(projectSubmissions.submittedAt, oneHourAgo),
+          ne(projectSubmissions.status, 'cancelled'),
+        ))
+      const oldestSubmittedAt = oldestSubmissionRows[0]?.oldestTime
+      const retryAfterSeconds = oldestSubmittedAt
+        ? Math.ceil((oldestSubmittedAt.getTime() + 60 * 60 * 1000 - Date.now()) / 1000)
+        : 3600
+      const error = new HttpException(
+        {
+          message: 'You have reached the submission limit. Please wait before submitting again.',
+          retryAfterSeconds,
+        },
         HttpStatus.TOO_MANY_REQUESTS,
       )
+      ;(error as any).getHeaders = () => ({ 'Retry-After': String(retryAfterSeconds) })
+      throw error
     }
 
     const challenge = await this.challengesService.getActive(dto.challengeId)
@@ -111,16 +128,21 @@ export class SubmissionsService {
   }
 
   async getStats(userId: string) {
-    const submissions = await this.listForUser(userId)
+    const IN_PROGRESS = ['created', 'queued', 'ingesting', 'analyzing', 'generating_report'] as const
+    const REPORT_GENERATED = ['verified', 'insufficient', 'failed'] as const
+
+    const [totalRows, verifiedRows, inProgressRows, reportsRows] = await Promise.all([
+      this.db.db.select({ value: count() }).from(projectSubmissions).where(eq(projectSubmissions.userId, userId)),
+      this.db.db.select({ value: count() }).from(projectSubmissions).where(and(eq(projectSubmissions.userId, userId), eq(projectSubmissions.status, 'verified'))),
+      this.db.db.select({ value: count() }).from(projectSubmissions).where(and(eq(projectSubmissions.userId, userId), inArray(projectSubmissions.status, [...IN_PROGRESS]))),
+      this.db.db.select({ value: count() }).from(projectSubmissions).where(and(eq(projectSubmissions.userId, userId), inArray(projectSubmissions.status, [...REPORT_GENERATED]))),
+    ])
+
     return {
-      totalSubmissions: submissions.length,
-      verifiedCount: submissions.filter((submission) => submission.status === 'verified').length,
-      inProgressCount: submissions.filter((submission) => (
-        ['created', 'queued', 'ingesting', 'analyzing', 'generating_report'].includes(submission.status)
-      )).length,
-      reportsGenerated: submissions.filter((submission) => (
-        ['verified', 'insufficient', 'failed'].includes(submission.status)
-      )).length,
+      totalSubmissions: totalRows[0]?.value ?? 0,
+      verifiedCount: verifiedRows[0]?.value ?? 0,
+      inProgressCount: inProgressRows[0]?.value ?? 0,
+      reportsGenerated: reportsRows[0]?.value ?? 0,
     }
   }
 
