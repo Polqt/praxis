@@ -10,6 +10,7 @@ export async function serverApiFetch<T>(
 
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${path}`, {
     ...options,
+    signal: options?.signal ?? AbortSignal.timeout(10_000),
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
+import { APP_GUARD } from '@nestjs/core'
 import configuration from './config/configuration'
 import { DatabaseModule } from './database/database.module'
 import { AuthModule } from './auth/auth.module'
@@ -25,6 +27,10 @@ import { NotificationsModule } from './notifications/notifications.module'
       load: [configuration],
       envFilePath: '.env',
     }),
+    ThrottlerModule.forRoot([
+      { name: 'short', ttl: 1000, limit: 20 },
+      { name: 'medium', ttl: 60_000, limit: 200 },
+    ]),
     DatabaseModule,
     AuditModule,
     AuthModule,
@@ -40,6 +46,10 @@ import { NotificationsModule } from './notifications/notifications.module'
     IngestionModule,
     NotificationsModule,
   ],
-  providers: [VerificationWorker, WorkerHealthService],
+  providers: [
+    VerificationWorker,
+    WorkerHealthService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}

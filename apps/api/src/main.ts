@@ -36,7 +36,11 @@ async function bootstrap() {
   app.get(WorkerHealthService).start()
 
   const queueService = app.get(VerificationQueueService)
-  const scheduleStaleExpiry = () => { queueService.enqueueExpireStale().catch(() => undefined) }
+  const scheduleStaleExpiry = () => {
+    queueService.enqueueExpireStale().catch((err: unknown) => {
+      logger.error('stale expiry enqueue failed', err instanceof Error ? err.message : String(err))
+    })
+  }
   scheduleStaleExpiry()
   const staleInterval = setInterval(scheduleStaleExpiry, 30 * 60 * 1000)
 

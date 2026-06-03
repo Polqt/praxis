@@ -34,6 +34,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         `${request.method} ${request.url} → ${status}`,
         exception instanceof Error ? exception.stack : String(exception),
       )
+    } else if (status === 401 || status === 403) {
+      this.logger.warn(`${request.method} ${request.url} → ${status}`)
     }
 
     const body: Record<string, unknown> = { statusCode: status, message, requestId }

@@ -7,7 +7,7 @@ services:
     rootDir: .
     buildCommand: npx --yes pnpm@9 install --frozen-lockfile --prod=false && npx --yes pnpm@9 --filter @praxis/api build
     startCommand: node apps/api/dist/apps/api/src/main.js
-    healthCheckPath: /api/health/live
+    healthCheckPath: /api/health/ready
     envVars:
       - key: NODE_ENV
         value: production
