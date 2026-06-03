@@ -235,7 +235,7 @@ export class VerificationWorker implements OnModuleDestroy {
         submissionId: job.data.submissionId,
         toStatus,
         reason: 'job_failed_final_attempt',
-        failureReason: error.message.slice(0, 500),
+        failureReason: error.message,
         metadata: { jobName: job.name, attemptsMade: job.attemptsMade },
       })
     } catch (transitionError) {
