@@ -1,8 +1,10 @@
 'use client'
 
+import { motion } from 'framer-motion'
 import { IconCheck, IconX } from '@tabler/icons-react'
-import { PIPELINE_STAGES, TERMINAL_STAGE_LABELS, TERMINAL_STATUSES } from '@/features/submissions/constants'
+import { PIPELINE_STAGES, TERMINAL_STAGE_LABELS, TERMINAL_STATUSES } from '../constants'
 import { formatDate } from '@/lib/praxis-format'
+import { staggerContainer, fadeUp } from '@/lib/animations'
 import type { ProjectSubmission, ProjectSubmissionEvent, SubmissionStatus } from '@praxis/shared'
 
 type Props = {
@@ -51,7 +53,12 @@ export function SubmissionTimeline({ submission, events }: Props) {
   }
 
   return (
-    <div className="space-y-0">
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      animate="visible"
+      className="space-y-0"
+    >
       {allStages.map((stage, index) => {
         const state = getState(index)
         const isLast = index === allStages.length - 1
@@ -63,7 +70,7 @@ export function SubmissionTimeline({ submission, events }: Props) {
           : null
 
         return (
-          <div key={stage.key} className="flex gap-4">
+          <motion.div key={stage.key} variants={fadeUp} className="flex gap-4">
             <div className="flex flex-col items-center">
               <div className={[
                 'size-7 rounded-full border-2 flex items-center justify-center shrink-0 z-10',
@@ -101,10 +108,10 @@ export function SubmissionTimeline({ submission, events }: Props) {
                 <p className="text-xs text-muted-foreground mt-1">In progress...</p>
               )}
             </div>
-          </div>
+          </motion.div>
         )
       })}
-    </div>
+    </motion.div>
   )
 }
 

@@ -1,11 +1,13 @@
 'use client'
 
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { IconCheck, IconX } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useUsernameOnboarding } from '@/features/onboarding/hooks/use-username-onboarding'
+import { useUsernameOnboarding } from '../hooks/use-username-onboarding'
+import { staggerContainer, fadeUp } from '@/lib/animations'
 
 export function UsernameOnboardingClient() {
   const { value, validationError, checkState, saving, saveError, handleChange, handleSubmit } =
@@ -20,22 +22,27 @@ export function UsernameOnboardingClient() {
     saving
 
   return (
-    <div className="space-y-6">
-      <div>
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
+      <motion.div variants={fadeUp}>
         <h1 className="text-2xl font-semibold tracking-tight">Choose your username</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Your username is your public identity on Praxis. It powers your proof profile URL and cannot be changed easily later.
         </p>
-      </div>
+      </motion.div>
 
-      <div className="text-sm text-muted-foreground">
+      <motion.div variants={fadeUp} className="text-sm text-muted-foreground">
         praxis.dev/p/
         <span className={`font-mono ${value ? 'text-foreground' : 'text-muted-foreground/50'}`}>
           {value || 'your-username'}
         </span>
-      </div>
+      </motion.div>
 
-      <div className="space-y-1.5">
+      <motion.div variants={fadeUp} className="space-y-1.5">
         <Label htmlFor="username">Username</Label>
         <Input
           id="username"
@@ -64,11 +71,11 @@ export function UsernameOnboardingClient() {
           </span>
           <span className="text-xs text-muted-foreground">{value.length}/24</span>
         </div>
-      </div>
+      </motion.div>
 
-      {saveError && <p className="text-sm text-destructive">{saveError}</p>}
+      {saveError && <motion.p variants={fadeUp} className="text-sm text-destructive">{saveError}</motion.p>}
 
-      <div className="space-y-2">
+      <motion.div variants={fadeUp} className="space-y-2">
         <Button onClick={handleSubmit} disabled={isSubmitDisabled} className="w-full">
           {saving ? 'Saving…' : 'Claim username'}
         </Button>
@@ -76,7 +83,7 @@ export function UsernameOnboardingClient() {
           You can update your username later from{' '}
           <Link href="/settings" className="underline">Settings</Link>.
         </p>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

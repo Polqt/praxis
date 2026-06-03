@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { IconUser, IconBrandGithub, IconAlertTriangle, IconLogout, IconCopy, IconCheck, IconExternalLink } from '@tabler/icons-react'
 import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -13,6 +14,7 @@ import { GitHubConnectionStatus } from '@/features/github/components/github-conn
 import { createClient } from '@/lib/supabase/client'
 import { useUser, useSetUsername } from '@/features/user/hooks/use-user-context'
 import { useSettingsNav } from '@/features/settings/hooks/use-settings-nav'
+import { fadeUp } from '@/lib/animations'
 import type { GitHubAccount } from '@praxis/shared'
 
 type Section = 'account' | 'github' | 'danger'
@@ -111,8 +113,9 @@ export function SettingsClient({ initialGithub }: Props) {
           <Separator className="mt-4" />
         </div>
         <div className="px-8 py-2 overflow-y-auto">
+          <AnimatePresence mode="wait">
           {activeSection === 'account' && (
-            <div className="space-y-6 max-w-md">
+            <motion.div key="account" variants={fadeUp} initial="hidden" animate="visible" className="space-y-6 max-w-md">
               <div className="space-y-1.5">
                 <Label htmlFor="email">Email address</Label>
                 <Input id="email" value={user.email} disabled className="opacity-70 cursor-not-allowed" />
@@ -140,15 +143,15 @@ export function SettingsClient({ initialGithub }: Props) {
                   </div>
                 </div>
               )}
-            </div>
+            </motion.div>
           )}
           {activeSection === 'github' && (
-            <div className="rounded-lg border bg-card p-5 max-w-md">
+            <motion.div key="github" variants={fadeUp} initial="hidden" animate="visible" className="rounded-lg border bg-card p-5 max-w-md">
               <GitHubConnectionStatus github={github} onRefresh={setGithub} />
-            </div>
+            </motion.div>
           )}
           {activeSection === 'danger' && (
-            <div className="rounded-lg border bg-card p-5 max-w-md">
+            <motion.div key="danger" variants={fadeUp} initial="hidden" animate="visible" className="rounded-lg border bg-card p-5 max-w-md">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[14px] font-medium text-foreground">Sign out</p>
@@ -159,8 +162,9 @@ export function SettingsClient({ initialGithub }: Props) {
                 </Button>
               </div>
               {signOutError && <p className="text-[12px] text-destructive mt-3">{signOutError}</p>}
-            </div>
+            </motion.div>
           )}
+          </AnimatePresence>
         </div>
       </div>
     </div>
