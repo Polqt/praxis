@@ -70,9 +70,11 @@ Write a single sentence public summary (max 25 words) that honestly describes th
 export class ReportEnrichmentService {
   private readonly logger = new Logger(ReportEnrichmentService.name)
   private readonly client: Anthropic | null
+  private readonly model: string
 
   constructor(private readonly config: ConfigService) {
     const apiKey = this.config.get<string>('anthropic.apiKey')
+    this.model = this.config.get<string>('anthropic.model') ?? 'claude-haiku-4-5-20251001'
     this.client = apiKey ? new Anthropic({ apiKey }) : null
 
     if (!this.client) {
@@ -147,7 +149,7 @@ export class ReportEnrichmentService {
 
   private async callClaude(userPrompt: string): Promise<string> {
     const message = await this.client!.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: this.model,
       max_tokens: 200,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userPrompt }],

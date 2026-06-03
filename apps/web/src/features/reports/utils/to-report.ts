@@ -1,7 +1,7 @@
 import { deriveStrengths } from './derive-strengths'
 import { deriveImprovements } from './derive-improvements'
 import type { VerificationReport } from '@praxis/shared'
-import type { Report, ReportStatus, ScoreItem } from '@/features/reports/types'
+import type { Report, ReportStatus, ScoreItem, ExecutionEvidence } from '@/features/reports/types'
 
 const VALID_STATUSES: ReportStatus[] = ['verified', 'insufficient', 'failed']
 
@@ -12,14 +12,26 @@ function toReportStatus(verdict: string): ReportStatus {
 }
 
 export function toReport(raw: VerificationReport, overrides?: { isPublic?: boolean }): Report {
-  const scores: ScoreItem[] = Object.entries(raw.categoryScores).map(([category, data]) => ({
-    category,
-    score: data.score,
-    narrative: data.narrative ?? '',
-    citations: data.citations ?? [],
-    status: data.status as ScoreItem['status'],
-    minimumScore: data.minimumScore,
-  }))
+  const scores: ScoreItem[] = Object.entries(raw.categoryScores).map(([category, data]) => {
+    const exec = (data.signals as Record<string, unknown> | undefined)?.execution as
+      | { passed: number; failed: number; skipped: number; language: string }
+      | null
+      | undefined
+
+    const executionEvidence: ExecutionEvidence | null = exec
+      ? { passed: exec.passed, failed: exec.failed, skipped: exec.skipped, language: exec.language }
+      : null
+
+    return {
+      category,
+      score: data.score,
+      narrative: data.narrative ?? '',
+      citations: data.citations ?? [],
+      status: data.status as ScoreItem['status'],
+      minimumScore: data.minimumScore,
+      executionEvidence,
+    }
+  })
 
   const rawStrengths = raw.strengths ?? []
   const rawImprovements = raw.improvements ?? []

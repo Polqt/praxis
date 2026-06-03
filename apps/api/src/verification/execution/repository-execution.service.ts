@@ -215,7 +215,7 @@ export class RepositoryExecutionService {
     ingestionId: string,
     repoFullName: string,
     runtime: DetectedRuntime,
-  ): Promise<ExecutionResult> {
+  ): Promise<ExecutionResult | null> {
     const [owner, repo] = repoFullName.split('/')
     const sandbox = await Sandbox.create({ apiKey: this.apiKey!, timeoutMs: EXECUTION_TIMEOUT_MS })
 
@@ -223,16 +223,22 @@ export class RepositoryExecutionService {
     const start = Date.now()
 
     try {
-      // Clone repo (shallow, no auth — only public repos supported)
-      await sandbox.runCode(`
+      // Clone repo — only works for public repos (no auth token passed to sandbox)
+      const cloneResult = await sandbox.runCode(`
 import subprocess
 result = subprocess.run(
   ['git', 'clone', '--depth', '1', 'https://github.com/${owner}/${repo}.git', '/repo'],
   capture_output=True, text=True, timeout=60
 )
-print(result.stdout)
+print('CLONE_EXIT:' + str(result.returncode))
 print(result.stderr)
 `)
+      const cloneOutput = cloneResult.logs.stdout.join('\n')
+      const cloneExitMatch = cloneOutput.match(/CLONE_EXIT:(\d+)/)
+      if (cloneExitMatch && parseInt(cloneExitMatch[1], 10) !== 0) {
+        this.logger.warn(`E2B: clone failed for ${repoFullName} — likely private or not found`)
+        return null
+      }
 
       // Install dependencies if needed
       if (runtime.installCommand) {

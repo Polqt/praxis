@@ -56,6 +56,20 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
                 />
               </div>
 
+              {item.executionEvidence && (
+                <div className="inline-flex items-center gap-1.5 mb-3 px-2 py-1 rounded-md bg-muted/60 border border-border text-[11px] font-medium">
+                  <span className="text-green-600">{item.executionEvidence.passed} passed</span>
+                  {item.executionEvidence.failed > 0 && (
+                    <><span className="text-muted-foreground">·</span><span className="text-red-600">{item.executionEvidence.failed} failed</span></>
+                  )}
+                  {item.executionEvidence.skipped > 0 && (
+                    <><span className="text-muted-foreground">·</span><span className="text-muted-foreground">{item.executionEvidence.skipped} skipped</span></>
+                  )}
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-muted-foreground uppercase tracking-wider">{item.executionEvidence.language}</span>
+                </div>
+              )}
+
               {item.narrative && (
                 <p className="text-sm text-muted-foreground leading-relaxed mb-3">{item.narrative}</p>
               )}

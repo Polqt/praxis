@@ -1,5 +1,12 @@
 export type ReportStatus = 'verified' | 'insufficient' | 'failed'
 
+export interface ExecutionEvidence {
+  passed: number
+  failed: number
+  skipped: number
+  language: string
+}
+
 export interface ScoreItem {
   category: string
   score: number
@@ -7,6 +14,7 @@ export interface ScoreItem {
   citations: string[]
   status?: 'pass' | 'fail' | 'floor'
   minimumScore?: number
+  executionEvidence?: ExecutionEvidence | null
 }
 
 export interface Report {
