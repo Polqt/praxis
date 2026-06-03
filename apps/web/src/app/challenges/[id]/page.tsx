@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { buildAuthRedirect } from '@/shared/utils/build-auth-redirect'
 import { IconArrowLeft, IconCircleCheck, IconExternalLink } from '@tabler/icons-react'
+import { CATEGORY_LABEL } from '@/features/submissions/constants'
 import type { ProjectChallenge } from '@praxis/shared'
 
 const ACCEPTED_REPOSITORY_EXAMPLES = [
@@ -31,7 +32,7 @@ export default async function ChallengeDetailPage(props: Props) {
 
   if (!challenge) notFound()
 
-  const categoryLabel = 'Backend Engineering'
+  const categoryLabel = CATEGORY_LABEL[challenge.projectType] ?? challenge.projectType
   const submitHref = user
     ? `/submit?challengeId=${challenge.id}`
     : buildAuthRedirect(`/submit?challengeId=${challenge.id}`)

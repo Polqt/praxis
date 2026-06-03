@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useSyncExternalStore } from 'react'
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -9,12 +9,10 @@ function getGreeting() {
   return 'evening'
 }
 
-export function GreetingHeading({ name }: { name: string }) {
-  const [period, setPeriod] = useState<string | null>(null)
+const subscribe = () => () => {}
 
-  useEffect(() => {
-    setPeriod(getGreeting())
-  }, [])
+export function GreetingHeading({ name }: { name: string }) {
+  const period = useSyncExternalStore(subscribe, getGreeting, () => null)
 
   return (
     <h1 className="text-3xl font-semibold tracking-tight">
