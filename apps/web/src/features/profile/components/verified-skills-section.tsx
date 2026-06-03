@@ -14,7 +14,7 @@ export function VerifiedSkillsSection({ skills }: Props) {
         <p className="text-sm text-muted-foreground">No verified skills yet.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {skills.map((skill) => (
+          {[...skills].sort().map((skill) => (
             <div key={skill} className="flex items-center gap-2">
               <IconCircleCheckFilled size={14} className="text-green-500 shrink-0" />
               <span className="text-sm font-medium">{skill}</span>
