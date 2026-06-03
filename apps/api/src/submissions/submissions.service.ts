@@ -157,6 +157,33 @@ export class SubmissionsService {
     }
   }
 
+  async requeueSubmission(userId: string, submissionId: string) {
+    const submission = await this.getForUser(userId, submissionId)
+
+    if (submission.status !== 'cancelled') {
+      throw new ConflictException('Only cancelled submissions can be requeued')
+    }
+
+    const now = new Date()
+    const updated = await this.db.db
+      .update(projectSubmissions)
+      .set({ status: 'queued', completedAt: null, submittedAt: now })
+      .where(eq(projectSubmissions.id, submissionId))
+      .returning()
+
+    await this.db.db.insert(projectSubmissionEvents).values({
+      submissionId,
+      fromStatus: 'cancelled',
+      toStatus: 'queued',
+      reason: 'submission_requeued',
+    })
+
+    this.audit.log(userId, 'submission_requeued', { submissionId })
+    await this.verificationQueue.enqueueIngestRepo(submissionId)
+
+    return updated[0]
+  }
+
   async cancelSubmission(userId: string, submissionId: string) {
     const submission = await this.getForUser(userId, submissionId)
 

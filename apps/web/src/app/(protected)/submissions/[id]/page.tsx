@@ -7,6 +7,7 @@ import { formatDate, githubRepoUrl, repoName, shortSha, statusLabel } from '@/li
 import { SubmissionTimeline } from '@/features/submissions/components/submission-timeline'
 import { SubmissionPoller } from '@/features/submissions/components/submission-poller'
 import { CancelSubmissionButton } from '@/features/submissions/components/cancel-submission-button'
+import { RequeueSubmissionButton } from '@/features/submissions/components/requeue-submission-button'
 import { IN_PROGRESS_STATUSES } from '@/features/submissions/constants'
 import { IconArrowLeft, IconBrandGithub, IconAlertCircle, IconClock, IconExternalLink } from '@tabler/icons-react'
 
@@ -155,9 +156,12 @@ export default async function SubmissionDetailPage(props: Props) {
                   </p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" className="mt-4 w-full" asChild>
-                <Link href={`/submit?challengeId=${submission.challengeId}`}>Submit again</Link>
-              </Button>
+              <div className="mt-4 space-y-2">
+                <RequeueSubmissionButton submissionId={submission.id} />
+                <Button variant="ghost" size="sm" className="w-full text-muted-foreground" asChild>
+                  <Link href={`/submit?challengeId=${submission.challengeId}`}>Submit a different commit</Link>
+                </Button>
+              </div>
             </div>
           )}
 

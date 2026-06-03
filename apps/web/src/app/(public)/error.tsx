@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
@@ -9,11 +8,7 @@ type Props = {
   reset: () => void
 }
 
-export default function PublicError({ error, reset }: Props) {
-  useEffect(() => {
-    console.error(error)
-  }, [error])
-
+export default function PublicError({ error: _error, reset }: Props) {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
       <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-4">Something went wrong</p>

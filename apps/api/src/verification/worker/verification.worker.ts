@@ -93,8 +93,21 @@ export class VerificationWorker implements OnModuleDestroy {
     }
 
     switch (job.name) {
-      case VERIFICATION_JOB_NAMES.ingestRepo:
-        await this.statuses.transition({ submissionId, toStatus: 'ingesting', reason: 'job_started' })
+      case VERIFICATION_JOB_NAMES.ingestRepo: {
+        try {
+          await this.statuses.transition({ submissionId, toStatus: 'ingesting', reason: 'job_started' })
+        } catch {
+          const rows = await this.db.db
+            .select({ status: projectSubmissions.status })
+            .from(projectSubmissions)
+            .where(eq(projectSubmissions.id, submissionId))
+            .limit(1)
+          if (rows[0]?.status === 'cancelled') {
+            this.logger.log(`Skipping cancelled submission ${submissionId} (race condition)`)
+            return
+          }
+          throw new Error(`Failed to transition submission ${submissionId} to ingesting`)
+        }
         await this.ingestion.ingestSubmission(submissionId)
         if (this.execution.enabled) {
           await this.queue.enqueueExecuteTests(submissionId)

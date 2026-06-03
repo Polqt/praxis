@@ -40,4 +40,10 @@ export class SubmissionsController {
   cancelSubmission(@GetUser() user: User, @Param('id') id: string) {
     return this.submissionsService.cancelSubmission(user.id, id)
   }
+
+  @Patch(':id/requeue')
+  @HttpCode(HttpStatus.OK)
+  requeueSubmission(@GetUser() user: User, @Param('id') id: string) {
+    return this.submissionsService.requeueSubmission(user.id, id)
+  }
 }
