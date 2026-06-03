@@ -1,6 +1,6 @@
 'use client'
 
-import { deriveEngineerTitle } from '@/features/profile/utils/derive-engineer-title'
+import { deriveEngineerTitle } from '../utils/derive-engineer-title'
 
 type Props = {
   username: string

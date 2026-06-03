@@ -3,7 +3,8 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { IconTrophy, IconMedal, IconAward } from '@tabler/icons-react'
-import { useLeaderboard } from '@/features/profile/hooks/use-leaderboard-query'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useLeaderboard } from '../hooks/use-leaderboard-query'
 import { fadeUp, staggerContainer } from '@/lib/animations'
 import type { LeaderboardEntry } from '@/lib/api'
 
@@ -14,7 +15,7 @@ function RankIcon({ rank }: { rank: number }) {
   return <span className="text-xs font-mono text-muted-foreground w-4 text-center shrink-0">{rank}</span>
 }
 
-function LeaderboardRow({ entry, index }: { entry: LeaderboardEntry; index: number }) {
+function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
   const isTopThree = entry.rank <= 3
 
   return (
@@ -28,11 +29,9 @@ function LeaderboardRow({ entry, index }: { entry: LeaderboardEntry; index: numb
         ].join(' ')}
       >
         <RankIcon rank={entry.rank} />
-
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium truncate">@{entry.username}</p>
         </div>
-
         <div className="flex items-center gap-6 shrink-0">
           <div className="text-right">
             <p className="text-sm font-semibold tabular-nums">{entry.verifiedCount}</p>
@@ -52,7 +51,7 @@ function LeaderboardSkeleton() {
   return (
     <div className="flex flex-col gap-2">
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="h-16 rounded-lg bg-muted animate-pulse" />
+        <Skeleton key={i} className="h-16 w-full rounded-lg" />
       ))}
     </div>
   )
@@ -91,8 +90,8 @@ export function LeaderboardClient() {
           animate="visible"
           className="flex flex-col gap-2"
         >
-          {data.map((entry, i) => (
-            <LeaderboardRow key={entry.username} entry={entry} index={i} />
+          {data.map((entry) => (
+            <LeaderboardRow key={entry.username} entry={entry} />
           ))}
         </motion.div>
       )}

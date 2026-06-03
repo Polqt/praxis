@@ -1,13 +1,13 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ProfileHero } from '@/features/profile/components/profile-hero'
-import { VerifiedSkillsSection } from '@/features/profile/components/verified-skills-section'
-import { VerifiedProjectsSection } from '@/features/profile/components/verified-projects-section'
-import { ProofStatisticsSection } from '@/features/profile/components/proof-statistics-section'
-import { ProfileFooter } from '@/features/profile/components/profile-footer'
 import { staggerContainer, fadeUp } from '@/lib/animations'
-import type { PublicProfile } from '@/features/profile/types'
+import { ProfileHero } from './profile-hero'
+import { VerifiedSkillsSection } from './verified-skills-section'
+import { VerifiedProjectsSection } from './verified-projects-section'
+import { ProofStatisticsSection } from './proof-statistics-section'
+import { ProfileFooter } from './profile-footer'
+import type { PublicProfile } from '../types'
 import type { User } from '@praxis/shared'
 
 type Props = {
@@ -27,8 +27,8 @@ export function ProfileClient({ profile, viewingUser }: Props) {
         <ProfileHero
           username={profile.username}
           verifiedSkills={profile.verifiedSkills}
-          reportsCount={profile.reportsCount}
           verificationsCount={profile.verificationsCount}
+          reportsCount={profile.reportsCount}
         />
       </motion.div>
 

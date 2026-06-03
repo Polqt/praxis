@@ -1,4 +1,4 @@
-import { BACKEND_SKILL_KEYWORDS, FRONTEND_SKILL_KEYWORDS } from '@/features/profile/constants'
+import { BACKEND_SKILL_KEYWORDS, FRONTEND_SKILL_KEYWORDS } from '../constants'
 
 export function deriveEngineerTitle(skills: string[]): string {
   if (skills.length === 0) return 'Praxis Developer'

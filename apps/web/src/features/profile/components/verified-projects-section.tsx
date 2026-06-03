@@ -4,11 +4,11 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { IconFolder } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
-import { resolveReportLink } from '@/features/profile/utils/resolve-report-link'
+import { resolveReportLink } from '../utils/resolve-report-link'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import { formatDate } from '@/lib/praxis-format'
 import { VERDICT_CLASS } from '../constants'
-import type { ProfileReport } from '@/features/profile/types'
+import type { ProfileReport } from '../types'
 import type { User } from '@praxis/shared'
 
 type Props = {
@@ -94,7 +94,9 @@ function Section({ label, reports, profileUsername, viewingUser, emptyText, mute
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-muted-foreground capitalize">{report.challengeCategory}</span>
                     <span className="text-xs text-muted-foreground">·</span>
-                    <span className="text-xs text-muted-foreground" suppressHydrationWarning>{formatDate(report.verifiedAt)}</span>
+                    <span className="text-xs text-muted-foreground" suppressHydrationWarning>
+                      {formatDate(report.verifiedAt)}
+                    </span>
                   </div>
                   {reportLink && (
                     <Button variant="ghost" size="sm" className="h-7 text-xs px-2 shrink-0" asChild>
