@@ -67,6 +67,8 @@ export function useSubmitForm(challengeId: string): UseSubmitFormReturn {
           setError('Repository not found. Make sure it exists and you have access to it.')
         } else if (err.status === 403) {
           setError('You must own or have write access to submit this repository.')
+        } else if (err.status === 409) {
+          setError("You've already submitted this exact commit. Try a different commit SHA or repository.")
         } else {
           setError(err.message || 'Something went wrong. Please try again.')
         }
