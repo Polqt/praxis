@@ -33,4 +33,5 @@ export const TERMINAL_STAGE_LABELS: Partial<Record<SubmissionStatus, string>> = 
 
 export const TERMINAL_STATUSES: SubmissionStatus[] = [
   'verified', 'insufficient', 'failed', 'expired', 'cancelled',
+  'ingestion_failed', 'analysis_failed', 'report_generation_failed',
 ]

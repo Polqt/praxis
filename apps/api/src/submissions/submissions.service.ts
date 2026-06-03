@@ -184,6 +184,33 @@ export class SubmissionsService {
     return updated[0]
   }
 
+  async retrySubmission(userId: string, submissionId: string) {
+    const submission = await this.getForUser(userId, submissionId)
+
+    const retryableStatuses: string[] = ['ingestion_failed', 'analysis_failed', 'report_generation_failed']
+    if (!retryableStatuses.includes(submission.status)) {
+      throw new ConflictException('Only failed submissions can be retried')
+    }
+
+    const updated = await this.db.db
+      .update(projectSubmissions)
+      .set({ status: 'queued', failureReason: null, completedAt: null })
+      .where(eq(projectSubmissions.id, submissionId))
+      .returning()
+
+    await this.db.db.insert(projectSubmissionEvents).values({
+      submissionId,
+      fromStatus: submission.status,
+      toStatus: 'queued',
+      reason: 'submission_retried',
+    })
+
+    this.audit.log(userId, 'submission_retried', { submissionId, fromStatus: submission.status })
+    await this.verificationQueue.enqueueIngestRepo(submissionId)
+
+    return updated[0]
+  }
+
   async cancelSubmission(userId: string, submissionId: string) {
     const submission = await this.getForUser(userId, submissionId)
 

@@ -106,7 +106,7 @@ export function StudioClient({
       <motion.div variants={staggerContainer} className="mt-8 grid grid-cols-2 gap-4">
         <motion.div variants={fadeUp}>
           <div className="rounded-lg border bg-card p-5 flex flex-col h-full">
-            <p className={CARD_LABEL_CLASS}>Active submission</p>
+            <p className={CARD_LABEL_CLASS}>Latest submission</p>
             {activeSubmission ? (
               <>
                 <div className="mt-3 flex items-start justify-between gap-3">

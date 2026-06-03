@@ -46,4 +46,10 @@ export class SubmissionsController {
   requeueSubmission(@GetUser() user: User, @Param('id') id: string) {
     return this.submissionsService.requeueSubmission(user.id, id)
   }
+
+  @Patch(':id/retry')
+  @HttpCode(HttpStatus.OK)
+  retrySubmission(@GetUser() user: User, @Param('id') id: string) {
+    return this.submissionsService.retrySubmission(user.id, id)
+  }
 }

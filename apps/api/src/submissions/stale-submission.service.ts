@@ -1,8 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { and, inArray, lt, notInArray } from 'drizzle-orm'
+import { and, eq, inArray, lt, notInArray } from 'drizzle-orm'
 import { DatabaseService } from '../database/database.service'
-import { projectSubmissionEvents, projectSubmissions } from '../database/schema'
+import { projectChallenges, projectSubmissionEvents, projectSubmissions, users } from '../database/schema'
+import { NotificationsService } from '../notifications/notifications.service'
 import type { SubmissionStatus } from '@praxis/shared'
 
 const TERMINAL_STATUSES: SubmissionStatus[] = [
@@ -24,6 +25,7 @@ export class StaleSubmissionService {
   constructor(
     private readonly db: DatabaseService,
     private readonly config: ConfigService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async expireStale(): Promise<void> {
@@ -60,6 +62,7 @@ export class StaleSubmissionService {
           })
         })
         expired++
+        void this.sendExpiryEmail(submission.id)
       } catch (err) {
         this.logger.error('stale-expiry: failed to expire submission', {
           submissionId: submission.id,
@@ -69,5 +72,47 @@ export class StaleSubmissionService {
     }
 
     this.logger.log(`stale-expiry: found ${stale.length} stale, expired ${expired}`)
+  }
+
+  private async sendExpiryEmail(submissionId: string): Promise<void> {
+    try {
+      const submissionRows = await this.db.db
+        .select()
+        .from(projectSubmissions)
+        .where(eq(projectSubmissions.id, submissionId))
+        .limit(1)
+      const submission = submissionRows[0]
+      if (!submission) return
+
+      const userRows = await this.db.db
+        .select({ email: users.email, username: users.username })
+        .from(users)
+        .where(eq(users.id, submission.userId))
+        .limit(1)
+      const user = userRows[0]
+      if (!user?.email) return
+
+      const challengeRows = await this.db.db
+        .select({ title: projectChallenges.title })
+        .from(projectChallenges)
+        .where(eq(projectChallenges.id, submission.challengeId))
+        .limit(1)
+      const challengeTitle = challengeRows[0]?.title ?? 'Verification Challenge'
+
+      const webBaseUrl = this.config.get<string>('webBaseUrl') ?? 'https://praxisdev.vercel.app'
+
+      await this.notifications.sendSubmissionExpired({
+        toEmail: user.email,
+        username: user.username ?? user.email.split('@')[0],
+        repositoryName: submission.githubRepoFullName,
+        challengeTitle,
+        resubmitUrl: `${webBaseUrl}/submit?challengeId=${submission.challengeId}`,
+      })
+    } catch (err) {
+      this.logger.error('stale-expiry: failed to send expiry email', {
+        submissionId,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
   }
 }

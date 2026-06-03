@@ -5,13 +5,14 @@ import { DatabaseModule } from '../database/database.module'
 import { GitHubModule } from '../github/github.module'
 import { UsersModule } from '../users/users.module'
 import { QueueModule } from '../verification/queue/queue.module'
+import { NotificationsModule } from '../notifications/notifications.module'
 import { SubmissionsController } from './submissions.controller'
 import { SubmissionStatusService } from './submission-status.service'
 import { SubmissionsService } from './submissions.service'
 import { StaleSubmissionService } from './stale-submission.service'
 
 @Module({
-  imports: [DatabaseModule, AuthModule, UsersModule, ChallengesModule, GitHubModule, QueueModule],
+  imports: [DatabaseModule, AuthModule, UsersModule, ChallengesModule, GitHubModule, QueueModule, NotificationsModule],
   controllers: [SubmissionsController],
   providers: [SubmissionsService, SubmissionStatusService, StaleSubmissionService],
   exports: [SubmissionsService, SubmissionStatusService, StaleSubmissionService],
