@@ -89,7 +89,7 @@ export function ReportVisibilityButton({ submissionId, isPublic, initialPublicTo
         {proofUrl && (
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-muted-foreground font-mono truncate max-w-48">{proofUrl}</span>
-            <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={handleCopy} title="Copy proof URL">
+            <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={handleCopy} title="Copy proof URL" aria-label="Copy proof URL">
               {copied ? <IconCheck size={12} /> : <IconCopy size={12} />}
             </Button>
           </div>

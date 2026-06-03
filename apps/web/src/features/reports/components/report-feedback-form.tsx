@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { IconCheck, IconStar } from '@tabler/icons-react'
@@ -9,9 +10,10 @@ import { fadeUp } from '@/lib/animations'
 
 type Props = {
   submissionId: string
+  challengeId?: string
 }
 
-export function ReportFeedbackForm({ submissionId }: Props) {
+export function ReportFeedbackForm({ submissionId, challengeId }: Props) {
   const [rating, setRating] = useState<number | null>(null)
   const [hover, setHover] = useState<number | null>(null)
   const [missedEvidence, setMissedEvidence] = useState('')
@@ -42,9 +44,21 @@ export function ReportFeedbackForm({ submissionId }: Props) {
 
   if (submitted) {
     return (
-      <motion.div variants={fadeUp} className="rounded-lg border bg-card p-5 flex items-center gap-3">
-        <IconCheck size={16} className="text-green-500 shrink-0" />
-        <p className="text-sm text-muted-foreground">Thanks for your feedback. It helps improve the verification engine.</p>
+      <motion.div variants={fadeUp} className="rounded-lg border bg-card p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <IconCheck size={16} className="text-green-500 shrink-0" />
+          <p className="text-sm text-muted-foreground">Thanks for your feedback. It helps improve the verification engine.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/submissions">Back to submissions</Link>
+          </Button>
+          {challengeId && (
+            <Button variant="ghost" size="sm" asChild>
+              <Link href={`/submit?challengeId=${challengeId}`}>Resubmit with improvements</Link>
+            </Button>
+          )}
+        </div>
       </motion.div>
     )
   }

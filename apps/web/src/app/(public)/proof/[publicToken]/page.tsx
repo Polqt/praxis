@@ -14,6 +14,7 @@ type ProofMeta = {
   compositeScore: number
   verdict: string
   publicSummary: string | null
+  challengeTitle: string | null
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -22,7 +23,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!meta) return { title: 'Proof not found' }
 
   const verdict = meta.verdict === 'verified' ? 'Verified' : 'Insufficient'
-  const title = `${meta.repositoryName} — ${verdict} · ${meta.compositeScore}/100 | Praxis`
+  const challengePart = meta.challengeTitle ? ` · ${meta.challengeTitle}` : ''
+  const title = `${meta.repositoryName} — ${verdict}${challengePart} · ${meta.compositeScore}/100 | Praxis`
   const description = meta.publicSummary ?? `${meta.repositoryName} was evaluated by Praxis and scored ${meta.compositeScore}/100.`
 
   return {

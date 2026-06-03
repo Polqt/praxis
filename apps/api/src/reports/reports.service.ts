@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { randomBytes } from 'node:crypto'
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { ANALYZER_VERSION, REPORT_GENERATOR_VERSION, SCORING_VERSION } from '../scoring/versions'
 import { RepositoryIngestionData } from '../verification/ingestion/repository-ingestion.types'
 import { DatabaseService } from '../database/database.service'
@@ -141,9 +141,11 @@ export class ReportsService {
       verdict: projectVerificationReports.verdict,
       publicSummary: projectVerificationReports.publicSummary,
       isPublic: projectVerificationReports.isPublic,
+      challengeTitle: projectChallenges.title,
     })
       .from(projectVerificationReports)
       .innerJoin(projectSubmissions, eq(projectVerificationReports.submissionId, projectSubmissions.id))
+      .innerJoin(projectChallenges, eq(projectChallenges.id, projectSubmissions.challengeId))
       .where(eq(projectVerificationReports.publicToken, publicToken))
       .limit(1)
     if (!reports[0] || !reports[0].isPublic) throw new NotFoundException('Proof not found')
@@ -174,34 +176,34 @@ export class ReportsService {
 
     const rubric = challenge.rubric as { categories: { name: string; floor: number }[] }
     const categoryScores = report.categoryScores as Record<string, { score: number }>
-    const awarded = []
 
-    for (const category of rubric.categories) {
-      const score = categoryScores[category.name]?.score ?? 0
-      if (score < category.floor) continue
+    // Collect category names that passed their floor in one pass
+    const eligibleNames = rubric.categories
+      .filter((cat) => (categoryScores[cat.name]?.score ?? 0) >= cat.floor)
+      .map((cat) => cat.name)
 
-      const skillRows = await this.db.db
-        .select()
-        .from(skills)
-        .where(eq(skills.name, category.name))
-        .limit(1)
+    if (eligibleNames.length === 0) return []
 
-      if (!skillRows[0]) continue
+    // Single query for all matching skills
+    const skillRows = await this.db.db
+      .select()
+      .from(skills)
+      .where(inArray(skills.name, eligibleNames))
 
-      const inserted = await this.db.db
-        .insert(userSkills)
-        .values({
-          userId: submission.userId,
-          skillId: skillRows[0].id,
-          sourceType: 'project',
-        })
-        .onConflictDoNothing()
-        .returning()
+    if (skillRows.length === 0) return []
 
-      if (inserted[0]) awarded.push(inserted[0])
-    }
+    // Bulk insert all awards, ignoring conflicts
+    const inserted = await this.db.db
+      .insert(userSkills)
+      .values(skillRows.map((skill) => ({
+        userId: submission.userId,
+        skillId: skill.id,
+        sourceType: 'project' as const,
+      })))
+      .onConflictDoNothing()
+      .returning()
 
-    return awarded
+    return inserted
   }
 
   private async getSubmission(submissionId: string) {

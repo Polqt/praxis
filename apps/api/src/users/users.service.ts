@@ -176,6 +176,14 @@ export class UsersService {
       .innerJoin(skills, eq(userSkills.skillId, skills.id))
       .where(eq(userSkills.userId, user.id))
 
+    // Count verified submissions separately so it isn't capped by the display limit
+    const verifiedCountRows = await this.db.db
+      .select({ value: count(projectSubmissions.id) })
+      .from(projectSubmissions)
+      .where(and(eq(projectSubmissions.userId, user.id), eq(projectSubmissions.status, 'verified')))
+
+    const verifiedCount = verifiedCountRows[0]?.value ?? 0
+
     const reportsWithDetails = await this.db.db
       .select({
         id: projectVerificationReports.id,
@@ -214,8 +222,6 @@ export class UsersService {
       publicToken: row.publicToken ?? null,
       compositeScore: row.compositeScore ?? null,
     }))
-
-    const verifiedCount = reportsWithDetails.filter((r) => r.submissionStatus === 'verified').length
 
     return {
       username: user.username as string,

@@ -30,7 +30,7 @@ export default async function PrivateReportPage({ params }: Props) {
       actions={
         <ReportVisibilityButton submissionId={raw.submissionId} isPublic={raw.isPublic} initialPublicToken={raw.publicToken} />
       }
-      feedbackSlot={<ReportFeedbackForm submissionId={submissionId} />}
+      feedbackSlot={<ReportFeedbackForm submissionId={submissionId} challengeId={submission?.challengeId} />}
       twitterSlot={showTwitterShare ? (
         <ShareOnTwitterButton
           verdict={raw.verdict as 'verified' | 'insufficient'}

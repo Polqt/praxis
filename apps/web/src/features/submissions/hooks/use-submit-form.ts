@@ -4,14 +4,17 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiClient, ApiError } from '@/lib/api'
 
+const COMMIT_SHA_RE = /^[0-9a-f]{7,40}$/i
+
 function parseGitHubUrl(input: string): string | null {
-  const trimmed = input.trim()
+  const trimmed = input.trim().replace(/\/+$/, '') // strip trailing slashes
   try {
     const url = new URL(trimmed)
     if (url.hostname !== 'github.com') return null
-    const parts = url.pathname.replace(/^\//, '').replace(/\/$/, '').split('/')
-    if (parts.length < 2 || !parts[0] || !parts[1]) return null
-    return `${parts[0]}/${parts[1]}`
+    // Take only the first two path segments (owner/repo), ignoring /tree/main, /issues, etc.
+    const segments = url.pathname.replace(/^\//, '').split('/').filter(Boolean)
+    if (segments.length < 2 || !segments[0] || !segments[1]) return null
+    return `${segments[0]}/${segments[1]}`
   } catch {
     const parts = trimmed.split('/')
     if (parts.length === 2 && parts[0] && parts[1]) return trimmed
@@ -48,6 +51,12 @@ export function useSubmitForm(challengeId: string): UseSubmitFormReturn {
     const githubRepoFullName = parseGitHubUrl(repoUrl)
     if (!githubRepoFullName) {
       setError('Enter a valid GitHub URL — e.g. https://github.com/owner/repo')
+      return
+    }
+
+    const sha = commitSha.trim()
+    if (sha && !COMMIT_SHA_RE.test(sha)) {
+      setError('Commit SHA must be a 7–40 character hex string (e.g. a1b2c3d). Leave blank to use the latest commit.')
       return
     }
 

@@ -146,6 +146,9 @@ export function LeaderboardClient({ entries }: Props) {
               <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium w-20 text-right">Best score</span>
             </div>
           </div>
+          <p className="text-[11px] text-muted-foreground px-1 pt-2 pb-0">
+            Rankings update automatically after each verification completes.
+          </p>
 
           <div className="border border-border">
             {entries.length === 0 && (

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { IconArrowLeft, IconInfoCircle } from '@tabler/icons-react'
 import { ReportHero } from './report-hero'
 import { ScoreOverview } from './score-overview'
+import { ScoreErrorBoundary } from './score-error-boundary'
 import { VerifiedSkillsSection } from './verified-skills-section'
 import { StrengthsImprovementsSection } from './strengths-improvements-section'
 import { ReportFooter } from './report-footer'
@@ -70,11 +71,13 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
       </motion.p>
 
       <motion.div variants={fadeUp} className="mt-10">
-        <ScoreOverview
-          scores={report.scores}
-          repositoryName={report.repositoryName}
-          commitSha={report.commitSha}
-        />
+        <ScoreErrorBoundary>
+          <ScoreOverview
+            scores={report.scores}
+            repositoryName={report.repositoryName}
+            commitSha={report.commitSha}
+          />
+        </ScoreErrorBoundary>
       </motion.div>
 
       {report.skills.length > 0 && (

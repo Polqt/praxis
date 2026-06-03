@@ -66,7 +66,7 @@ export function SettingsClient({ initialGithub }: Props) {
   async function handleSignOut() {
     if (signOutLoading) return
     setSignOutLoading(true)
-    setSignOutError('')
+    setSignOutError('') // clear any previous error before retrying
     try {
       const supabase = createClient()
       const { error } = await supabase.auth.signOut()
@@ -142,10 +142,10 @@ export function SettingsClient({ initialGithub }: Props) {
                     <p className="text-[13px] font-mono truncate">{typeof window !== 'undefined' ? window.location.host : 'praxisdev.vercel.app'}/p/{user.username}</p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopyProfileUrl} title="Copy link">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopyProfileUrl} title="Copy link" aria-label="Copy profile URL">
                       {profileUrlCopied ? <IconCheck size={13} /> : <IconCopy size={13} />}
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" asChild title="Open profile">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" asChild title="Open profile" aria-label="Open public profile">
                       <a href={`/p/${user.username}`} target="_blank" rel="noreferrer">
                         <IconExternalLink size={13} />
                       </a>

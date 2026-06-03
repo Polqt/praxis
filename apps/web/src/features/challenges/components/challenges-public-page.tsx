@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import { useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
@@ -78,7 +79,18 @@ function ChallengeList({ challenges, isAuthenticated }: { challenges: Challenge[
 // ── Authenticated view (matches Studio / Submissions aesthetic) ───────────────
 
 function ChallengesAppView({ challenges, isAuthenticated }: Props) {
-  const [tab, setTab] = useState<ChallengeCategory>('frontend')
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+  const rawTab = searchParams.get('tab')
+  const tab: ChallengeCategory = rawTab === 'backend' ? 'backend' : 'frontend'
+
+  const setTab = useCallback((value: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', value)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, router, pathname])
+
   const frontend = challenges.filter((c) => c.category === 'frontend')
   const backend = challenges.filter((c) => c.category === 'backend')
 
@@ -118,7 +130,18 @@ function ChallengesAppView({ challenges, isAuthenticated }: Props) {
 // ── Public marketing view (matches why / how-it-works aesthetic) ──────────────
 
 function ChallengesMarketingView({ challenges, isAuthenticated }: Props) {
-  const [tab, setTab] = useState<ChallengeCategory>('frontend')
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+  const rawTab = searchParams.get('tab')
+  const tab: ChallengeCategory = rawTab === 'backend' ? 'backend' : 'frontend'
+
+  const setTab = useCallback((value: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', value)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, router, pathname])
+
   const frontend = challenges.filter((c) => c.category === 'frontend')
   const backend = challenges.filter((c) => c.category === 'backend')
 
