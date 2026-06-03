@@ -1,6 +1,8 @@
 'use client'
 
+import { motion } from 'framer-motion'
 import { IconArrowUpRight, IconArrowRight } from '@tabler/icons-react'
+import { staggerContainer, fadeUp } from '@/lib/animations'
 
 type ItemListProps = {
   items: string[]
@@ -30,8 +32,13 @@ type Props = {
 
 export function StrengthsImprovementsSection({ strengths, improvements, derived }: Props) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="rounded-lg border bg-card p-5">
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      animate="visible"
+      className="grid grid-cols-1 md:grid-cols-2 gap-6"
+    >
+      <motion.div variants={fadeUp} className="rounded-lg border bg-card p-5">
         <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-1">Strengths</p>
         {derived && <p className="text-[11px] text-muted-foreground mb-3">Derived from rubric results</p>}
         {!derived && <div className="mb-3" />}
@@ -40,8 +47,8 @@ export function StrengthsImprovementsSection({ strengths, improvements, derived 
           icon={<IconArrowUpRight size={14} className="text-green-500 shrink-0 mt-0.5" strokeWidth={2} />}
           empty="None identified."
         />
-      </div>
-      <div className="rounded-lg border bg-card p-5">
+      </motion.div>
+      <motion.div variants={fadeUp} className="rounded-lg border bg-card p-5">
         <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-1">Improvements</p>
         {derived && <p className="text-[11px] text-muted-foreground mb-3">Derived from rubric results</p>}
         {!derived && <div className="mb-3" />}
@@ -50,7 +57,7 @@ export function StrengthsImprovementsSection({ strengths, improvements, derived 
           icon={<IconArrowRight size={14} className="text-amber-500 shrink-0 mt-0.5" strokeWidth={2} />}
           empty="None identified."
         />
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

@@ -1,13 +1,15 @@
 'use client'
 
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { IconBrandGithub } from '@tabler/icons-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ConnectGitHubButton } from '@/features/github/components/connect-github-button'
-import { useSubmitForm } from '@/features/submissions/hooks/use-submit-form'
-import { CATEGORY_LABEL } from '@/features/submissions/constants'
+import { useSubmitForm } from '../hooks/use-submit-form'
+import { CATEGORY_LABEL } from '../constants'
+import { staggerContainer, fadeUp } from '@/lib/animations'
 import type { ProjectChallenge } from '@praxis/shared'
 
 type Props = {
@@ -23,8 +25,13 @@ export function SubmitClient({ challenge, githubConnected, githubHasScopes }: Pr
   const categoryLabel = CATEGORY_LABEL[challenge.projectType] ?? challenge.projectType
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-lg border bg-card p-5">
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
+      <motion.div variants={fadeUp} className="rounded-lg border bg-card p-5">
         <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-3">Selected challenge</p>
         <p className="font-medium text-base">{challenge.title}</p>
         <Badge variant="outline" className="mt-2 text-xs">{categoryLabel}</Badge>
@@ -33,10 +40,10 @@ export function SubmitClient({ challenge, githubConnected, githubHasScopes }: Pr
             Change challenge
           </Link>
         </div>
-      </div>
+      </motion.div>
 
       {!githubConnected ? (
-        <div className="rounded-lg border bg-card p-6">
+        <motion.div variants={fadeUp} className="rounded-lg border bg-card p-6">
           <div className="flex items-start gap-4">
             <div className="size-9 rounded-md border flex items-center justify-center shrink-0">
               <IconBrandGithub size={18} className="text-muted-foreground" />
@@ -51,9 +58,9 @@ export function SubmitClient({ challenge, githubConnected, githubHasScopes }: Pr
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       ) : !githubHasScopes ? (
-        <div className="rounded-lg border bg-card p-6">
+        <motion.div variants={fadeUp} className="rounded-lg border bg-card p-6">
           <div className="flex items-start gap-4">
             <div className="size-9 rounded-md border flex items-center justify-center shrink-0">
               <IconBrandGithub size={18} className="text-muted-foreground" />
@@ -68,9 +75,13 @@ export function SubmitClient({ challenge, githubConnected, githubHasScopes }: Pr
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       ) : (
-        <form onSubmit={handleSubmit} className="rounded-lg border bg-card p-6 space-y-6">
+        <motion.form
+          variants={fadeUp}
+          onSubmit={handleSubmit}
+          className="rounded-lg border bg-card p-6 space-y-6"
+        >
           <div className="space-y-2">
             <label htmlFor="repo-url" className="text-xs uppercase tracking-widest font-semibold text-muted-foreground">
               Repository URL
@@ -107,9 +118,7 @@ export function SubmitClient({ challenge, githubConnected, githubHasScopes }: Pr
             </p>
           </div>
 
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
           <div className="flex items-center justify-between pt-2 border-t">
             <p className="text-xs text-muted-foreground">Verification typically takes 2–5 minutes.</p>
@@ -117,8 +126,8 @@ export function SubmitClient({ challenge, githubConnected, githubHasScopes }: Pr
               {submitting ? 'Submitting...' : 'Submit for verification'}
             </Button>
           </div>
-        </form>
+        </motion.form>
       )}
-    </div>
+    </motion.div>
   )
 }

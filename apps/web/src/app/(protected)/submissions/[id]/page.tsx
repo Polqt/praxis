@@ -6,7 +6,7 @@ import type { ProjectSubmission, ProjectSubmissionEvent } from '@praxis/shared'
 import { formatDate, githubRepoUrl, repoName, shortSha, statusLabel } from '@/lib/praxis-format'
 import { SubmissionTimeline } from '@/features/submissions/components/submission-timeline'
 import { SubmissionPoller } from '@/features/submissions/components/submission-poller'
-import { IN_PROGRESS_STATUSES, TERMINAL_STATUSES } from '@/features/submissions/constants'
+import { IN_PROGRESS_STATUSES } from '@/features/submissions/constants'
 import { IconArrowLeft, IconBrandGithub, IconAlertCircle, IconClock, IconExternalLink } from '@tabler/icons-react'
 
 type Props = {

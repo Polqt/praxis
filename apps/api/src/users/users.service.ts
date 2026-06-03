@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
-import { and, desc, eq, inArray } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, max } from 'drizzle-orm'
 import { DatabaseService } from '../database/database.service'
 import {
   projectChallenges,
@@ -104,6 +104,32 @@ export class UsersService {
       verifiedSkills,
       recentSubmissions: submissions.slice(0, 5),
     }
+  }
+
+  async getLeaderboard(limit = 50) {
+    const rows = await this.db.db
+      .select({
+        userId: projectSubmissions.userId,
+        username: users.username,
+        verifiedCount: count(projectSubmissions.id),
+        bestScore: max(projectVerificationReports.compositeScore),
+      })
+      .from(projectSubmissions)
+      .innerJoin(users, eq(projectSubmissions.userId, users.id))
+      .innerJoin(projectVerificationReports, eq(projectVerificationReports.submissionId, projectSubmissions.id))
+      .where(eq(projectSubmissions.status, 'verified'))
+      .groupBy(projectSubmissions.userId, users.username)
+      .orderBy(desc(count(projectSubmissions.id)), desc(max(projectVerificationReports.compositeScore)))
+      .limit(limit)
+
+    return rows
+      .filter((r) => r.username !== null)
+      .map((r, i) => ({
+        rank: i + 1,
+        username: r.username as string,
+        verifiedCount: r.verifiedCount,
+        bestScore: r.bestScore ?? 0,
+      }))
   }
 
   async findPublicProfile(username: string) {

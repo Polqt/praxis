@@ -2,9 +2,11 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { ChallengeCard } from '@/features/challenges/components/challenge-card'
+import { staggerContainer } from '@/lib/animations'
 import type { Challenge, ChallengeCategory } from '@/features/challenges/types'
 
 type Props = {
@@ -59,11 +61,16 @@ function ChallengeList({ challenges, isAuthenticated }: { challenges: Challenge[
     return <p className="text-sm text-muted-foreground mt-3">No challenges available.</p>
   }
   return (
-    <div className="flex flex-col gap-3 mt-6">
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      animate="visible"
+      className="flex flex-col gap-3 mt-6"
+    >
       {challenges.map((challenge) => (
         <ChallengeCard key={challenge.id} challenge={challenge} isAuthenticated={isAuthenticated} />
       ))}
-    </div>
+    </motion.div>
   )
 }
 

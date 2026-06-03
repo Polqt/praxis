@@ -1,11 +1,13 @@
 'use client'
 
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DIFFICULTY_CLASS, DIFFICULTY_LABEL } from '@/features/challenges/constants'
 import { buildAuthRedirect } from '@/shared/utils/build-auth-redirect'
 import { stripMarkdown } from '@/features/challenges/utils'
+import { fadeUp } from '@/lib/animations'
 import type { Challenge } from '@/features/challenges/types'
 
 type Props = {
@@ -20,7 +22,7 @@ export function ChallengeCard({ challenge, isAuthenticated }: Props) {
   const ctaLabel = isAuthenticated ? 'Submit repository' : 'Start verification'
 
   return (
-    <div className="rounded-lg border bg-card">
+    <motion.div variants={fadeUp} className="rounded-lg border bg-card">
       <div className="px-5 py-4">
         <p className="text-sm font-semibold">{challenge.title}</p>
         <p className="text-xs text-muted-foreground mt-1">{stripMarkdown(challenge.description)}</p>
@@ -42,6 +44,6 @@ export function ChallengeCard({ challenge, isAuthenticated }: Props) {
           <Link href={ctaHref}>{ctaLabel}</Link>
         </Button>
       </div>
-    </div>
+    </motion.div>
   )
 }
