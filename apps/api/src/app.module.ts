@@ -12,6 +12,7 @@ import { HealthModule } from './health/health.module'
 import { AuditModule } from './audit/audit.module'
 import { QueueModule } from './verification/queue/queue.module'
 import { AnalysisModule } from './verification/analysis/analysis.module'
+import { ExecutionModule } from './verification/execution/execution.module'
 import { IngestionModule } from './verification/ingestion/ingestion.module'
 import { VerificationWorker } from './verification/worker/verification.worker'
 import { WorkerHealthService } from './verification/worker/worker-health.service'
@@ -35,6 +36,7 @@ import { NotificationsModule } from './notifications/notifications.module'
     HealthModule,
     QueueModule,
     AnalysisModule,
+    ExecutionModule,
     IngestionModule,
     NotificationsModule,
   ],
