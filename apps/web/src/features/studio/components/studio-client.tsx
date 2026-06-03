@@ -60,7 +60,7 @@ export function StudioClient({
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Button asChild><Link href="/challenges">Browse Challenges</Link></Button>
-            <Button variant="outline" asChild><Link href="/challenges">Submit Repository</Link></Button>
+            <Button variant="outline" asChild><Link href="/submissions">My Submissions</Link></Button>
           </div>
         </div>
       </motion.section>

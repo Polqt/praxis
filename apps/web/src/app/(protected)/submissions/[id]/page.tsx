@@ -25,7 +25,13 @@ export default async function SubmissionDetailPage(props: Props) {
   ])
 
   const isInProgress = IN_PROGRESS_STATUSES.includes(submission.status)
-  const hasReport = submission.status === 'verified' || submission.status === 'insufficient'
+  const statusHasReport = submission.status === 'verified' || submission.status === 'insufficient'
+  // Verify the report actually exists before showing the button — there's a brief window
+  // between the status transition and report generation completing where the link would 404.
+  const reportExists = statusHasReport
+    ? await serverApiFetch(`/reports/${id}`).then(() => true).catch(() => false)
+    : false
+  const hasReport = statusHasReport && reportExists
   const isFailed = ['failed', 'ingestion_failed', 'analysis_failed', 'report_generation_failed'].includes(submission.status)
   const isQueued = submission.status === 'queued'
 

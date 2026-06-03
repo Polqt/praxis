@@ -66,16 +66,27 @@ export function ReportClaritySection({ status, scores, allCitedFiles, challengeI
         )}
       </Block>
 
-      {highImpactFixes.length > 0 && (
+      {failedCategories.length > 0 && (
         <Block icon={<IconBulb size={14} />} title="Highest-impact fixes">
-          <ul className="flex flex-col gap-2">
-            {highImpactFixes.map((fix) => (
-              <li key={fix} className="text-sm flex items-start gap-2">
-                <IconArrowRight size={13} className="text-amber-500 shrink-0 mt-0.5" />
-                {fix}
-              </li>
-            ))}
-          </ul>
+          {highImpactFixes.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {highImpactFixes.map((fix) => (
+                <li key={fix} className="text-sm flex items-start gap-2">
+                  <IconArrowRight size={13} className="text-amber-500 shrink-0 mt-0.5" />
+                  {fix}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {failedCategories.map((s) => (
+                <li key={s.category} className="text-sm flex items-start gap-2">
+                  <IconArrowRight size={13} className="text-amber-500 shrink-0 mt-0.5" />
+                  Improve <strong>{s.category}</strong> — bring it above the minimum score of {s.minimumScore}/10.
+                </li>
+              ))}
+            </ul>
+          )}
         </Block>
       )}
 

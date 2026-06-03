@@ -119,7 +119,17 @@ export function SettingsClient({ initialGithub }: Props) {
               <div className="space-y-1.5">
                 <Label htmlFor="email">Email address</Label>
                 <Input id="email" value={user.email} disabled className="opacity-70 cursor-not-allowed" />
-                <p className="text-[13px] text-muted-foreground">Email cannot be changed here. Manage it through your auth provider.</p>
+                <p className="text-[13px] text-muted-foreground">
+                  Email cannot be changed here.{' '}
+                  <a
+                    href="https://supabase.com/dashboard/account"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline underline-offset-2 hover:text-foreground transition-colors"
+                  >
+                    Manage it in your Supabase account.
+                  </a>
+                </p>
               </div>
               <UsernameField
                 initialValue={user.username ?? (initialGithub.connected ? initialGithub.githubUsername : '')}

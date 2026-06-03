@@ -3,6 +3,23 @@ import { ConfigModule } from '@nestjs/config'
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { APP_GUARD } from '@nestjs/core'
 import configuration from './config/configuration'
+
+const REQUIRED_ENV_VARS = [
+  'DATABASE_URL',
+  'SUPABASE_JWKS_URL',
+  'GITHUB_TOKEN_ENCRYPTION_KEY',
+  'REDIS_URL',
+  'CORS_ORIGIN',
+  'ANTHROPIC_API_KEY',
+] as const
+
+function validateEnv(env: Record<string, unknown>) {
+  const missing = REQUIRED_ENV_VARS.filter((key) => !env[key])
+  if (missing.length > 0) {
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`)
+  }
+  return env
+}
 import { DatabaseModule } from './database/database.module'
 import { AuthModule } from './auth/auth.module'
 import { UsersModule } from './users/users.module'
@@ -26,6 +43,7 @@ import { NotificationsModule } from './notifications/notifications.module'
       isGlobal: true,
       load: [configuration],
       envFilePath: '.env',
+      validate: validateEnv,
     }),
     ThrottlerModule.forRoot([
       { name: 'short', ttl: 1000, limit: 20 },

@@ -10,7 +10,7 @@ type Props = {
 }
 
 export function UsernameField({ initialValue, onSaveSuccess }: Props) {
-  const { value, status, validationError, showProofUrl, handleChange } = useUsernameField(
+  const { value, status, validationError, showProofUrl, showUrlChangeWarning, handleChange } = useUsernameField(
     initialValue,
     onSaveSuccess,
   )
@@ -46,6 +46,11 @@ export function UsernameField({ initialValue, onSaveSuccess }: Props) {
         <p className="text-[13px] text-muted-foreground">
           Your proof page:{' '}
           <span className="font-mono text-primary">praxis.dev/p/{value}</span>
+        </p>
+      )}
+      {showUrlChangeWarning && (
+        <p className="text-[13px] text-amber-600">
+          Changing your username will update your public profile URL. Anyone with your old link won't be able to find you.
         </p>
       )}
     </div>

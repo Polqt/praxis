@@ -13,6 +13,7 @@ import {
 @Injectable()
 export class UsersService {
   private static readonly RESERVED_USERNAMES = new Set([
+    // Generic reserved words
     'admin', 'administrator', 'api', 'app', 'auth',
     'billing', 'blog', 'cdn', 'dashboard', 'dev',
     'docs', 'email', 'ftp', 'git', 'github',
@@ -22,6 +23,10 @@ export class UsersService {
     'security', 'server', 'settings', 'signup', 'signin',
     'status', 'support', 'system', 'team', 'terms',
     'undefined', 'user', 'username', 'www', 'www1', 'www2',
+    // App route paths — claiming these creates /p/<route> which looks official
+    'onboarding', 'challenges', 'studio', 'submissions', 'reports',
+    'proof', 'leaderboard', 'submit', 'sign-in', 'sign-up',
+    'example-report', 'account', 'profile',
   ])
 
   constructor(private db: DatabaseService) {}

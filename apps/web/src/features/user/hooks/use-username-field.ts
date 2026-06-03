@@ -16,6 +16,7 @@ type UseUsernameFieldReturn = {
   status: SaveStatus
   validationError: string | null
   showProofUrl: boolean
+  showUrlChangeWarning: boolean
   handleChange: (raw: string) => void
 }
 
@@ -78,6 +79,7 @@ export function useUsernameField(
 
   const validationError = validateUsername(value)
   const showProofUrl = value.length > 0 && validationError === null
+  const showUrlChangeWarning = initialValue.length > 0 && value !== initialValue && value.length > 0 && validationError === null
 
-  return { value, status, validationError, showProofUrl, handleChange }
+  return { value, status, validationError, showProofUrl, showUrlChangeWarning, handleChange }
 }
