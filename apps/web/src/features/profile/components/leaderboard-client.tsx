@@ -3,11 +3,12 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { IconTrophy, IconMedal, IconAward } from '@tabler/icons-react'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useLeaderboard } from '../hooks/use-leaderboard-query'
 import { fadeUp, staggerContainer } from '@/lib/animations'
 import type { LeaderboardEntry } from '@/lib/api'
 
+type Props = {
+  entries: LeaderboardEntry[]
+}
 
 function SectionLabel({ text, light = false }: { text: string; light?: boolean }) {
   return (
@@ -58,7 +59,6 @@ function RankIcon({ rank }: { rank: number }) {
 
 function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
   const isTopThree = entry.rank <= 3
-
   return (
     <motion.div variants={fadeUp}>
       <Link
@@ -90,19 +90,7 @@ function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
   )
 }
 
-function LeaderboardSkeleton() {
-  return (
-    <div className="flex flex-col">
-      {Array.from({ length: 10 }).map((_, i) => (
-        <Skeleton key={i} className="h-16 w-full rounded-none border-b border-border" />
-      ))}
-    </div>
-  )
-}
-
-export function LeaderboardClient() {
-  const { data, isLoading, isError } = useLeaderboard()
-
+export function LeaderboardClient({ entries }: Props) {
   return (
     <div className="bg-background">
       <section className="min-h-screen bg-muted flex flex-col items-center justify-center text-center px-6 pt-14 border-b border-border">
@@ -160,27 +148,14 @@ export function LeaderboardClient() {
           </div>
 
           <div className="border border-border">
-            {isLoading && <LeaderboardSkeleton />}
-
-            {isError && (
-              <p className="text-sm text-muted-foreground text-center py-16">
-                Failed to load leaderboard. Please try again.
-              </p>
-            )}
-
-            {data && data.length === 0 && (
+            {entries.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-16">
                 No verified developers yet. Be the first.
               </p>
             )}
-
-            {data && data.length > 0 && (
-              <motion.div
-                variants={staggerContainer}
-                initial="hidden"
-                animate="visible"
-              >
-                {data.map((entry) => (
+            {entries.length > 0 && (
+              <motion.div variants={staggerContainer} initial="hidden" animate="visible">
+                {entries.map((entry) => (
                   <LeaderboardRow key={entry.username} entry={entry} />
                 ))}
               </motion.div>
@@ -224,7 +199,6 @@ export function LeaderboardClient() {
           </p>
         </div>
       </section>
-
     </div>
   )
 }

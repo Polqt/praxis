@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Syne, DM_Sans, JetBrains_Mono } from 'next/font/google'
 import { Toaster } from 'sonner'
-import { QueryProvider } from '@/lib/query-client'
 import './globals.css'
 
 const syne = Syne({
@@ -46,10 +45,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}>
       <body className="min-h-screen flex flex-col antialiased bg-background text-foreground">
-        <QueryProvider>
-          {children}
-          <Toaster position="bottom-right" />
-        </QueryProvider>
+        {children}
+        <Toaster position="bottom-right" />
       </body>
     </html>
   )

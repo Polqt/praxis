@@ -27,7 +27,7 @@ type Props = {
   latestReport: VerificationReport | null
   submissionStats: SubmissionStats
   dashboard: DashboardStats
-  username: string
+  username: string | null
   progress: number
   completed: number
   total: number
@@ -36,7 +36,7 @@ type Props = {
 
 function StatusBadge({ status }: { status: string }) {
   const label = statusLabel(status as Parameters<typeof statusLabel>[0])
-  const isActive = !['verified', 'insufficient', 'failed', 'expired'].includes(status)
+  const isActive = !['verified', 'insufficient', 'failed', 'expired', 'cancelled'].includes(status)
 
   if (status === 'verified') return <Badge className="rounded bg-green-50 text-green-700 border border-green-200 text-[11px] font-medium">{label}</Badge>
   if (status === 'insufficient') return <Badge className="rounded bg-amber-50 text-amber-700 border border-amber-200 text-[11px] font-medium">{label}</Badge>
