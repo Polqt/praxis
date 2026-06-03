@@ -116,6 +116,7 @@ export class VerificationWorker implements OnModuleDestroy {
           await this.queue.enqueueAnalyzeProject(submissionId)
         }
         return
+      }
       case VERIFICATION_JOB_NAMES.executeTests: {
         const submissionRows = await this.db.db
           .select({ commitSha: projectSubmissions.commitSha, githubRepoId: projectSubmissions.githubRepoId })
