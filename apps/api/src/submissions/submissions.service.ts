@@ -115,7 +115,7 @@ export class SubmissionsService {
       totalSubmissions: submissions.length,
       verifiedCount: submissions.filter((submission) => submission.status === 'verified').length,
       inProgressCount: submissions.filter((submission) => (
-        ['queued', 'ingesting', 'analyzing', 'generating_report'].includes(submission.status)
+        ['created', 'queued', 'ingesting', 'analyzing', 'generating_report'].includes(submission.status)
       )).length,
       reportsGenerated: submissions.filter((submission) => (
         ['verified', 'insufficient', 'failed'].includes(submission.status)

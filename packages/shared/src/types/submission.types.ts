@@ -80,6 +80,7 @@ export interface VerificationReport {
   id: string
   submissionId: string
   repositoryName: string
+  githubRepoFullName?: string
   commitSha: string
   challengeTitle: string
   compositeScore: number

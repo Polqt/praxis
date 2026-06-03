@@ -34,6 +34,9 @@ function StatusBadge({ status }: { status: SubmissionStatus }) {
   if (status === 'failed' || status === 'expired') {
     return <Badge variant="destructive" className="rounded text-[11px] font-medium">{label}</Badge>
   }
+  if (status === 'cancelled') {
+    return <Badge variant="outline" className="rounded text-[11px] font-medium text-muted-foreground">{label}</Badge>
+  }
   if (IN_PROGRESS_STATUSES.includes(status)) {
     return (
       <Badge variant="secondary" className="rounded text-[11px] font-medium gap-1.5">
@@ -80,7 +83,7 @@ function SubmissionCard({ submission }: { submission: ProjectSubmission }) {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <StatusBadge status={submission.status} />
-          {isTerminal && (
+          {(submission.status === 'verified' || submission.status === 'insufficient') && (
             <Button variant="ghost" size="sm" asChild onClick={(e) => e.stopPropagation()}>
               <Link href={`/reports/${submission.id}`}>View report</Link>
             </Button>
