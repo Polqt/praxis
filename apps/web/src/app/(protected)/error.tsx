@@ -4,11 +4,10 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
 type Props = {
-  error: Error & { digest?: string }
   reset: () => void
 }
 
-export default function ProtectedError({ error: _error, reset }: Props) {
+export default function ProtectedError({ reset }: Props) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-10 text-center">
       <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-4">Something went wrong</p>

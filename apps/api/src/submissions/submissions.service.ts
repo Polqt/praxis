@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { and, count, desc, eq, gte } from 'drizzle-orm'
+import { and, count, desc, eq, gte, ne } from 'drizzle-orm'
 import { ChallengesService } from '../challenges/challenges.service'
 import { DatabaseService } from '../database/database.service'
 import { projectSubmissionEvents, projectSubmissions } from '../database/schema'
@@ -34,6 +34,7 @@ export class SubmissionsService {
       .where(and(
         eq(projectSubmissions.userId, userId),
         gte(projectSubmissions.submittedAt, oneHourAgo),
+        ne(projectSubmissions.status, 'cancelled'),
       ))
     const recentCount = recentCountRows[0]?.value ?? 0
     if (recentCount >= rateLimitPerHour) {
@@ -164,10 +165,9 @@ export class SubmissionsService {
       throw new ConflictException('Only cancelled submissions can be requeued')
     }
 
-    const now = new Date()
     const updated = await this.db.db
       .update(projectSubmissions)
-      .set({ status: 'queued', completedAt: null, submittedAt: now })
+      .set({ status: 'queued', completedAt: null })
       .where(eq(projectSubmissions.id, submissionId))
       .returning()
 

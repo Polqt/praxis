@@ -22,9 +22,6 @@ function statusVariant(status: string): 'default' | 'outline' | 'secondary' | 'd
   return 'outline'
 }
 
-function isCancelled(status: string) {
-  return status === 'cancelled'
-}
 
 export default async function SubmissionDetailPage(props: Props) {
   const { id } = await props.params
@@ -145,7 +142,7 @@ export default async function SubmissionDetailPage(props: Props) {
             </div>
           )}
 
-          {isCancelled(submission.status) && (
+          {submission.status === 'cancelled' && (
             <div className="rounded-lg border bg-card p-5">
               <div className="flex items-start gap-3">
                 <IconClock size={15} className="text-muted-foreground shrink-0 mt-0.5" />
