@@ -34,13 +34,11 @@ export const metadata: Metadata = {
     url: BASE_URL,
     siteName: 'Praxis',
     type: 'website',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Praxis — Proof of work for developers' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Praxis — Skill Verification Platform',
     description: 'Submit a real GitHub repository. Get a deterministic verification report.',
-    images: ['/og-image.png'],
   },
 }
 
