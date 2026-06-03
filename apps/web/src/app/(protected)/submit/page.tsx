@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { serverApiFetch } from '@/lib/api.server'
 import type { GitHubAccount, ProjectChallenge } from '@praxis/shared'
 import { SubmitClient } from '@/features/submissions/components/submit-client'
@@ -12,18 +12,7 @@ export default async function SubmitPage(props: Props) {
   const searchParams = await props.searchParams
   const challengeId = typeof searchParams.challengeId === 'string' ? searchParams.challengeId : null
 
-  if (!challengeId) {
-    return (
-      <div className="px-10 py-10 w-full">
-        <p className="text-sm text-muted-foreground">
-          No challenge selected.{' '}
-          <Link href="/challenges" className="underline hover:text-foreground transition-colors">
-            Browse challenges
-          </Link>
-        </p>
-      </div>
-    )
-  }
+  if (!challengeId) redirect('/challenges')
 
   let challenge: ProjectChallenge
   let github: GitHubAccount
@@ -34,16 +23,7 @@ export default async function SubmitPage(props: Props) {
       serverApiFetch<GitHubAccount>('/github/account').catch(() => ({ connected: false } as GitHubAccount)),
     ])
   } catch {
-    return (
-      <div className="px-10 py-10 w-full">
-        <p className="text-sm text-muted-foreground">
-          Challenge not found.{' '}
-          <Link href="/challenges" className="underline hover:text-foreground transition-colors">
-            Browse challenges
-          </Link>
-        </p>
-      </div>
-    )
+    redirect('/challenges')
   }
 
   const githubConnected = github.connected

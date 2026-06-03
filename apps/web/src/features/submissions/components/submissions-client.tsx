@@ -5,48 +5,15 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { IconSend } from '@tabler/icons-react'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { formatDate, repoName, statusLabel } from '@/lib/praxis-format'
-import { IN_PROGRESS_STATUSES } from '@/features/submissions/constants'
+import { repoName } from '@/lib/praxis-format'
 import { fadeUp, staggerContainer } from '@/lib/animations'
-import type { ProjectSubmission, SubmissionStatus } from '@praxis/shared'
-
-function StatusBadge({ status }: { status: SubmissionStatus }) {
-  const label = statusLabel(status)
-
-  if (status === 'verified') {
-    return (
-      <Badge className="rounded bg-green-50 text-green-700 border border-green-200 dark:bg-green-950 dark:text-green-300 text-[11px] font-medium">
-        {label}
-      </Badge>
-    )
-  }
-  if (status === 'insufficient') {
-    return (
-      <Badge className="rounded bg-amber-50 text-amber-700 border border-amber-200 text-[11px] font-medium">
-        {label}
-      </Badge>
-    )
-  }
-  if (status === 'failed' || status === 'expired') {
-    return <Badge variant="destructive" className="rounded text-[11px] font-medium">{label}</Badge>
-  }
-  if (status === 'cancelled') {
-    return <Badge variant="outline" className="rounded text-[11px] font-medium text-muted-foreground">{label}</Badge>
-  }
-  if (IN_PROGRESS_STATUSES.includes(status)) {
-    return (
-      <Badge variant="secondary" className="rounded text-[11px] font-medium gap-1.5">
-        <span className="size-1.5 rounded-full bg-current inline-block animate-pulse" />
-        {label}
-      </Badge>
-    )
-  }
-  return <Badge variant="outline" className="rounded text-[11px] font-medium">{label}</Badge>
-}
+import { IN_PROGRESS_STATUSES } from '@/features/submissions/constants'
+import { StatusBadge } from '@/features/submissions/components/status-badge'
+import { FormattedDate } from '@/components/ui/formatted-date'
+import type { ProjectSubmission } from '@praxis/shared'
 
 type FilterTab = 'all' | 'verified' | 'in-progress' | 'failed'
 
@@ -78,7 +45,7 @@ function SubmissionCard({ submission }: { submission: ProjectSubmission }) {
         <div className="min-w-0">
           <p className="font-mono text-sm font-medium truncate">{repoName(submission.githubRepoFullName)}</p>
           <p className="text-xs text-muted-foreground mt-0.5">{submission.githubRepoFullName}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{formatDate(submission.submittedAt)}</p>
+          <p className="text-xs text-muted-foreground mt-0.5"><FormattedDate value={submission.submittedAt} /></p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <StatusBadge status={submission.status} />
@@ -140,10 +107,17 @@ export function SubmissionsClient({ submissions }: { submissions: ProjectSubmiss
         {filtered.length === 0 ? (
           <motion.div variants={fadeUp} className="flex flex-col items-center justify-center py-16 gap-3">
             <IconSend size={20} className="text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No submissions yet.</p>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/challenges">Browse challenges</Link>
-            </Button>
+            <p className="text-sm text-muted-foreground">
+              {tab === 'all' ? 'No submissions yet.' :
+               tab === 'verified' ? 'No verified submissions yet.' :
+               tab === 'in-progress' ? 'No submissions in progress.' :
+               'No failed submissions.'}
+            </p>
+            {tab === 'all' && (
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/challenges">Browse challenges</Link>
+              </Button>
+            )}
           </motion.div>
         ) : (
           filtered.map((submission) => (

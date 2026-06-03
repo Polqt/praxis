@@ -9,16 +9,21 @@ type Props = {
   params: Promise<{ publicToken: string }>
 }
 
+type ProofMeta = {
+  repositoryName: string
+  compositeScore: number
+  verdict: string
+  publicSummary: string | null
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { publicToken } = await params
-  const raw = await serverApiFetch<VerificationReport>(`/proof/${publicToken}`).catch(() => null)
-  if (!raw) return { title: 'Proof not found' }
+  const meta = await serverApiFetch<ProofMeta>(`/proof/${publicToken}/meta`).catch(() => null)
+  if (!meta) return { title: 'Proof not found' }
 
-  const repoName = raw.repositoryName ?? 'Unknown repo'
-  const verdict = raw.verdict === 'verified' ? 'Verified' : 'Insufficient'
-  const score = raw.compositeScore
-  const title = `${repoName} — ${verdict} · ${score}/100 | Praxis`
-  const description = raw.publicSummary ?? `${repoName} was evaluated by Praxis and scored ${score}/100.`
+  const verdict = meta.verdict === 'verified' ? 'Verified' : 'Insufficient'
+  const title = `${meta.repositoryName} — ${verdict} · ${meta.compositeScore}/100 | Praxis`
+  const description = meta.publicSummary ?? `${meta.repositoryName} was evaluated by Praxis and scored ${meta.compositeScore}/100.`
 
   return {
     title,

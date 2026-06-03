@@ -1,5 +1,8 @@
 import type { SubmissionStatus } from '@praxis/shared'
 
+// ingestion_failed, analysis_failed, report_generation_failed are intentionally
+// NOT in this set — they are retryable intermediate failures, not final outcomes.
+// A user or the retry endpoint can transition them back to 'queued'.
 const terminalStatuses = new Set<SubmissionStatus>([
   'verified',
   'insufficient',

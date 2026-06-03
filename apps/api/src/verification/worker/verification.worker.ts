@@ -48,7 +48,7 @@ export class VerificationWorker implements OnModuleDestroy {
       (job) => this.process(job),
       {
         connection: redisConnectionOptions(redisUrl),
-        concurrency: 2,
+        concurrency: this.config.get<number>('verificationPipeline.workerConcurrency') ?? 2,
       },
     )
 

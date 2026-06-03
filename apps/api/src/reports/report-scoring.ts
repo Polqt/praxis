@@ -1,4 +1,5 @@
 import type { Verdict } from '@praxis/shared'
+import { deriveStrengths, deriveImprovements } from '../scoring/derive-report-highlights'
 import type { RepositoryIngestionData } from '../verification/ingestion/repository-ingestion.types'
 import { TestingScorer } from '../scoring/categories/testing.scorer'
 import { DocumentationScorer } from '../scoring/categories/documentation.scorer'
@@ -107,21 +108,6 @@ function scoreCategoryByName(
   return securityScorer.score(extractSecuritySignals(ingestionData))
 }
 
-function deriveStrengths(categoryScores: Record<string, { score: number; status: string }>): string[] {
-  return Object.entries(categoryScores)
-    .filter(([, v]) => v.score >= 8)
-    .sort(([, a], [, b]) => b.score - a.score)
-    .slice(0, 4)
-    .map(([name]) => `Strong result in ${name}`)
-}
-
-function deriveImprovements(categoryScores: Record<string, { score: number; status: string }>): string[] {
-  return Object.entries(categoryScores)
-    .filter(([, v]) => v.score <= 6)
-    .sort(([, a], [, b]) => a.score - b.score)
-    .slice(0, 4)
-    .map(([name]) => `Improve coverage in ${name}`)
-}
 
 export function scoreReport(
   rubric: Rubric,

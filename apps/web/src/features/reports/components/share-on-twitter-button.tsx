@@ -25,8 +25,12 @@ type Props = {
 export function ShareOnTwitterButton({ verdict, compositeScore, challengeTitle, publicToken }: Props) {
   const proofUrl = publicToken ? `https://praxis.dev/proof/${publicToken}` : null
 
+  const intro = verdict === 'verified'
+    ? `I just got my ${challengeTitle} verified on Praxis.`
+    : `I just submitted my ${challengeTitle} for verification on Praxis.`
+
   const shareText = [
-    `I just got my ${challengeTitle} verified on Praxis.`,
+    intro,
     `Score: ${compositeScore}/10. Verdict: ${verdict}.`,
     proofUrl ?? '',
     '#ProofOfWork #Praxis',

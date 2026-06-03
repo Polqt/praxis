@@ -106,7 +106,7 @@ export class UsersService {
     }
   }
 
-  async getLeaderboard(limit = 50) {
+  async getLeaderboard(limit = 50, offset = 0) {
     const rows = await this.db.db
       .select({
         userId: projectSubmissions.userId,
@@ -121,11 +121,12 @@ export class UsersService {
       .groupBy(projectSubmissions.userId, users.username)
       .orderBy(desc(count(projectSubmissions.id)), desc(max(projectVerificationReports.compositeScore)))
       .limit(limit)
+      .offset(offset)
 
     return rows
       .filter((r) => r.username !== null)
       .map((r, i) => ({
-        rank: i + 1,
+        rank: offset + i + 1,
         username: r.username as string,
         verifiedCount: r.verifiedCount,
         bestScore: r.bestScore ?? 0,

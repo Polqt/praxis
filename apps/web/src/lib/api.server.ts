@@ -10,6 +10,8 @@ export async function serverApiFetch<T>(
 
   const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${path}`, {
     ...options,
+    // 10s covers all current server component fetches. E2B execution (up to 120s)
+    // runs in the worker queue, never via a server component fetch.
     signal: options?.signal ?? AbortSignal.timeout(10_000),
     headers: {
       'Content-Type': 'application/json',

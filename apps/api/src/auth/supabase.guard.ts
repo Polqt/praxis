@@ -41,7 +41,7 @@ export class SupabaseGuard implements CanActivate {
 
     let payload: { sub: string; email: string }
     try {
-      payload = jwt.verify(token, publicKey, { algorithms: ['ES256'] }) as { sub: string; email: string }
+      payload = jwt.verify(token, publicKey, { algorithms: ['ES256'], audience: 'authenticated' }) as { sub: string; email: string }
     } catch {
       throw new UnauthorizedException()
     }

@@ -22,8 +22,13 @@ export class UsersController {
   constructor(private usersService: UsersService) {}
 
   @Get('leaderboard')
-  getLeaderboard() {
-    return this.usersService.getLeaderboard()
+  getLeaderboard(
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    const parsedLimit = Math.min(parseInt(limit ?? '50', 10) || 50, 100)
+    const parsedOffset = parseInt(offset ?? '0', 10) || 0
+    return this.usersService.getLeaderboard(parsedLimit, parsedOffset)
   }
 
   @Get('check-username')

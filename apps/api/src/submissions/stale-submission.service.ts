@@ -63,6 +63,9 @@ export class StaleSubmissionService {
           })
         })
         expired++
+        // Fire-and-forget: email failure is logged but does not roll back the expiry.
+        // If the process restarts between expiry and email dispatch, the email is lost.
+        // Acceptable for V1 — expiry emails are best-effort notifications.
         void this.sendExpiryEmail(submission.id)
       } catch (err) {
         this.logger.error('stale-expiry: failed to expire submission', {

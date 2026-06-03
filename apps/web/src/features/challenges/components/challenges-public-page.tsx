@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { ChallengeCard } from '@/features/challenges/components/challenge-card'
 import { staggerContainer } from '@/lib/animations'
+import { CATEGORY_LABEL } from '@/features/submissions/constants'
 import type { Challenge, ChallengeCategory } from '@/features/challenges/types'
 
 type Props = {
@@ -98,7 +99,7 @@ function ChallengesAppView({ challenges, isAuthenticated }: Props) {
               value={category}
               className="px-4 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:text-foreground text-muted-foreground bg-transparent shadow-none capitalize"
             >
-              {category === 'frontend' ? 'Frontend Engineering' : 'Backend Engineering'}
+              {CATEGORY_LABEL[category] ?? category}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -177,7 +178,7 @@ function ChallengesMarketingView({ challenges, isAuthenticated }: Props) {
                   value={category}
                   className="px-4 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:text-foreground text-muted-foreground bg-transparent shadow-none"
                 >
-                  {category === 'frontend' ? 'Frontend Engineering' : 'Backend Engineering'}
+                  {CATEGORY_LABEL[category] ?? category}
                 </TabsTrigger>
               ))}
             </TabsList>

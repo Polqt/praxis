@@ -107,22 +107,28 @@ export class ReportEnrichmentService {
     const strengths: string[] = []
     const improvements: string[] = []
 
-    // Enrich each category narrative in parallel
+    // Cap concurrent Anthropic calls to avoid rate limits when upgrading models
+    const CONCURRENCY = 3
     const categoryEntries = Object.entries(input.categoryScores)
-    const narrativeResults = await Promise.all(
-      categoryEntries.map(async ([name, entry]) => {
-        const prompt = buildCategoryPrompt(
-          name,
-          entry.score,
-          entry.minimumScore,
-          entry.status,
-          entry.citations,
-          entry.signals,
-        )
-        const narrative = await this.callClaude(prompt)
-        return { name, narrative }
-      }),
-    )
+    const narrativeResults: { name: string; narrative: string }[] = []
+    for (let i = 0; i < categoryEntries.length; i += CONCURRENCY) {
+      const batch = categoryEntries.slice(i, i + CONCURRENCY)
+      const batchResults = await Promise.all(
+        batch.map(async ([name, entry]) => {
+          const prompt = buildCategoryPrompt(
+            name,
+            entry.score,
+            entry.minimumScore,
+            entry.status,
+            entry.citations,
+            entry.signals,
+          )
+          const narrative = await this.callClaude(prompt)
+          return { name, narrative }
+        }),
+      )
+      narrativeResults.push(...batchResults)
+    }
 
     for (const { name, narrative } of narrativeResults) {
       enrichedScores[name] = { ...enrichedScores[name], narrative }

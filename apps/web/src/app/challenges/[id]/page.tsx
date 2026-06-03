@@ -5,17 +5,9 @@ import { serverApiFetch } from '@/lib/api.server'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { buildAuthRedirect } from '@/shared/utils/build-auth-redirect'
-import { IconArrowLeft, IconCircleCheck, IconExternalLink } from '@tabler/icons-react'
+import { IconArrowLeft, IconCircleCheck } from '@tabler/icons-react'
 import { CATEGORY_LABEL } from '@/features/submissions/constants'
 import type { ProjectChallenge } from '@praxis/shared'
-
-const ACCEPTED_REPOSITORY_EXAMPLES = [
-  'Inventory API',
-  'Booking API',
-  'CRM Backend',
-  'Auth Service',
-  'Internal Tools API',
-]
 
 type Props = {
   params: Promise<{ id: string }>
@@ -79,19 +71,6 @@ export default async function ChallengeDetailPage(props: Props) {
             <Badge key={cat.name} variant="outline">{cat.name}</Badge>
           ))}
         </div>
-      </section>
-
-      <section className="mt-8 space-y-3">
-        <h2 className="text-sm font-semibold">Accepted repository examples</h2>
-        {/* Temporary UI fallback — replace when backend returns acceptedExamples */}
-        <ul className="space-y-1.5">
-          {ACCEPTED_REPOSITORY_EXAMPLES.map((name) => (
-            <li key={name} className="flex items-center gap-1.5 font-mono text-sm text-muted-foreground">
-              <span>{name}</span>
-              <IconExternalLink size={12} className="shrink-0" />
-            </li>
-          ))}
-        </ul>
       </section>
 
       {challenge.passingThreshold != null && (

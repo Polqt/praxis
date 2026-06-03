@@ -26,6 +26,10 @@ export class AuditService {
 
   constructor(private readonly db: DatabaseService) {}
 
+  // Fire-and-forget by design: callers must not depend on audit success.
+  // Failures are logged but not propagated — a missed audit entry is
+  // preferable to a failed business operation. If the DB is briefly
+  // unavailable, those entries are lost with no replay mechanism (V1 trade-off).
   log(
     userId: string | null,
     eventType: AuditEventType,

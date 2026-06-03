@@ -18,6 +18,7 @@ import {
 import { AuditService } from '../audit/audit.service'
 import { scoreReport } from './report-scoring'
 import { ReportEnrichmentService } from './report-enrichment.service'
+import { deriveStrengths, deriveImprovements } from '../scoring/derive-report-highlights'
 
 type StoredCategoryScore = {
   score: number
@@ -25,22 +26,6 @@ type StoredCategoryScore = {
   citations: string[]
   status: string
   minimumScore: number
-}
-
-function deriveStrengths(scores: Record<string, StoredCategoryScore>): string[] {
-  return Object.entries(scores)
-    .filter(([, v]) => v.score >= 8)
-    .sort(([, a], [, b]) => b.score - a.score)
-    .slice(0, 4)
-    .map(([name]) => `Strong result in ${name}`)
-}
-
-function deriveImprovements(scores: Record<string, StoredCategoryScore>): string[] {
-  return Object.entries(scores)
-    .filter(([, v]) => v.score <= 6)
-    .sort(([, a], [, b]) => a.score - b.score)
-    .slice(0, 4)
-    .map(([name]) => `Improve coverage in ${name}`)
 }
 
 @Injectable()
@@ -144,6 +129,22 @@ export class ReportsService {
       reportId: rows[0].id,
     })
     return this.toSafeReport(rows[0], submission, challenge)
+  }
+
+  async getPublicProofMeta(publicToken: string) {
+    const reports = await this.db.db.select({
+      repositoryName: projectSubmissions.githubRepoFullName,
+      compositeScore: projectVerificationReports.compositeScore,
+      verdict: projectVerificationReports.verdict,
+      publicSummary: projectVerificationReports.publicSummary,
+      isPublic: projectVerificationReports.isPublic,
+    })
+      .from(projectVerificationReports)
+      .innerJoin(projectSubmissions, eq(projectVerificationReports.submissionId, projectSubmissions.id))
+      .where(eq(projectVerificationReports.publicToken, publicToken))
+      .limit(1)
+    if (!reports[0] || !reports[0].isPublic) throw new NotFoundException('Proof not found')
+    return reports[0]
   }
 
   async getPublicProof(publicToken: string) {

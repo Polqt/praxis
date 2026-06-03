@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { ProofProfileSection } from './proof-profile-section'
 import { GreetingHeading } from './greeting-heading'
+import { StatusBadge } from '@/features/submissions/components/status-badge'
+import { FormattedDate } from '@/components/ui/formatted-date'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import { ONBOARDING_GUIDANCE_GITHUB_CONNECTED, ONBOARDING_GUIDANCE_GITHUB_DISCONNECTED, CARD_LABEL_CLASS } from '../constants'
-import { formatDate, repoName, statusLabel } from '@/lib/praxis-format'
+import { repoName } from '@/lib/praxis-format'
 import type { DashboardStats, GitHubAccount, ProjectChallenge, ProjectSubmission, VerificationReport } from '@praxis/shared'
 
 type SubmissionStats = {
@@ -35,23 +37,6 @@ type Props = {
   proofReady: boolean
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const label = statusLabel(status as Parameters<typeof statusLabel>[0])
-  const TERMINAL = ['verified', 'insufficient', 'failed', 'expired', 'cancelled', 'ingestion_failed', 'analysis_failed', 'report_generation_failed']
-  const isActive = !TERMINAL.includes(status)
-
-  if (status === 'verified') return <Badge className="rounded bg-green-50 text-green-700 border border-green-200 text-[11px] font-medium">{label}</Badge>
-  if (status === 'insufficient') return <Badge className="rounded bg-amber-50 text-amber-700 border border-amber-200 text-[11px] font-medium">{label}</Badge>
-  if (['failed', 'expired', 'ingestion_failed', 'analysis_failed', 'report_generation_failed'].includes(status)) return <Badge variant="destructive" className="rounded text-[11px] font-medium">{label}</Badge>
-  if (status === 'cancelled') return <Badge variant="outline" className="rounded text-[11px] font-medium text-muted-foreground">{label}</Badge>
-  if (isActive) return (
-    <Badge variant="secondary" className="rounded text-[11px] font-medium gap-1.5">
-      <span className="size-1.5 rounded-full bg-current inline-block animate-pulse" />
-      {label}
-    </Badge>
-  )
-  return <Badge variant="outline" className="rounded text-[11px] font-medium">{label}</Badge>
-}
 
 export function StudioClient({
   displayName, githubAccount, activeSubmission, activeChallenge,
@@ -75,7 +60,7 @@ export function StudioClient({
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Button asChild><Link href="/challenges">Browse Challenges</Link></Button>
-            <Button variant="outline" asChild><Link href="/submit">Submit Repository</Link></Button>
+            <Button variant="outline" asChild><Link href="/challenges">Submit Repository</Link></Button>
           </div>
         </div>
       </motion.section>
@@ -113,8 +98,8 @@ export function StudioClient({
                   </div>
                   <StatusBadge status={activeSubmission.status} />
                 </div>
-                <p className="text-xs text-muted-foreground mt-3" suppressHydrationWarning>
-                  Submitted {formatDate(activeSubmission.submittedAt)}
+                <p className="text-xs text-muted-foreground mt-3">
+                  Submitted <FormattedDate value={activeSubmission.submittedAt} />
                 </p>
                 <Button variant="outline" size="sm" className="mt-4 self-start" asChild>
                   <Link href={`/submissions/${activeSubmission.id}`}>View submission</Link>
@@ -146,7 +131,7 @@ export function StudioClient({
                 <div className="mt-3 flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-mono text-sm font-medium truncate">{repoName(latestTerminalSubmission.githubRepoFullName)}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5" suppressHydrationWarning>{formatDate(latestReport.generatedAt)}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5"><FormattedDate value={latestReport.generatedAt} /></p>
                   </div>
                   <StatusBadge status={latestReport.verdict} />
                 </div>

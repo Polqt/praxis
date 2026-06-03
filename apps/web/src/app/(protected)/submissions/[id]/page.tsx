@@ -1,26 +1,19 @@
 import Link from 'next/link'
 import { serverApiFetch } from '@/lib/api.server'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { ProjectSubmission, ProjectSubmissionEvent } from '@praxis/shared'
-import { formatDate, githubRepoUrl, repoName, shortSha, statusLabel } from '@/lib/praxis-format'
+import { formatDate, githubRepoUrl, repoName, shortSha } from '@/lib/praxis-format'
 import { SubmissionTimeline } from '@/features/submissions/components/submission-timeline'
 import { SubmissionPoller } from '@/features/submissions/components/submission-poller'
 import { CancelSubmissionButton } from '@/features/submissions/components/cancel-submission-button'
 import { RequeueSubmissionButton } from '@/features/submissions/components/requeue-submission-button'
 import { RetrySubmissionButton } from '@/features/submissions/components/retry-submission-button'
+import { StatusBadge } from '@/features/submissions/components/status-badge'
 import { IN_PROGRESS_STATUSES } from '@/features/submissions/constants'
 import { IconArrowLeft, IconBrandGithub, IconAlertCircle, IconClock, IconExternalLink } from '@tabler/icons-react'
 
 type Props = {
   params: Promise<{ id: string }>
-}
-
-function statusVariant(status: string): 'default' | 'outline' | 'secondary' | 'destructive' {
-  if (status === 'verified') return 'default'
-  if (status === 'insufficient') return 'secondary'
-  if (['failed', 'ingestion_failed', 'analysis_failed', 'report_generation_failed'].includes(status)) return 'destructive'
-  return 'outline'
 }
 
 
@@ -65,9 +58,7 @@ export default async function SubmissionDetailPage(props: Props) {
               <IconExternalLink size={11} />
             </a>
           </div>
-          <Badge variant={statusVariant(submission.status)} className="capitalize shrink-0">
-            {statusLabel(submission.status)}
-          </Badge>
+          <StatusBadge status={submission.status} />
         </div>
       </div>
 
@@ -97,9 +88,7 @@ export default async function SubmissionDetailPage(props: Props) {
               </div>
               <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-muted-foreground">Status</span>
-                <Badge variant={statusVariant(submission.status)} className="capitalize text-[10px] h-4 px-1.5">
-                  {statusLabel(submission.status)}
-                </Badge>
+                <StatusBadge status={submission.status} />
               </div>
             </div>
           </div>

@@ -26,6 +26,7 @@ export default () => ({
     workerHeartbeatKey: process.env.WORKER_HEARTBEAT_KEY ?? 'praxis:worker:heartbeat',
     workerHeartbeatTtlSeconds: parseInt(process.env.WORKER_HEARTBEAT_TTL_SECONDS ?? '30', 10),
     submissionExpiryHours: parseInt(process.env.SUBMISSION_EXPIRY_HOURS ?? '6', 10),
+    workerConcurrency: parseInt(process.env.WORKER_CONCURRENCY ?? '2', 10),
   },
   submissions: {
     rateLimitPerHour: parseInt(process.env.SUBMISSION_RATE_LIMIT_PER_HOUR ?? '5', 10),
