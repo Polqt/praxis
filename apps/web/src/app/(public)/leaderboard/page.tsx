@@ -2,8 +2,6 @@ import type { Metadata } from 'next'
 import { LeaderboardClient } from '@/features/profile/components/leaderboard-client'
 import type { LeaderboardEntry } from '@/lib/api'
 
-export const dynamic = 'force-dynamic'
-
 export const metadata: Metadata = {
   title: 'Leaderboard | Praxis',
   description: 'Top verified developers ranked by completed challenges and best score.',

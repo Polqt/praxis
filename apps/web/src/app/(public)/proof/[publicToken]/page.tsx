@@ -18,7 +18,7 @@ type ProofMeta = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { publicToken } = await params
-  const meta = await serverApiFetch<ProofMeta>(`/proof/${publicToken}/meta`).catch(() => null)
+  const meta = await serverApiFetch<ProofMeta>(`/proof/${publicToken}/meta`, { next: { revalidate: 300 } }).catch(() => null)
   if (!meta) return { title: 'Proof not found' }
 
   const verdict = meta.verdict === 'verified' ? 'Verified' : 'Insufficient'

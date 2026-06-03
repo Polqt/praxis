@@ -33,7 +33,7 @@ export function ReportHero({ repositoryName, challengeTitle, status, compositeSc
           {config.label}
         </span>
         <p className="text-2xl font-semibold tabular-nums">
-          {compositeScore}
+          {compositeScore ?? 0}
           <span className="text-sm font-normal text-muted-foreground">/100</span>
         </p>
       </div>

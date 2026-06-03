@@ -149,15 +149,23 @@ export class UsersService {
       .innerJoin(skills, eq(userSkills.skillId, skills.id))
       .where(eq(userSkills.userId, user.id))
 
-    const verifiedSubmissions = await this.db.db
+    const reportsWithDetails = await this.db.db
       .select({
-        submissionId: projectSubmissions.id,
-        challengeId: projectSubmissions.challengeId,
+        id: projectVerificationReports.id,
+        submissionId: projectVerificationReports.submissionId,
+        compositeScore: projectVerificationReports.compositeScore,
+        verdict: projectVerificationReports.verdict,
+        generatedAt: projectVerificationReports.generatedAt,
+        publicToken: projectVerificationReports.publicToken,
         githubRepoFullName: projectSubmissions.githubRepoFullName,
         completedAt: projectSubmissions.completedAt,
-        status: projectSubmissions.status,
+        submissionStatus: projectSubmissions.status,
+        challengeTitle: projectChallenges.title,
+        challengeCategory: projectChallenges.projectType,
       })
       .from(projectSubmissions)
+      .innerJoin(projectVerificationReports, eq(projectVerificationReports.submissionId, projectSubmissions.id))
+      .innerJoin(projectChallenges, eq(projectChallenges.id, projectSubmissions.challengeId))
       .where(
         and(
           eq(projectSubmissions.userId, user.id),
@@ -165,56 +173,22 @@ export class UsersService {
         ),
       )
       .orderBy(desc(projectSubmissions.completedAt))
+      .limit(6)
 
-    const reportsWithDetails = await Promise.all(
-      verifiedSubmissions.slice(0, 6).map(async (sub) => {
-        const [reportRow, challengeRow] = await Promise.all([
-          this.db.db
-            .select({
-              id: projectVerificationReports.id,
-              submissionId: projectVerificationReports.submissionId,
-              compositeScore: projectVerificationReports.compositeScore,
-              verdict: projectVerificationReports.verdict,
-              generatedAt: projectVerificationReports.generatedAt,
-              publicToken: projectVerificationReports.publicToken,
-            })
-            .from(projectVerificationReports)
-            .where(eq(projectVerificationReports.submissionId, sub.submissionId))
-            .limit(1),
-          this.db.db
-            .select({
-              title: projectChallenges.title,
-              projectType: projectChallenges.projectType,
-            })
-            .from(projectChallenges)
-            .where(eq(projectChallenges.id, sub.challengeId))
-            .limit(1),
-        ])
+    const latestReports = reportsWithDetails.map((row) => ({
+      id: row.id,
+      submissionId: row.submissionId,
+      repositoryName: row.githubRepoFullName,
+      challengeTitle: row.challengeTitle,
+      challengeCategory: row.challengeCategory,
+      verdict: row.verdict,
+      submissionStatus: row.submissionStatus,
+      verifiedAt: (row.completedAt ?? row.generatedAt).toISOString(),
+      publicToken: row.publicToken ?? null,
+      compositeScore: row.compositeScore ?? null,
+    }))
 
-        const report = reportRow[0]
-        const challenge = challengeRow[0]
-        if (!report || !challenge) return null
-
-        return {
-          id: report.id,
-          submissionId: report.submissionId,
-          repositoryName: sub.githubRepoFullName,
-          challengeTitle: challenge.title,
-          challengeCategory: challenge.projectType,
-          verdict: report.verdict,
-          submissionStatus: sub.status,
-          verifiedAt: (sub.completedAt ?? report.generatedAt).toISOString(),
-          publicToken: report.publicToken ?? null,
-          compositeScore: report.compositeScore ?? null,
-        }
-      }),
-    )
-
-    const latestReports = reportsWithDetails.filter(
-      (r): r is NonNullable<typeof r> => r !== null,
-    )
-
-    const verifiedCount = verifiedSubmissions.filter((s) => s.status === 'verified').length
+    const verifiedCount = reportsWithDetails.filter((r) => r.submissionStatus === 'verified').length
 
     return {
       username: user.username as string,

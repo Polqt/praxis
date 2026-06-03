@@ -1,12 +1,17 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { GitHubTokenMetadata, GitHubViewer } from './github.types'
 
+class GitHubRateLimitError extends Error {
+  constructor(public readonly retryAfterSeconds: number) {
+    super(`GitHub rate limit hit — retry after ${retryAfterSeconds}s`)
+    this.name = 'GitHubRateLimitError'
+  }
+}
+
 @Injectable()
 export class GitHubApiService {
   async getViewer(accessToken: string): Promise<GitHubViewer & GitHubTokenMetadata> {
-    const response = await fetch('https://api.github.com/user', {
-      headers: this.headers(accessToken),
-    })
+    const response = await this.githubFetch('https://api.github.com/user', accessToken)
 
     if (response.status === 401) {
       throw new UnauthorizedException('Invalid GitHub access token')
@@ -30,9 +35,7 @@ export class GitHubApiService {
   }
 
   async getRepository(accessToken: string, owner: string, repo: string) {
-    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
-      headers: this.headers(accessToken),
-    })
+    const response = await this.githubFetch(`https://api.github.com/repos/${owner}/${repo}`, accessToken)
 
     if (response.status === 404) return null
     if (!response.ok) {
@@ -49,9 +52,10 @@ export class GitHubApiService {
   }
 
   async getCommit(accessToken: string, owner: string, repo: string, ref: string) {
-    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits/${ref}`, {
-      headers: this.headers(accessToken),
-    })
+    const response = await this.githubFetch(
+      `https://api.github.com/repos/${owner}/${repo}/commits/${ref}`,
+      accessToken,
+    )
 
     if (response.status === 404) return null
     if (!response.ok) {
@@ -62,9 +66,9 @@ export class GitHubApiService {
   }
 
   async getTree(accessToken: string, owner: string, repo: string, commitSha: string) {
-    const response = await fetch(
+    const response = await this.githubFetch(
       `https://api.github.com/repos/${owner}/${repo}/git/trees/${commitSha}?recursive=1`,
-      { headers: this.headers(accessToken) },
+      accessToken,
     )
 
     if (!response.ok) {
@@ -78,9 +82,9 @@ export class GitHubApiService {
   }
 
   async getFileContent(accessToken: string, owner: string, repo: string, path: string, ref: string) {
-    const response = await fetch(
+    const response = await this.githubFetch(
       `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${ref}`,
-      { headers: this.headers(accessToken) },
+      accessToken,
     )
 
     if (!response.ok) {
@@ -90,6 +94,20 @@ export class GitHubApiService {
     const body = await response.json() as { encoding?: string; content?: string }
     if (body.encoding !== 'base64' || !body.content) return ''
     return Buffer.from(body.content, 'base64').toString('utf8')
+  }
+
+  private async githubFetch(url: string, accessToken: string): Promise<Response> {
+    const response = await fetch(url, {
+      headers: this.headers(accessToken),
+      signal: AbortSignal.timeout(30_000),
+    })
+
+    if (response.status === 429) {
+      const retryAfter = parseInt(response.headers.get('retry-after') ?? '60', 10)
+      throw new GitHubRateLimitError(retryAfter)
+    }
+
+    return response
   }
 
   private headers(accessToken: string) {
