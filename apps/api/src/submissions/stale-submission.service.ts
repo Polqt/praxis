@@ -6,11 +6,12 @@ import { projectChallenges, projectSubmissionEvents, projectSubmissions, users }
 import { NotificationsService } from '../notifications/notifications.service'
 import type { SubmissionStatus } from '@praxis/shared'
 
-const TERMINAL_STATUSES: SubmissionStatus[] = [
+const SKIP_EXPIRY_STATUSES: SubmissionStatus[] = [
   'verified',
   'insufficient',
   'failed',
   'expired',
+  'cancelled',
   'ingestion_failed',
   'analysis_failed',
   'report_generation_failed',
@@ -37,7 +38,7 @@ export class StaleSubmissionService {
       .from(projectSubmissions)
       .where(
         and(
-          notInArray(projectSubmissions.status, TERMINAL_STATUSES),
+          notInArray(projectSubmissions.status, SKIP_EXPIRY_STATUSES),
           lt(projectSubmissions.submittedAt, cutoff),
         ),
       )

@@ -22,9 +22,10 @@ type Props = {
   challengeId?: string
   feedbackSlot?: React.ReactNode
   twitterSlot?: React.ReactNode
+  viewCount?: number
 }
 
-export function ReportClient({ report, backHref = '/submissions', backLabel = 'Back to submissions', actions, challengeId, feedbackSlot, twitterSlot }: Props) {
+export function ReportClient({ report, backHref = '/submissions', backLabel = 'Back to submissions', actions, challengeId, feedbackSlot, twitterSlot, viewCount }: Props) {
   return (
     <motion.div
       variants={staggerContainer}
@@ -41,6 +42,11 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
           {backLabel}
         </Link>
         <div className="flex items-center gap-2">
+          {viewCount !== undefined && viewCount > 0 && (
+            <span className="text-[11px] text-muted-foreground tabular-nums">
+              {viewCount.toLocaleString()} {viewCount === 1 ? 'view' : 'views'}
+            </span>
+          )}
           {report.isPublic && report.publicToken && (
             <ShareProofButton publicToken={report.publicToken} />
           )}

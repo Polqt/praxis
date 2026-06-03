@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { ProofProfileSection } from './proof-profile-section'
+import { GreetingHeading } from './greeting-heading'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import { ONBOARDING_GUIDANCE_GITHUB_CONNECTED, ONBOARDING_GUIDANCE_GITHUB_DISCONNECTED, CARD_LABEL_CLASS } from '../constants'
 import { formatDate, repoName, statusLabel } from '@/lib/praxis-format'
@@ -66,13 +67,7 @@ export function StudioClient({
     >
       <motion.section variants={fadeUp} className="flex items-start justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight" suppressHydrationWarning>
-            {(() => {
-              const hour = new Date().getHours()
-              const period = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'
-              return `Good ${period}, ${displayName}.`
-            })()}
-          </h1>
+          <GreetingHeading name={displayName} />
           <p className="mt-2 text-sm text-muted-foreground">
             {githubAccount?.connected
               ? 'Your GitHub is connected and ready.'

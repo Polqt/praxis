@@ -96,4 +96,5 @@ export interface VerificationReport {
   generatedAt: string
   isPublic: boolean
   publicToken: string | null
+  viewCount?: number
 }

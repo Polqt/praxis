@@ -151,9 +151,15 @@ export class ReportsService {
       .where(eq(projectVerificationReports.publicToken, publicToken))
       .limit(1)
     if (!reports[0] || !reports[0].isPublic) throw new NotFoundException('Proof not found')
+
+    await this.db.db
+      .update(projectVerificationReports)
+      .set({ viewCount: (reports[0].viewCount ?? 0) + 1 })
+      .where(eq(projectVerificationReports.id, reports[0].id))
+
     const submission = await this.getSubmission(reports[0].submissionId)
     const challenge = await this.getChallenge(submission.challengeId)
-    return this.toPublicProof(reports[0], submission, challenge)
+    return this.toPublicProof({ ...reports[0], viewCount: (reports[0].viewCount ?? 0) + 1 }, submission, challenge)
   }
 
   async awardSkillsForSubmission(submissionId: string) {
@@ -282,6 +288,7 @@ export class ReportsService {
       rubricVersion: report.rubricVersion,
       generatedAt: report.generatedAt,
       publicToken: report.publicToken,
+      viewCount: report.viewCount ?? 0,
     }
   }
 

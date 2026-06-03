@@ -1,6 +1,6 @@
 {
-  "id": "b871239e-8a48-4c8d-9365-cc923e3b7ed4",
-  "prevId": "4125a82b-d927-4061-b3fd-988ab432e6a6",
+  "id": "4e5a067f-3c77-40a9-9e8b-c13d5fb9e4b6",
+  "prevId": "b871239e-8a48-4c8d-9365-cc923e3b7ed4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -571,6 +571,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "view_count": {
+          "name": "view_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         }
       },
       "indexes": {},
@@ -1302,7 +1309,8 @@
         "verified",
         "insufficient",
         "failed",
-        "expired"
+        "expired",
+        "cancelled"
       ]
     },
     "public.verdict": {

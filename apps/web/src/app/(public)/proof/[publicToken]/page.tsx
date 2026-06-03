@@ -43,6 +43,7 @@ export default async function PublicProofPage({ params }: Props) {
       report={toReport(raw, { isPublic: true })}
       backHref={viewingUser ? '/studio' : '/'}
       backLabel={viewingUser ? 'Back to studio' : 'Back to Praxis'}
+      viewCount={raw.viewCount ?? 0}
     />
   )
 }

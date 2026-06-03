@@ -195,6 +195,7 @@ export const projectVerificationReports = pgTable('project_verification_reports'
   generatedAt: timestamp('generated_at').defaultNow().notNull(),
   isPublic: boolean('is_public').notNull().default(false),
   publicToken: text('public_token').unique(),
+  viewCount: integer('view_count').notNull().default(0),
 })
 
 export const reportFeedback = pgTable('report_feedback', {
