@@ -18,7 +18,8 @@ export class TestingScorer implements CategoryScorer<TestingSignals> {
     // When execution result is available, use real pass/fail as primary signal
     if (exec && !exec.timedOut) {
       const total = exec.passed + exec.failed + exec.skipped
-      const isFloor = total === 0 && signals.testFileCount === 0
+      // Floor condition is consistent: no test files detected (same as deterministic path)
+      const isFloor = signals.testFileCount === 0
 
       let execScore: number
       if (total === 0) {

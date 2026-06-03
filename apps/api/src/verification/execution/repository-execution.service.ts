@@ -91,15 +91,20 @@ function parseTestOutput(stdout: string, language: string): { passed: number; fa
   let skipped = 0
 
   if (language === 'javascript') {
-    // Jest: "Tests: 3 passed, 1 failed, 4 total" or "Tests: 5 passed, 5 total"
-    const jestMatch = stdout.match(/Tests:\s+(?:(\d+)\s+failed,\s+)?(?:(\d+)\s+skipped,\s+)?(?:(\d+)\s+passed)/i)
-    if (jestMatch) {
-      failed = parseInt(jestMatch[1] ?? '0', 10)
-      skipped = parseInt(jestMatch[2] ?? '0', 10)
-      passed = parseInt(jestMatch[3] ?? '0', 10)
-      return { passed, failed, skipped }
+    // Jest summary line — fields appear in any order, extract by label
+    // e.g. "Tests: 3 passed, 1 failed, 4 total" or "Tests: 1 failed, 3 passed, 4 total"
+    if (/Tests:/i.test(stdout)) {
+      const passedMatch = stdout.match(/(\d+)\s+passed/i)
+      const failedMatch = stdout.match(/(\d+)\s+failed/i)
+      const skippedMatch = stdout.match(/(\d+)\s+(?:skipped|todo)/i)
+      if (passedMatch || failedMatch) {
+        passed = passedMatch ? parseInt(passedMatch[1], 10) : 0
+        failed = failedMatch ? parseInt(failedMatch[1], 10) : 0
+        skipped = skippedMatch ? parseInt(skippedMatch[1], 10) : 0
+        return { passed, failed, skipped }
+      }
     }
-    // Vitest / Mocha: "passing (123ms)" / "failing"
+    // Vitest / Mocha: "5 passing (123ms)" / "2 failing"
     const passMatch = stdout.match(/(\d+)\s+passing/i)
     const failMatch = stdout.match(/(\d+)\s+failing/i)
     const pendingMatch = stdout.match(/(\d+)\s+pending/i)
@@ -216,13 +221,19 @@ export class RepositoryExecutionService {
     repoFullName: string,
     runtime: DetectedRuntime,
   ): Promise<ExecutionResult | null> {
-    const [owner, repo] = repoFullName.split('/')
-    const sandbox = await Sandbox.create({ apiKey: this.apiKey!, timeoutMs: EXECUTION_TIMEOUT_MS })
+    // Sanitize owner/repo to prevent injection into Python subprocess args
+    const parts = repoFullName.split('/')
+    const owner = (parts[0] ?? '').replace(/[^a-zA-Z0-9._-]/g, '')
+    const repo = (parts[1] ?? '').replace(/[^a-zA-Z0-9._-]/g, '')
+    if (!owner || !repo) return null
 
-    this.logger.log(`E2B: sandbox created for ${repoFullName} (${runtime.language})`)
     const start = Date.now()
+    let sandbox: Sandbox | null = null
 
     try {
+      sandbox = await Sandbox.create({ apiKey: this.apiKey!, timeoutMs: EXECUTION_TIMEOUT_MS })
+      this.logger.log(`E2B: sandbox created for ${repoFullName} (${runtime.language})`)
+
       // Clone repo — only works for public repos (no auth token passed to sandbox)
       const cloneResult = await sandbox.runCode(`
 import subprocess
@@ -242,10 +253,11 @@ print(result.stderr)
 
       // Install dependencies if needed
       if (runtime.installCommand) {
+        const installCmd = runtime.installCommand
         await sandbox.runCode(`
 import subprocess
 result = subprocess.run(
-  ${JSON.stringify(runtime.installCommand)},
+  '${installCmd}',
   shell=True, capture_output=True, text=True, cwd='/repo', timeout=90
 )
 print(result.stdout[-3000:] if result.stdout else '')
@@ -254,11 +266,12 @@ print(result.stderr[-1000:] if result.stderr else '')
       }
 
       // Run tests
+      const testCmd = runtime.testCommand
       const testResult = await sandbox.runCode(`
 import subprocess, time
 start = time.time()
 result = subprocess.run(
-  ${JSON.stringify(runtime.testCommand)},
+  '${testCmd}',
   shell=True, capture_output=True, text=True, cwd='/repo', timeout=60
 )
 elapsed = int((time.time() - start) * 1000)
@@ -307,7 +320,7 @@ print('STDERR_END')
       return result
 
     } finally {
-      await sandbox.kill()
+      await sandbox?.kill()
     }
   }
 }

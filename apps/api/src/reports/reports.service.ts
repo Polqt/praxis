@@ -19,9 +19,6 @@ import { AuditService } from '../audit/audit.service'
 import { scoreReport } from './report-scoring'
 import { ReportEnrichmentService } from './report-enrichment.service'
 
-const SCORE_HIGH_THRESHOLD = 8
-const SCORE_MID_THRESHOLD = 6
-
 type StoredCategoryScore = {
   score: number
   narrative: string
@@ -32,7 +29,7 @@ type StoredCategoryScore = {
 
 function deriveStrengths(scores: Record<string, StoredCategoryScore>): string[] {
   return Object.entries(scores)
-    .filter(([, v]) => v.score >= SCORE_HIGH_THRESHOLD)
+    .filter(([, v]) => v.score >= 8)
     .sort(([, a], [, b]) => b.score - a.score)
     .slice(0, 4)
     .map(([name]) => `Strong result in ${name}`)
@@ -40,7 +37,7 @@ function deriveStrengths(scores: Record<string, StoredCategoryScore>): string[] 
 
 function deriveImprovements(scores: Record<string, StoredCategoryScore>): string[] {
   return Object.entries(scores)
-    .filter(([, v]) => v.score <= SCORE_MID_THRESHOLD)
+    .filter(([, v]) => v.score <= 6)
     .sort(([, a], [, b]) => a.score - b.score)
     .slice(0, 4)
     .map(([name]) => `Improve coverage in ${name}`)
