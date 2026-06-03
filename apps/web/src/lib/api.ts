@@ -96,6 +96,7 @@ export const apiClient = {
   checkUsernameAvailability: (username: string) =>
     apiFetch<{ available: boolean }>(`/users/check-username?username=${encodeURIComponent(username)}`),
   getLeaderboard: () => apiFetch<LeaderboardEntry[]>('/users/leaderboard'),
+  getPublicProofs: () => apiFetch<PublicProofEntry[]>('/proof'),
   submitReportFeedback: (
     submissionId: string,
     data: { accuracyRating: number; missedEvidence?: string; notes?: string; wouldShare?: boolean },
@@ -112,4 +113,16 @@ export interface LeaderboardEntry {
   bestScore: number
   lastVerifiedAt: string | null
   recentlyActive: boolean
+}
+
+export interface PublicProofEntry {
+  publicToken: string
+  repositoryName: string
+  compositeScore: number
+  verdict: string
+  publicSummary: string | null
+  challengeTitle: string
+  generatedAt: string
+  viewCount: number | null
+  username: string | null
 }

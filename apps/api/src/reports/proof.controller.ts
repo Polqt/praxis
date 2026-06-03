@@ -5,6 +5,11 @@ import { ReportsService } from './reports.service'
 export class ProofController {
   constructor(private readonly reports: ReportsService) {}
 
+  @Get()
+  listPublicProofs() {
+    return this.reports.listPublicProofs()
+  }
+
   @Get(':publicToken/meta')
   getPublicProofMeta(@Param('publicToken') publicToken: string) {
     return this.reports.getPublicProofMeta(publicToken)

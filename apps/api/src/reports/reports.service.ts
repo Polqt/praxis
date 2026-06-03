@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common'
 import { randomBytes } from 'node:crypto'
-import { eq } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 import { ANALYZER_VERSION, REPORT_GENERATOR_VERSION, SCORING_VERSION } from '../scoring/versions'
 import { RepositoryIngestionData } from '../verification/ingestion/repository-ingestion.types'
 import { DatabaseService } from '../database/database.service'
@@ -14,6 +14,7 @@ import {
   reportFeedback,
   skills,
   userSkills,
+  users,
 } from '../database/schema'
 import { AuditService } from '../audit/audit.service'
 import { scoreReport } from './report-scoring'
@@ -194,6 +195,29 @@ export class ReportsService implements OnModuleInit {
     const submission = await this.getSubmission(reports[0].submissionId)
     const challenge = await this.getChallenge(submission.challengeId)
     return this.toPublicProof({ ...reports[0], viewCount: (reports[0].viewCount ?? 0) + 1 }, submission, challenge)
+  }
+
+  async listPublicProofs(limit = 50) {
+    const rows = await this.db.db.select({
+      publicToken: projectVerificationReports.publicToken,
+      repositoryName: projectSubmissions.githubRepoFullName,
+      compositeScore: projectVerificationReports.compositeScore,
+      verdict: projectVerificationReports.verdict,
+      publicSummary: projectVerificationReports.publicSummary,
+      challengeTitle: projectChallenges.title,
+      generatedAt: projectVerificationReports.generatedAt,
+      viewCount: projectVerificationReports.viewCount,
+      username: users.username,
+    })
+      .from(projectVerificationReports)
+      .innerJoin(projectSubmissions, eq(projectVerificationReports.submissionId, projectSubmissions.id))
+      .innerJoin(projectChallenges, eq(projectChallenges.id, projectSubmissions.challengeId))
+      .innerJoin(users, eq(users.id, projectSubmissions.userId))
+      .where(eq(projectVerificationReports.isPublic, true))
+      .orderBy(desc(projectVerificationReports.generatedAt))
+      .limit(limit)
+
+    return rows
   }
 
   async awardSkillsForSubmission(submissionId: string) {

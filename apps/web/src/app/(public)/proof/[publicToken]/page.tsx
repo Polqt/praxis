@@ -42,6 +42,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
+function SectionLabel({ text }: { text: string }) {
+  return (
+    <div className="inline-flex items-center gap-2.5 mb-6">
+      <div className="w-2 h-2.5 rounded-[1px] shrink-0 bg-primary" />
+      <span className="text-[13px] uppercase tracking-widest text-muted-foreground">{text}</span>
+    </div>
+  )
+}
+
 export default async function PublicProofPage({ params }: Props) {
   const { publicToken } = await params
 
@@ -60,20 +69,20 @@ export default async function PublicProofPage({ params }: Props) {
     ? `https://github.com/${report.repositoryName}/commit/${report.commitSha}`
     : null
 
-  const backHref = viewingUser ? '/studio' : '/'
-  const backLabel = viewingUser ? 'Back to studio' : 'Back to Praxis'
+  const backHref = viewingUser ? '/proof' : '/proof'
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Minimal top bar — just back button + share */}
+    <div className="bg-background">
+
+      {/* ── STICKY TOP BAR ── */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-6 md:px-10 h-14 flex items-center justify-between gap-4">
           <Link
             href={backHref}
             className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             <IconArrowLeft size={14} />
-            {backLabel}
+            All proofs
           </Link>
           <div className="flex items-center gap-3">
             {raw.viewCount !== undefined && raw.viewCount > 0 && (
@@ -86,119 +95,160 @@ export default async function PublicProofPage({ params }: Props) {
         </div>
       </div>
 
-      {/* Proof content */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+      {/* ── HERO SECTION ── */}
+      <section className="min-h-[60vh] bg-muted flex flex-col justify-center px-6 pt-8 pb-16 border-b border-border">
+        <div className="max-w-4xl mx-auto w-full">
+          <SectionLabel text="Verification Report" />
 
-        {/* Hero */}
-        <div className="flex items-start justify-between gap-6 mb-8">
-          <div className="min-w-0">
-            <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-2">
-              Verification Report
-            </p>
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight font-mono truncate">
-              {report.repositoryName}
-            </h1>
-            {report.challengeTitle && (
-              <p className="text-sm text-muted-foreground mt-1">{report.challengeTitle}</p>
-            )}
+          <div className="flex items-start justify-between gap-6">
+            <div className="min-w-0">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight font-mono truncate text-foreground">
+                {report.repositoryName?.split('/')[1] ?? report.repositoryName}
+              </h1>
+              <p className="text-base text-muted-foreground mt-2 font-mono">{report.repositoryName}</p>
+              {report.challengeTitle && (
+                <p className="text-sm text-muted-foreground mt-1">{report.challengeTitle}</p>
+              )}
+            </div>
+
+            <div className="shrink-0 flex flex-col items-end gap-3">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm border text-sm font-medium ${statusConfig.className}`}>
+                {isVerified && <IconCheck size={13} strokeWidth={2.5} />}
+                {statusConfig.label}
+              </span>
+              <p className="text-5xl font-bold tabular-nums">
+                {report.compositeScore ?? 0}
+                <span className="text-base font-normal text-muted-foreground">/100</span>
+              </p>
+            </div>
           </div>
-          <div className="shrink-0 flex flex-col items-end gap-2">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-medium ${statusConfig.className}`}>
-              {isVerified && <IconCheck size={13} strokeWidth={2.5} />}
-              {statusConfig.label}
-            </span>
-            <p className="text-3xl font-semibold tabular-nums">
-              {report.compositeScore ?? 0}
-              <span className="text-sm font-normal text-muted-foreground">/100</span>
+
+          {report.summary && (
+            <p className="text-base md:text-lg text-muted-foreground mt-8 max-w-3xl leading-relaxed">
+              {report.summary}
             </p>
-          </div>
+          )}
         </div>
+      </section>
 
-        <hr className="border-border mb-8" />
+      {/* ── RUBRIC RESULTS ── */}
+      <section className="bg-background flex flex-col justify-center border-b border-border py-24">
+        <div className="max-w-4xl mx-auto px-6 w-full">
+          <SectionLabel text="Rubric Results" />
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-2 mb-10 text-foreground">
+            Six dimensions. All deterministic. No human bias.
+          </h2>
 
-        {/* Summary */}
-        {report.summary && (
-          <p className="text-sm text-muted-foreground leading-relaxed mb-10">
-            {report.summary}
-          </p>
-        )}
+          <ScoreErrorBoundary>
+            <ScoreOverview
+              scores={report.scores}
+              repositoryName={report.repositoryName}
+              commitSha={report.commitSha}
+            />
+          </ScoreErrorBoundary>
+        </div>
+      </section>
 
-        {/* Score breakdown */}
-        <ScoreErrorBoundary>
-          <ScoreOverview
-            scores={report.scores}
-            repositoryName={report.repositoryName}
-            commitSha={report.commitSha}
-          />
-        </ScoreErrorBoundary>
-
-        {/* Strengths & improvements */}
-        <div className="mt-10">
+      {/* ── STRENGTHS & IMPROVEMENTS ── */}
+      <section className="bg-muted flex flex-col justify-center border-b border-border py-24">
+        <div className="max-w-4xl mx-auto px-6 w-full">
+          <SectionLabel text="Analysis" />
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-2 mb-10 text-foreground">
+            Strengths and areas for improvement.
+          </h2>
           <StrengthsImprovementsSection
             strengths={report.strengths}
             improvements={report.improvements}
             derived={report.derivedStrengthsAndImprovements}
           />
         </div>
+      </section>
 
-        <hr className="border-border mt-12 mb-8" />
-
-        {/* Metadata footer */}
-        <div className="flex flex-wrap gap-x-8 gap-y-3 mb-10">
-          <div>
-            <p className="text-[11px] text-muted-foreground mb-0.5">Repository</p>
-            <a
-              href={`https://github.com/${report.repositoryName}`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-[11px] font-mono hover:underline inline-flex items-center gap-1"
-            >
-              {report.repositoryName}
-              <IconExternalLink size={10} />
-            </a>
-          </div>
-          {shortSha && (
-            <div>
-              <p className="text-[11px] text-muted-foreground mb-0.5">Commit</p>
-              {commitUrl ? (
-                <a href={commitUrl} target="_blank" rel="noreferrer" className="text-[11px] font-mono hover:underline">
-                  {shortSha}
-                </a>
-              ) : (
-                <p className="text-[11px] font-mono">{shortSha}</p>
-              )}
-            </div>
-          )}
-          <div>
-            <p className="text-[11px] text-muted-foreground mb-0.5">Generated</p>
-            <p className="text-[11px]" suppressHydrationWarning>{formatDate(report.generatedAt)}</p>
-          </div>
-          <div>
-            <p className="text-[11px] text-muted-foreground mb-0.5">Analyzer</p>
-            <p className="text-[11px] font-mono">{report.modelVersion}</p>
+      {/* ── METADATA ── */}
+      <section className="bg-background flex flex-col justify-center border-b border-border py-24">
+        <div className="max-w-4xl mx-auto px-6 w-full">
+          <SectionLabel text="Report Details" />
+          <div className="border-t border-border mt-2">
+            {[
+              {
+                label: 'Repository',
+                value: (
+                  <a
+                    href={`https://github.com/${report.repositoryName}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-mono text-[15px] hover:underline inline-flex items-center gap-1.5"
+                  >
+                    {report.repositoryName}
+                    <IconExternalLink size={12} />
+                  </a>
+                ),
+              },
+              ...(shortSha ? [{
+                label: 'Commit',
+                value: commitUrl ? (
+                  <a href={commitUrl} target="_blank" rel="noreferrer" className="font-mono text-[15px] hover:underline">
+                    {shortSha}
+                  </a>
+                ) : (
+                  <span className="font-mono text-[15px]">{shortSha}</span>
+                ),
+              }] : []),
+              {
+                label: 'Generated',
+                value: <span className="text-[15px]" suppressHydrationWarning>{formatDate(report.generatedAt)}</span>,
+              },
+              {
+                label: 'Analyzer',
+                value: <span className="font-mono text-[15px]">{report.modelVersion}</span>,
+              },
+            ].map(({ label, value }) => (
+              <div key={label} className="flex items-center h-14 border-b border-border gap-8">
+                <span className="text-[11px] uppercase tracking-widest text-muted-foreground w-32 shrink-0">{label}</span>
+                <span className="text-foreground">{value}</span>
+              </div>
+            ))}
           </div>
         </div>
+      </section>
 
-        {/* CTA for visitors who aren't signed in */}
-        {!viewingUser && (
-          <div className="rounded-lg border border-border bg-muted/40 px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium">Verify your own project</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Submit a real GitHub repository and earn your own verified proof of work.
-              </p>
+      {/* ── CTA for visitors ── */}
+      {!viewingUser && (
+        <section className="min-h-screen flex flex-col justify-center px-6 py-24 border-t border-border bg-foreground">
+          <div className="max-w-4xl mx-auto w-full">
+            <div className="inline-flex items-center gap-2.5 mb-6">
+              <div className="w-2 h-2.5 rounded-[1px] shrink-0 bg-white/40" />
+              <span className="text-[13px] uppercase tracking-widest text-white/40">Your turn</span>
             </div>
-            <Link
-              href="/sign-in"
-              className="shrink-0 inline-flex items-center justify-center h-9 px-5 text-[11px] font-medium uppercase tracking-widest bg-foreground text-background rounded-none hover:opacity-90 transition-opacity"
-            >
-              Get started
-            </Link>
+            <h2 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight mb-10 max-w-3xl text-background">
+              Verify your own project.
+              <br />
+              Earn your place.
+            </h2>
+            <div className="flex items-center gap-3 mb-6">
+              <Link
+                href="/sign-in"
+                className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none bg-background text-foreground hover:opacity-90 transition-opacity"
+              >
+                Get started
+              </Link>
+              <Link
+                href="/challenges"
+                className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none border border-white/30 text-background hover:bg-white/10 transition-colors"
+              >
+                Browse challenges
+              </Link>
+            </div>
+            <p className="text-sm text-white/50">
+              Free to start. No credit card required.
+            </p>
           </div>
-        )}
+        </section>
+      )}
 
-        {/* Praxis attribution */}
-        <p className="text-[10px] text-muted-foreground/60 text-center mt-8">
+      {/* ── Attribution ── */}
+      <div className="py-8 border-t border-border">
+        <p className="text-[10px] text-muted-foreground/60 text-center">
           Verified by{' '}
           <Link href="/" className="hover:text-muted-foreground transition-colors underline underline-offset-2">
             Praxis
@@ -206,6 +256,7 @@ export default async function PublicProofPage({ params }: Props) {
           {' '}— deterministic repository analysis, not self-reported.
         </p>
       </div>
+
     </div>
   )
 }

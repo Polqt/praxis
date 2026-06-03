@@ -47,7 +47,7 @@ assert.ok(floorResult.narrative.toLowerCase().includes('no readme'),
 
 // README only scores 2, not 10
 const readmeOnly: DocumentationSignals = {
-  hasReadme: true, hasSetupInstructions: false, hasApiDocs: false,
+  hasReadme: true, readmeWordCount: 50, hasSetupInstructions: false, hasApiDocs: false,
   hasArchitectureDocs: false, hasContributionDocs: false, detectedDocFiles: ['README.md'],
 }
 assert.equal(scorer.score(readmeOnly).score, 2, 'README only must score exactly 2')

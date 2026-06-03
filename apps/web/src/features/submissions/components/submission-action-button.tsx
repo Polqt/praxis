@@ -2,7 +2,6 @@
 
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import type { ButtonHTMLAttributes } from 'react'
 
 type Props = {
   label: string
@@ -12,9 +11,7 @@ type Props = {
   error: string | null
   disabled?: boolean
   className?: string
-  variant?: ButtonHTMLAttributes<HTMLButtonElement>['type'] extends string
-    ? 'outline' | 'ghost' | 'destructive' | 'default' | 'secondary' | 'link'
-    : never
+  variant?: 'outline' | 'ghost' | 'destructive' | 'default' | 'secondary' | 'link'
 }
 
 export function SubmissionActionButton({
