@@ -31,7 +31,7 @@ export function ShareOnTwitterButton({ verdict, compositeScore, challengeTitle, 
 
   const shareText = [
     intro,
-    `Score: ${compositeScore}/10. Verdict: ${verdict}.`,
+    `Score: ${compositeScore}/100. Verdict: ${verdict}.`,
     proofUrl ?? '',
     '#ProofOfWork #Praxis',
   ].filter(Boolean).join(' ')

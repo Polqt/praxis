@@ -20,7 +20,9 @@ type FilterTab = 'all' | 'verified' | 'in-progress' | 'failed'
 function filterSubmissions(submissions: ProjectSubmission[], tab: FilterTab): ProjectSubmission[] {
   if (tab === 'verified') return submissions.filter((s) => s.status === 'verified')
   if (tab === 'in-progress') return submissions.filter((s) => IN_PROGRESS_STATUSES.includes(s.status))
-  if (tab === 'failed') return submissions.filter((s) => s.status === 'failed' || s.status === 'insufficient')
+  if (tab === 'failed') return submissions.filter((s) =>
+    ['failed', 'insufficient', 'ingestion_failed', 'analysis_failed', 'report_generation_failed'].includes(s.status)
+  )
   return submissions
 }
 

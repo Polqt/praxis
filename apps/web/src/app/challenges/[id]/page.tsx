@@ -56,9 +56,12 @@ export default async function ChallengeDetailPage(props: Props) {
         <h2 className="text-sm font-semibold">Rubric categories</h2>
         <ul className="space-y-2">
           {challenge.rubric.categories.map((cat) => (
-            <li key={cat.name} className="flex items-center gap-2">
-              <IconCircleCheck size={14} className="text-muted-foreground shrink-0" />
-              <span className="text-sm">{cat.name}</span>
+            <li key={cat.name} className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <IconCircleCheck size={14} className="text-muted-foreground shrink-0" />
+                <span className="text-sm">{cat.name}</span>
+              </div>
+              <span className="text-xs text-muted-foreground tabular-nums">{cat.weight}%</span>
             </li>
           ))}
         </ul>

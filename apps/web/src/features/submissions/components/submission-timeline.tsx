@@ -1,11 +1,17 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { IconCheck, IconX } from '@tabler/icons-react'
+import { IconCheck, IconX, IconRefresh } from '@tabler/icons-react'
 import { PIPELINE_STAGES, TERMINAL_STAGE_LABELS, TERMINAL_STATUSES } from '../constants'
 import { formatDate, statusLabel } from '@/lib/praxis-format'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import type { ProjectSubmission, ProjectSubmissionEvent, SubmissionStatus } from '@praxis/shared'
+
+const EXTRA_EVENT_LABELS: Record<string, string> = {
+  submission_cancelled: 'Cancelled',
+  submission_requeued:  'Re-queued',
+  submission_retried:   'Retried',
+}
 
 type Props = {
   submission: ProjectSubmission
@@ -52,6 +58,8 @@ export function SubmissionTimeline({ submission, events }: Props) {
     return 'pending'
   }
 
+  const extraEvents = events.filter((e) => e.reason && EXTRA_EVENT_LABELS[e.reason])
+
   return (
     <motion.div
       variants={staggerContainer}
@@ -59,6 +67,18 @@ export function SubmissionTimeline({ submission, events }: Props) {
       animate="visible"
       className="space-y-0"
     >
+      {extraEvents.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {extraEvents.map((e) => (
+            <motion.div key={e.id} variants={fadeUp} className="flex items-center gap-2.5 text-xs text-muted-foreground">
+              <IconRefresh size={13} className="shrink-0" />
+              <span className="font-medium text-foreground">{EXTRA_EVENT_LABELS[e.reason!]}</span>
+              <span suppressHydrationWarning>{formatDate(e.createdAt)}</span>
+            </motion.div>
+          ))}
+          <div className="border-t border-border my-3" />
+        </div>
+      )}
       {allStages.map((stage, index) => {
         const state = getState(index)
         const isLast = index === allStages.length - 1
