@@ -16,6 +16,7 @@ import {
 } from '../database/schema'
 import { AuditService } from '../audit/audit.service'
 import { scoreReport } from './report-scoring'
+import { ReportEnrichmentService } from './report-enrichment.service'
 
 const SCORE_HIGH_THRESHOLD = 8
 const SCORE_MID_THRESHOLD = 6
@@ -49,6 +50,7 @@ export class ReportsService {
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
+    private readonly enrichment: ReportEnrichmentService,
   ) {}
 
   async generateForSubmission(submissionId: string, repositoryAnalysisId: string) {
@@ -62,12 +64,20 @@ export class ReportsService {
       challenge.passingThreshold,
     )
 
+    const enriched = await this.enrichment.enrich({
+      categoryScores: scored.categoryScores,
+      verdict: scored.verdict,
+      compositeScore: scored.compositeScore,
+      repositoryName: submission.githubRepoFullName,
+      challengeTitle: challenge.title,
+    })
+
     const inserted = await this.db.db.insert(projectVerificationReports).values({
       submissionId,
       compositeScore: scored.compositeScore,
       verdict: scored.verdict,
-      categoryScores: scored.categoryScores,
-      publicSummary: scored.publicSummary,
+      categoryScores: enriched.categoryScores,
+      publicSummary: enriched.publicSummary,
       analyzerVersion: ANALYZER_VERSION,
       scoringVersion: SCORING_VERSION,
       reportGeneratorVersion: REPORT_GENERATOR_VERSION,
@@ -78,8 +88,8 @@ export class ReportsService {
       set: {
         compositeScore: scored.compositeScore,
         verdict: scored.verdict,
-        categoryScores: scored.categoryScores,
-        publicSummary: scored.publicSummary,
+        categoryScores: enriched.categoryScores,
+        publicSummary: enriched.publicSummary,
         analyzerVersion: ANALYZER_VERSION,
         scoringVersion: SCORING_VERSION,
         reportGeneratorVersion: REPORT_GENERATOR_VERSION,
