@@ -11,6 +11,7 @@ export type SubmissionStatus =
   | 'insufficient'
   | 'failed'
   | 'expired'
+  | 'cancelled'
 
 export type ProjectType = 'backend' | 'frontend'
 

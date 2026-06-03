@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common'
 import { User } from '@praxis/shared'
 import { SupabaseGuard } from '../auth/supabase.guard'
 import { GetUser } from '../auth/get-user.decorator'
@@ -33,5 +33,11 @@ export class SubmissionsController {
   @Get(':id/events')
   listEventsForUser(@GetUser() user: User, @Param('id') id: string) {
     return this.submissionsService.listEventsForUser(user.id, id)
+  }
+
+  @Patch(':id/cancel')
+  @HttpCode(HttpStatus.OK)
+  cancelSubmission(@GetUser() user: User, @Param('id') id: string) {
+    return this.submissionsService.cancelSubmission(user.id, id)
   }
 }

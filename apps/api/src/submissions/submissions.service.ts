@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { and, count, desc, eq, gte } from 'drizzle-orm'
 import { ChallengesService } from '../challenges/challenges.service'
@@ -155,6 +155,24 @@ export class SubmissionsService {
       verifiedSkills,
       recentSubmissions: submissions.slice(0, 5),
     }
+  }
+
+  async cancelSubmission(userId: string, submissionId: string) {
+    const submission = await this.getForUser(userId, submissionId)
+
+    if (submission.status !== 'queued') {
+      throw new ConflictException('Only queued submissions can be cancelled')
+    }
+
+    const updated = await this.statusService.transition({
+      submissionId,
+      toStatus: 'cancelled',
+      reason: 'submission_cancelled',
+    })
+
+    this.audit.log(userId, 'submission_cancelled', { submissionId })
+
+    return updated
   }
 
   private async findDuplicate(userId: string, challengeId: string, commitSha: string) {

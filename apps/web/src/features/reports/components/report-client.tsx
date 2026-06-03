@@ -21,9 +21,10 @@ type Props = {
   actions?: React.ReactNode
   challengeId?: string
   feedbackSlot?: React.ReactNode
+  twitterSlot?: React.ReactNode
 }
 
-export function ReportClient({ report, backHref = '/submissions', backLabel = 'Back to submissions', actions, challengeId, feedbackSlot }: Props) {
+export function ReportClient({ report, backHref = '/submissions', backLabel = 'Back to submissions', actions, challengeId, feedbackSlot, twitterSlot }: Props) {
   return (
     <motion.div
       variants={staggerContainer}
@@ -95,6 +96,12 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
       {feedbackSlot && (
         <motion.div variants={fadeUp} className="mt-6">
           {feedbackSlot}
+        </motion.div>
+      )}
+
+      {twitterSlot && (
+        <motion.div variants={fadeUp} className="mt-6">
+          {twitterSlot}
         </motion.div>
       )}
 

@@ -29,6 +29,7 @@ export const submissionStatusEnum = pgEnum('submission_status', [
   'insufficient',
   'failed',
   'expired',
+  'cancelled',
 ])
 
 export const projectTypeEnum = pgEnum('project_type', [

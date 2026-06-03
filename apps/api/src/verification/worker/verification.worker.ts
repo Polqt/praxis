@@ -80,6 +80,18 @@ export class VerificationWorker implements OnModuleDestroy {
       throw new Error('Verification jobs must contain only submissionId')
     }
 
+    if (job.name === VERIFICATION_JOB_NAMES.ingestRepo) {
+      const rows = await this.db.db
+        .select({ status: projectSubmissions.status })
+        .from(projectSubmissions)
+        .where(eq(projectSubmissions.id, submissionId))
+        .limit(1)
+      if (rows[0]?.status === 'cancelled') {
+        this.logger.log(`Skipping cancelled submission ${submissionId}`)
+        return
+      }
+    }
+
     switch (job.name) {
       case VERIFICATION_JOB_NAMES.ingestRepo:
         await this.statuses.transition({ submissionId, toStatus: 'ingesting', reason: 'job_started' })
