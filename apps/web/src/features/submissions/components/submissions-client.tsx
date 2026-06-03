@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatDate, repoName, statusLabel } from '@/lib/praxis-format'
-import { IN_PROGRESS_STATUSES, TERMINAL_STATUSES } from '@/features/submissions/constants'
+import { IN_PROGRESS_STATUSES } from '@/features/submissions/constants'
 import { fadeUp, staggerContainer } from '@/lib/animations'
 import type { ProjectSubmission, SubmissionStatus } from '@praxis/shared'
 
@@ -60,7 +60,6 @@ function filterSubmissions(submissions: ProjectSubmission[], tab: FilterTab): Pr
 function SubmissionCard({ submission }: { submission: ProjectSubmission }) {
   const router = useRouter()
   const isActive = IN_PROGRESS_STATUSES.includes(submission.status)
-  const isTerminal = TERMINAL_STATUSES.includes(submission.status)
 
   return (
     <motion.div
