@@ -36,6 +36,14 @@ export class VerificationQueueService {
     return this.enqueue(VERIFICATION_JOB_NAMES.sendReportEmail, submissionId)
   }
 
+  enqueueReEnrichReport(reportId: string) {
+    return this.queue.add(
+      VERIFICATION_JOB_NAMES.reEnrichReport,
+      { submissionId: '', reportId },
+      { ...DEFAULT_JOB_OPTIONS, jobId: `re-enrich-${reportId}` },
+    )
+  }
+
   enqueueExpireStale() {
     return this.queue.add(
       VERIFICATION_JOB_NAMES.expireStaleSubmission,

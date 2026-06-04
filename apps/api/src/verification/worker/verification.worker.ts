@@ -13,6 +13,7 @@ import {
 import { redisConnectionOptions } from '../queue/redis-connection'
 import { VerificationQueueService } from '../queue/queue.service'
 import { ReportsService } from '../../reports/reports.service'
+import { FALLBACK_SUMMARY_VERIFIED, FALLBACK_SUMMARY_INSUFFICIENT } from '../../reports/report-enrichment.service'
 import { SubmissionStatusService } from '../../submissions/submission-status.service'
 import { StaleSubmissionService } from '../../submissions/stale-submission.service'
 import { AuditService } from '../../audit/audit.service'
@@ -77,9 +78,16 @@ export class VerificationWorker implements OnModuleDestroy {
       return
     }
 
+    if (job.name === VERIFICATION_JOB_NAMES.reEnrichReport) {
+      const { reportId } = job.data
+      if (!reportId) throw new Error('reEnrichReport job missing reportId')
+      await this.reports.reEnrichReport(reportId)
+      return
+    }
+
     const { submissionId } = job.data
-    if (!submissionId || Object.keys(job.data).length !== 1) {
-      throw new Error('Verification jobs must contain only submissionId')
+    if (!submissionId || !job.data.submissionId) {
+      throw new Error('Verification jobs must contain submissionId')
     }
 
     if (job.name === VERIFICATION_JOB_NAMES.ingestRepo) {
@@ -161,6 +169,14 @@ export class VerificationWorker implements OnModuleDestroy {
         })
         await this.queue.enqueueAwardSkills(submissionId)
         await this.queue.enqueueSendReportEmail(submissionId)
+
+        // If enrichment fell back (AI unavailable), schedule re-enrichment
+        if (
+          report.publicSummary === FALLBACK_SUMMARY_VERIFIED ||
+          report.publicSummary === FALLBACK_SUMMARY_INSUFFICIENT
+        ) {
+          await this.queue.enqueueReEnrichReport(report.id)
+        }
         return
       }
       case VERIFICATION_JOB_NAMES.awardSkills:

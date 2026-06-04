@@ -293,6 +293,45 @@ export class ReportsService implements OnModuleInit {
     return inserted
   }
 
+  async reEnrichReport(reportId: string) {
+    if (!this.enrichment.enabled) return
+
+    const reportRows = await this.db.db
+      .select()
+      .from(projectVerificationReports)
+      .where(eq(projectVerificationReports.id, reportId))
+      .limit(1)
+    const report = reportRows[0]
+    if (!report) return
+
+    const submission = await this.getSubmission(report.submissionId)
+    const challenge = await this.getChallenge(submission.challengeId)
+    const ingestionRows = await this.db.db
+      .select()
+      .from(repositoryIngestions)
+      .where(eq(repositoryIngestions.commitSha, submission.commitSha))
+      .limit(1)
+    if (!ingestionRows[0]) return
+
+    const enriched = await this.enrichment.enrich({
+      categoryScores: report.categoryScores as Record<string, { score: number; narrative: string; citations: string[]; status: string; minimumScore: number; signals: Record<string, unknown> }>,
+      verdict: report.verdict,
+      compositeScore: report.compositeScore,
+      repositoryName: submission.githubRepoFullName,
+      challengeTitle: challenge.title,
+    })
+
+    await this.db.db
+      .update(projectVerificationReports)
+      .set({
+        categoryScores: enriched.categoryScores,
+        publicSummary: enriched.publicSummary,
+      })
+      .where(eq(projectVerificationReports.id, reportId))
+
+    this.logger.log(`Re-enriched report ${reportId} for ${submission.githubRepoFullName}`)
+  }
+
   async getExecutionForSubmission(userId: string, submissionId: string) {
     const submission = await this.getSubmission(submissionId)
     if (submission.userId !== userId) throw new NotFoundException('Report not found')

@@ -9,12 +9,14 @@ export const VERIFICATION_JOB_NAMES = {
   awardSkills: 'award-skills',
   sendReportEmail: 'send-report-email',
   expireStaleSubmission: 'expire-stale-submission',
+  reEnrichReport: 're-enrich-report',
 } as const
 
 export type VerificationJobName = typeof VERIFICATION_JOB_NAMES[keyof typeof VERIFICATION_JOB_NAMES]
 
 export interface VerificationJobPayload {
   submissionId: string
+  reportId?: string
 }
 
 export const DEFAULT_JOB_OPTIONS = {
