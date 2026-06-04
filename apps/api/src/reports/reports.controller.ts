@@ -11,6 +11,11 @@ import { ReportsService } from './reports.service'
 export class ReportsController {
   constructor(private readonly reports: ReportsService) {}
 
+  @Get('feedback/analytics')
+  getFeedbackAnalytics() {
+    return this.reports.getFeedbackAnalytics()
+  }
+
   @Get('submissions/:submissionId')
   getPrivateReport(@GetUser() user: User, @Param('submissionId') submissionId: string) {
     return this.reports.getPrivateReport(user.id, submissionId)

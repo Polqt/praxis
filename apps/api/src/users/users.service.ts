@@ -280,6 +280,20 @@ export class UsersService {
 
     const verifiedCount = verifiedCountRows[0]?.value ?? 0
 
+    const insufficientCountRows = await this.db.db
+      .select({ value: count(projectSubmissions.id) })
+      .from(projectSubmissions)
+      .where(and(eq(projectSubmissions.userId, user.id), eq(projectSubmissions.status, 'insufficient')))
+
+    const publishedCountRows = await this.db.db
+      .select({ value: count(projectVerificationReports.id) })
+      .from(projectVerificationReports)
+      .innerJoin(projectSubmissions, eq(projectVerificationReports.submissionId, projectSubmissions.id))
+      .where(and(eq(projectSubmissions.userId, user.id), eq(projectVerificationReports.isPublic, true)))
+
+    const insufficientCount = insufficientCountRows[0]?.value ?? 0
+    const publishedCount = publishedCountRows[0]?.value ?? 0
+
     const reportsWithDetails = await this.db.db
       .select({
         id: projectVerificationReports.id,
@@ -324,6 +338,9 @@ export class UsersService {
       bio: user.bio ?? null,
       verifiedSkills: earnedSkills.map((s) => ({ name: s.name, awardedAt: s.awardedAt.toISOString() })),
       reportsCount: verifiedCount,
+      verifiedProjectsCount: verifiedCount,
+      publishedReportsCount: publishedCount,
+      needsImprovementCount: insufficientCount,
       challengesCompleted: verifiedCount,
       latestReports,
     }

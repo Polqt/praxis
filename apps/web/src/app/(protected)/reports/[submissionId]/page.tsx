@@ -16,7 +16,9 @@ export default async function PrivateReportPage({ params }: Props) {
   const { submissionId } = await params
 
   type ExecutionOutput = {
-    language: string; testCommand: string; exitCode: number
+    language: string; framework?: string | null; testCommand: string; publicSummary?: string | null
+    commandSummary?: { phase: string; label: string; exitCode: number; timedOut: boolean }[]
+    exitCode: number
     passed: number; failed: number; skipped: number
     durationMs: number | null; stdout: string | null; stderr: string | null; timedOut: boolean
   }

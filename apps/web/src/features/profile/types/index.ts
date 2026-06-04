@@ -21,6 +21,9 @@ export interface PublicProfile {
   bio: string | null
   verifiedSkills: VerifiedSkill[]
   reportsCount: number
+  verifiedProjectsCount?: number
+  publishedReportsCount?: number
+  needsImprovementCount?: number
   challengesCompleted: number
   latestReports: ProfileReport[]
 }

@@ -5,12 +5,14 @@ import { SubmitClient } from '@/features/submissions/components/submit-client'
 import { hasRequiredScopes } from '@/features/github/utils'
 
 type Props = {
-  searchParams: Promise<{ challengeId?: string | string[] }>
+  searchParams: Promise<{ challengeId?: string | string[]; repo?: string | string[]; commit?: string | string[] }>
 }
 
 export default async function SubmitPage(props: Props) {
   const searchParams = await props.searchParams
   const challengeId = typeof searchParams.challengeId === 'string' ? searchParams.challengeId : null
+  const repo = typeof searchParams.repo === 'string' ? searchParams.repo : ''
+  const commit = typeof searchParams.commit === 'string' ? searchParams.commit : ''
 
   if (!challengeId) redirect('/challenges')
 
@@ -44,6 +46,8 @@ export default async function SubmitPage(props: Props) {
             challenge={challenge}
             githubConnected={githubConnected}
             githubHasScopes={githubHasScopes}
+            initialRepoUrl={repo}
+            initialCommitSha={commit}
           />
         </div>
 

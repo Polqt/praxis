@@ -32,7 +32,7 @@ export function VerifiedProjectsSection({ reports, profileUsername, viewingUser 
         reports={verified}
         profileUsername={profileUsername}
         viewingUser={viewingUser}
-        emptyText="No verified projects yet."
+        emptyText="Projects appear here after a report reaches Verified."
       />
       {insufficient.length > 0 && (
         <Section
@@ -42,6 +42,7 @@ export function VerifiedProjectsSection({ reports, profileUsername, viewingUser 
           viewingUser={viewingUser}
           emptyText=""
           muted
+          helpText="These reports are private progress records unless published."
         />
       )}
     </div>
@@ -55,12 +56,14 @@ type SectionProps = {
   viewingUser: User | null
   emptyText: string
   muted?: boolean
+  helpText?: string
 }
 
-function Section({ label, reports, profileUsername, viewingUser, emptyText, muted }: SectionProps) {
+function Section({ label, reports, profileUsername, viewingUser, emptyText, muted, helpText }: SectionProps) {
   return (
     <div>
       <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">{label}</p>
+      {helpText && <p className="text-xs text-muted-foreground mb-3">{helpText}</p>}
       {reports.length === 0 ? (
         emptyText ? (
           <div className="rounded-lg border border-dashed flex flex-col items-center justify-center py-8 gap-2">

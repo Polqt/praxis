@@ -16,6 +16,10 @@ type Props = {
 }
 
 export function ProfileClient({ profile, viewingUser }: Props) {
+  const verifiedProjectsCount = profile.verifiedProjectsCount ?? profile.reportsCount
+  const publishedReportsCount = profile.publishedReportsCount ?? profile.latestReports.filter((report) => report.publicToken).length
+  const needsImprovementCount = profile.needsImprovementCount ?? profile.latestReports.filter((report) => report.submissionStatus === 'insufficient').length
+
   return (
     <motion.div
       variants={staggerContainer}
@@ -28,7 +32,9 @@ export function ProfileClient({ profile, viewingUser }: Props) {
           username={profile.username}
           bio={profile.bio}
           verifiedSkills={profile.verifiedSkills}
-          reportsCount={profile.reportsCount}
+          verifiedProjectsCount={verifiedProjectsCount}
+          publishedReportsCount={publishedReportsCount}
+          needsImprovementCount={needsImprovementCount}
           isOwner={viewingUser?.username === profile.username}
         />
       </motion.div>
@@ -49,7 +55,9 @@ export function ProfileClient({ profile, viewingUser }: Props) {
 
       <motion.div variants={fadeUp}>
         <ProofStatisticsSection
-          verifiedCount={profile.reportsCount}
+          verifiedCount={verifiedProjectsCount}
+          publishedReportsCount={publishedReportsCount}
+          needsImprovementCount={needsImprovementCount}
           skillsCount={profile.verifiedSkills.length}
         />
       </motion.div>

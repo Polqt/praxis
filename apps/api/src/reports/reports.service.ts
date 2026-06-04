@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto'
 import { desc, eq } from 'drizzle-orm'
 import { ANALYZER_VERSION, REPORT_GENERATOR_VERSION, SCORING_VERSION } from '../scoring/versions'
 import { RepositoryIngestionData } from '../verification/ingestion/repository-ingestion.types'
+import type { RepositoryAnalysisData } from '../verification/analysis/repository-analysis.types'
 import { DatabaseService } from '../database/database.service'
 import {
   projectChallenges,
@@ -19,6 +20,7 @@ import {
 import { AuditService } from '../audit/audit.service'
 import { scoreReport } from './report-scoring'
 import { ReportEnrichmentService } from './report-enrichment.service'
+import { AiEvidenceReviewService } from './ai-evidence-review.service'
 import { deriveStrengths, deriveImprovements } from '../scoring/derive-report-highlights'
 
 type StoredCategoryScore = {
@@ -37,6 +39,7 @@ export class ReportsService implements OnModuleInit {
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
     private readonly enrichment: ReportEnrichmentService,
+    private readonly evidenceReview: AiEvidenceReviewService,
   ) {}
 
   async onModuleInit() {
@@ -85,6 +88,12 @@ export class ReportsService implements OnModuleInit {
           language: executionRows[0].language,
         }
       : null
+
+    await this.evidenceReview.review(
+      analysis.id,
+      analysis.repositoryIngestionId,
+      analysis.analysisData as RepositoryAnalysisData,
+    )
 
     const scored = scoreReport(
       challenge.rubric as { categories: { name: string; weight: number; floor: number }[] },
@@ -276,7 +285,10 @@ export class ReportsService implements OnModuleInit {
     const execRows = await this.db.db
       .select({
         language: repositoryExecutions.language,
+        framework: repositoryExecutions.framework,
         testCommand: repositoryExecutions.testCommand,
+        commandSummary: repositoryExecutions.commandSummary,
+        publicSummary: repositoryExecutions.publicSummary,
         exitCode: repositoryExecutions.exitCode,
         passed: repositoryExecutions.passed,
         failed: repositoryExecutions.failed,
@@ -285,6 +297,12 @@ export class ReportsService implements OnModuleInit {
         stdout: repositoryExecutions.stdout,
         stderr: repositoryExecutions.stderr,
         timedOut: repositoryExecutions.timedOut,
+        installResult: repositoryExecutions.installResult,
+        testResult: repositoryExecutions.testResult,
+        buildResult: repositoryExecutions.buildResult,
+        lintResult: repositoryExecutions.lintResult,
+        typecheckResult: repositoryExecutions.typecheckResult,
+        doctorResult: repositoryExecutions.doctorResult,
       })
       .from(repositoryExecutions)
       .where(eq(repositoryExecutions.repositoryIngestionId, ingestionRows[0].id))
@@ -417,5 +435,59 @@ export class ReportsService implements OnModuleInit {
 
     this.audit.log(userId, 'report_feedback_submitted', { reportId: report.id, rating: dto.accuracyRating })
     return rows[0]
+  }
+
+  async getFeedbackAnalytics() {
+    const rows = await this.db.db
+      .select({
+        accuracyRating: reportFeedback.accuracyRating,
+        missedEvidence: reportFeedback.missedEvidence,
+        notes: reportFeedback.notes,
+        wouldShare: reportFeedback.wouldShare,
+      })
+      .from(reportFeedback)
+
+    const categoryCounts = new Map<string, number>()
+    const frameworkCounts = new Map<string, number>()
+    let wouldShare = 0
+    let wouldNotShare = 0
+
+    const categories = ['API Design', 'Authentication', 'Database Design', 'Testing', 'Documentation', 'Deployment']
+    const frameworks = ['Django', 'Expo', 'NestJS', 'Next.js', 'React Native', 'Express', 'Laravel', 'Rails', 'Spring', 'Go']
+
+    for (const row of rows) {
+      const text = `${row.missedEvidence ?? ''}\n${row.notes ?? ''}`.toLowerCase()
+      for (const category of categories) {
+        if (text.includes(category.toLowerCase())) {
+          categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1)
+        }
+      }
+      for (const framework of frameworks) {
+        if (text.includes(framework.toLowerCase())) {
+          frameworkCounts.set(framework, (frameworkCounts.get(framework) ?? 0) + 1)
+        }
+      }
+      if (row.wouldShare === true) wouldShare += 1
+      if (row.wouldShare === false) wouldNotShare += 1
+    }
+
+    const toSorted = (map: Map<string, number>) =>
+      Array.from(map.entries())
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+
+    return {
+      total: rows.length,
+      averageAccuracyRating: rows.length
+        ? Number((rows.reduce((sum, row) => sum + row.accuracyRating, 0) / rows.length).toFixed(2))
+        : 0,
+      categoriesMarkedInaccurate: toSorted(categoryCounts),
+      frameworksMentioned: toSorted(frameworkCounts),
+      shareIntent: { wouldShare, wouldNotShare },
+      commonMissedEvidence: rows
+        .map((row) => row.missedEvidence)
+        .filter((value): value is string => Boolean(value))
+        .slice(0, 25),
+    }
   }
 }

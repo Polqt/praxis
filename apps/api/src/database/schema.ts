@@ -166,12 +166,21 @@ export const repositoryExecutions = pgTable('repository_executions', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
   repositoryIngestionId: text('repository_ingestion_id').notNull().references(() => repositoryIngestions.id),
   language: text('language').notNull(),
+  framework: text('framework'),
   testCommand: text('test_command').notNull(),
+  commandSummary: jsonb('command_summary').notNull().default({}),
+  installResult: jsonb('install_result'),
+  testResult: jsonb('test_result'),
+  buildResult: jsonb('build_result'),
+  lintResult: jsonb('lint_result'),
+  typecheckResult: jsonb('typecheck_result'),
+  doctorResult: jsonb('doctor_result'),
   exitCode: integer('exit_code').notNull(),
   passed: integer('passed').notNull().default(0),
   failed: integer('failed').notNull().default(0),
   skipped: integer('skipped').notNull().default(0),
   durationMs: integer('duration_ms'),
+  publicSummary: text('public_summary'),
   stdout: text('stdout'),
   stderr: text('stderr'),
   timedOut: boolean('timed_out').notNull().default(false),
@@ -188,6 +197,24 @@ export const repositoryAnalyses = pgTable('repository_analyses', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (t) => [
   uniqueIndex('repository_analyses_ingestion_version_idx').on(t.repositoryIngestionId, t.analyzerVersion),
+])
+
+export const repositoryAiReviews = pgTable('repository_ai_reviews', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  repositoryAnalysisId: text('repository_analysis_id').notNull().references(() => repositoryAnalyses.id),
+  model: text('model').notNull(),
+  promptVersion: text('prompt_version').notNull(),
+  inputHash: text('input_hash').notNull(),
+  reviewData: jsonb('review_data').notNull(),
+  inputTokens: integer('input_tokens').notNull().default(0),
+  outputTokens: integer('output_tokens').notNull().default(0),
+  estimatedCostUsd: text('estimated_cost_usd'),
+  latencyMs: integer('latency_ms'),
+  status: text('status').notNull().default('success'),
+  errorMessage: text('error_message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (t) => [
+  uniqueIndex('repository_ai_reviews_analysis_prompt_input_idx').on(t.repositoryAnalysisId, t.promptVersion, t.inputHash),
 ])
 
 export const projectVerificationReports = pgTable('project_verification_reports', {

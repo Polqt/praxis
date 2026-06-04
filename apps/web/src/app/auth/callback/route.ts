@@ -6,6 +6,22 @@ function signInRedirect(origin: string, error: string, nextPath: string) {
   return NextResponse.redirect(`${origin}/sign-in?error=${error}&next=${encodeURIComponent(nextPath)}`)
 }
 
+function getJwtHeader(token: string) {
+  try {
+    const encodedHeader = token.split('.')[0]
+    if (!encodedHeader) return null
+    const json = Buffer.from(encodedHeader, 'base64url').toString('utf8')
+    const header = JSON.parse(json) as { alg?: string; kid?: string }
+    return { alg: header.alg ?? 'missing', kid: header.kid ? 'present' : 'missing' }
+  } catch {
+    return null
+  }
+}
+
+function compactBody(body: string) {
+  return body.replace(/\s+/g, ' ').slice(0, 500)
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
@@ -52,50 +68,52 @@ export async function GET(request: NextRequest) {
   const bearer = { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }
   const provider = session.user.app_metadata?.provider
   const providerToken = session.provider_token
+  const jwtHeader = getJwtHeader(session.access_token)
 
   console.info('[auth/callback] Session exchanged', {
     provider,
     hasProviderToken: Boolean(providerToken),
     apiHost: apiBase ? new URL(apiBase).host : 'missing',
+    accessTokenHeader: jwtHeader,
     nextPath,
   })
 
+  let apiUserReady = false
   try {
     const userResponse = await fetch(`${apiBase}/api/users/me`, { headers: bearer })
+    const body = userResponse.ok ? '' : compactBody(await userResponse.text().catch(() => ''))
     console.info('[auth/callback] /api/users/me provisioning result', {
       status: userResponse.status,
       ok: userResponse.ok,
+      body,
     })
-    if (!userResponse.ok) {
-      return signInRedirect(origin, 'api_user_failed', nextPath)
-    }
+    apiUserReady = userResponse.ok
   } catch (err) {
     console.warn('[auth/callback] /api/users/me provisioning request failed', {
       message: err instanceof Error ? err.message : 'unknown',
     })
-    return signInRedirect(origin, 'api_user_failed', nextPath)
   }
 
-  if (provider === 'github' && providerToken) {
+  if (provider === 'github' && providerToken && apiUserReady) {
     try {
       const githubResponse = await fetch(`${apiBase}/api/github/sync`, {
         method: 'POST',
         headers: bearer,
         body: JSON.stringify({ accessToken: providerToken }),
       })
+      const body = githubResponse.ok ? '' : compactBody(await githubResponse.text().catch(() => ''))
       console.info('[auth/callback] /api/github/sync result', {
         status: githubResponse.status,
         ok: githubResponse.ok,
+        body,
       })
-      if (!githubResponse.ok) {
-        return signInRedirect(origin, 'github_sync_failed', nextPath)
-      }
     } catch (err) {
       console.warn('[auth/callback] /api/github/sync request failed', {
         message: err instanceof Error ? err.message : 'unknown',
       })
-      return signInRedirect(origin, 'github_sync_failed', nextPath)
     }
+  } else if (provider === 'github' && providerToken && !apiUserReady) {
+    console.warn('[auth/callback] Skipping GitHub sync because /api/users/me did not provision successfully')
   }
 
   return response

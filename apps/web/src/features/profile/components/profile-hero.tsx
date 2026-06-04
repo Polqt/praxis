@@ -12,11 +12,21 @@ type Props = {
   username: string
   bio: string | null
   verifiedSkills: VerifiedSkill[]
-  reportsCount: number
+  verifiedProjectsCount: number
+  publishedReportsCount: number
+  needsImprovementCount: number
   isOwner?: boolean
 }
 
-export function ProfileHero({ username, bio, verifiedSkills, reportsCount, isOwner }: Props) {
+export function ProfileHero({
+  username,
+  bio,
+  verifiedSkills,
+  verifiedProjectsCount,
+  publishedReportsCount,
+  needsImprovementCount,
+  isOwner,
+}: Props) {
   const skillNames = verifiedSkills.map((s) => s.name)
   const title = deriveEngineerTitle(skillNames)
   const titleTooltip = deriveEngineerTitleTooltip(skillNames)
@@ -83,9 +93,11 @@ export function ProfileHero({ username, bio, verifiedSkills, reportsCount, isOwn
         </div>
       )}
 
-      <div className="flex items-center gap-3 mt-4">
-        <StatPill value={verifiedSkills.length} label="Skills" />
-        <StatPill value={reportsCount} label="Verified" />
+      <div className="flex flex-wrap items-center gap-3 mt-4">
+        <StatPill value={verifiedProjectsCount} label="Verified projects" />
+        <StatPill value={publishedReportsCount} label="Published reports" />
+        <StatPill value={needsImprovementCount} label="Needs improvement" />
+        <StatPill value={verifiedSkills.length} label="Verified skills" />
       </div>
     </div>
   )

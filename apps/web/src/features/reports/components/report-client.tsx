@@ -7,11 +7,13 @@ import { ReportHero } from './report-hero'
 import { ScoreOverview } from './score-overview'
 import { ScoreErrorBoundary } from './score-error-boundary'
 import { SkillsNearMissSection } from './skills-near-miss-section'
+import { NextBestFixesSection } from './next-best-fixes-section'
 import { VerifiedSkillsSection } from './verified-skills-section'
 import { StrengthsImprovementsSection } from './strengths-improvements-section'
 import { ReportFooter } from './report-footer'
 import { ShareProofButton } from './share-proof-button'
 import { ReportClaritySection } from './report-clarity-section'
+import { ResubmitAfterFixesButton } from './resubmit-after-fixes-button'
 import { REPORT_DISCLAIMER_TEXT, REPORT_DISCLAIMER_LINK_LABEL, REPORT_DISCLAIMER_LINK_HREF } from '@/features/reports/constants'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import type { Report } from '@/features/reports/types'
@@ -56,6 +58,13 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
             <ShareProofButton publicToken={report.publicToken} />
           )}
           {actions && actions}
+          {report.status === 'insufficient' && (
+            <ResubmitAfterFixesButton
+              challengeId={challengeId}
+              repositoryName={report.repositoryName}
+              commitSha={report.commitSha}
+            />
+          )}
         </div>
       </div>
 
@@ -129,7 +138,10 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
       />
 
       {report.status === 'insufficient' && (
-        <SkillsNearMissSection scores={report.scores} />
+        <>
+          <NextBestFixesSection scores={report.scores} />
+          <SkillsNearMissSection scores={report.scores} />
+        </>
       )}
 
       {feedbackSlot && (

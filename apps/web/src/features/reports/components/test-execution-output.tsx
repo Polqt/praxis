@@ -10,7 +10,10 @@ const STDERR_CAP = 2000
 
 interface ExecutionOutput {
   language: string
+  framework?: string | null
   testCommand: string
+  publicSummary?: string | null
+  commandSummary?: { phase: string; label: string; exitCode: number; timedOut: boolean }[]
   exitCode: number
   passed: number
   failed: number
@@ -47,13 +50,13 @@ export function TestExecutionOutput({ execution }: Props) {
       >
         <IconTerminal2 size={14} className="text-muted-foreground shrink-0" />
         <span className="text-xs uppercase tracking-widest font-semibold text-muted-foreground flex-1">
-          Test execution output
+          Sandbox execution output
         </span>
         <div className="flex items-center gap-3 shrink-0 text-xs">
           <span className={statusColor}>
             {execution.timedOut ? 'Timed out' : `Exit ${execution.exitCode}`}
           </span>
-          <span className="text-muted-foreground">{execution.language}</span>
+          <span className="text-muted-foreground">{execution.framework ?? execution.language}</span>
           {durationLabel && <span className="text-muted-foreground">{durationLabel}</span>}
           {open ? <IconChevronDown size={13} className="text-muted-foreground" /> : <IconChevronRight size={13} className="text-muted-foreground" />}
         </div>
@@ -85,6 +88,26 @@ export function TestExecutionOutput({ execution }: Props) {
                 {execution.failed > 0 && <span className="text-destructive">{execution.failed} failed</span>}
                 {execution.skipped > 0 && <span>{execution.skipped} skipped</span>}
               </div>
+
+              {execution.publicSummary && (
+                <p className="text-xs text-muted-foreground">{execution.publicSummary}</p>
+              )}
+
+              {execution.commandSummary && execution.commandSummary.length > 0 && (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {execution.commandSummary.map((item) => (
+                    <div key={`${item.phase}-${item.label}`} className="rounded-md border bg-muted/30 px-3 py-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{item.phase}</span>
+                        <span className={item.timedOut || item.exitCode !== 0 ? 'text-[11px] text-destructive' : 'text-[11px] text-green-600'}>
+                          {item.timedOut ? 'Timed out' : `Exit ${item.exitCode}`}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs font-mono break-all">{item.label}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {hasOutput ? (
                 <>

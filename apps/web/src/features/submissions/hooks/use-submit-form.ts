@@ -16,10 +16,13 @@ export type UseSubmitFormReturn = {
   handleSubmit: (e: React.FormEvent) => Promise<void>
 }
 
-export function useSubmitForm(challengeId: string): UseSubmitFormReturn {
+export function useSubmitForm(
+  challengeId: string,
+  initial?: { repoUrl?: string; commitSha?: string },
+): UseSubmitFormReturn {
   const router = useRouter()
-  const [repoUrl, setRepoUrlRaw] = useState('')
-  const [commitSha, setCommitSha] = useState('')
+  const [repoUrl, setRepoUrlRaw] = useState(initial?.repoUrl ?? '')
+  const [commitSha, setCommitSha] = useState(initial?.commitSha ?? '')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

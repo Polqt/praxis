@@ -7,6 +7,7 @@ import { ShareProofButton } from '@/features/reports/components/share-proof-butt
 import { ScoreOverview } from '@/features/reports/components/score-overview'
 import { ScoreErrorBoundary } from '@/features/reports/components/score-error-boundary'
 import { StrengthsImprovementsSection } from '@/features/reports/components/strengths-improvements-section'
+import { ProofSafetyLabels } from '@/features/reports/components/proof-safety-labels'
 import { toReport } from '@/features/reports/utils/to-report'
 import { STATUS_CONFIG } from '@/features/reports/constants'
 import { formatDate } from '@/lib/praxis-format'
@@ -128,6 +129,7 @@ export default async function PublicProofPage({ params }: Props) {
               {report.summary}
             </p>
           )}
+          <ProofSafetyLabels status={report.status} />
         </div>
       </section>
 

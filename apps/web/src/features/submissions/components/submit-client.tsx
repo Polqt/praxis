@@ -16,11 +16,16 @@ type Props = {
   challenge: ProjectChallenge
   githubConnected: boolean
   githubHasScopes: boolean
+  initialRepoUrl?: string
+  initialCommitSha?: string
 }
 
-export function SubmitClient({ challenge, githubConnected, githubHasScopes }: Props) {
+export function SubmitClient({ challenge, githubConnected, githubHasScopes, initialRepoUrl, initialCommitSha }: Props) {
   const { repoUrl, commitSha, submitting, error, setRepoUrl, setCommitSha, handleSubmit } =
-    useSubmitForm(challenge.id)
+    useSubmitForm(challenge.id, {
+      repoUrl: initialRepoUrl,
+      commitSha: initialCommitSha,
+    })
 
   const categoryLabel = CATEGORY_LABEL[challenge.projectType] ?? challenge.projectType
 
