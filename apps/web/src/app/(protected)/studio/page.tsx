@@ -20,12 +20,16 @@ type SubmissionStats = {
 }
 
 export default async function StudioPage() {
-  let user: User = null!
-  try {
-    user = await serverApiFetch<User>('/users/me')
-  } catch {
-    redirect('/sign-in?next=/studio')
+  let user: User | null = null
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      user = await serverApiFetch<User>('/users/me')
+      break
+    } catch {
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 600 * (attempt + 1)))
+    }
   }
+  if (!user) redirect('/sign-in?next=/studio')
   if (!user.username) redirect('/onboarding/username')
 
   const [githubAccount, challenges, submissions, submissionStats, dashboard, scoreHistory] = await Promise.all([
