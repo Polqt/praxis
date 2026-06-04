@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode } from '@nestjs/common'
+import { Controller, Get, Headers, HttpCode } from '@nestjs/common'
 import { SkipThrottle } from '@nestjs/throttler'
 import { HealthService } from './health.service'
 
@@ -16,5 +16,10 @@ export class HealthController {
   @Get('ready')
   async ready() {
     return this.health.ready()
+  }
+
+  @Get('auth')
+  async auth(@Headers('authorization') authorization?: string) {
+    return this.health.auth(authorization)
   }
 }

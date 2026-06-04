@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { serverApiFetch } from '@/lib/api.server'
+import { ApiAccountError } from '@/features/auth/components/api-account-error'
 import { StudioClient } from '@/features/studio/components/studio-client'
 import { isTerminalSubmission } from '@/lib/praxis-format'
 import type {
@@ -21,15 +22,18 @@ type SubmissionStats = {
 
 export default async function StudioPage() {
   let user: User | null = null
+  let userError: unknown = null
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       user = await serverApiFetch<User>('/users/me')
+      userError = null
       break
-    } catch {
+    } catch (err) {
+      userError = err
       if (attempt < 2) await new Promise((r) => setTimeout(r, 600 * (attempt + 1)))
     }
   }
-  if (!user) redirect('/sign-in?next=/studio')
+  if (!user) return <ApiAccountError error={userError} />
   if (!user.username) redirect('/onboarding/username')
 
   const [githubAccount, challenges, submissions, submissionStats, dashboard, scoreHistory] = await Promise.all([

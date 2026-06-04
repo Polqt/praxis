@@ -11,6 +11,14 @@ import { GITHUB_AUTH_SCOPES, REQUIRED_SCOPES } from '@/features/github/constants
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  auth_failed: 'Authentication callback failed. Please try signing in again.',
+  missing_code: 'The authentication callback was missing a required code. Please try again.',
+  session_expired: 'Your session expired. Please sign in again.',
+  api_user_failed: 'You signed in, but Praxis could not load your account. Please try again.',
+  github_sync_failed: 'You signed in, but Praxis could not sync your GitHub account. Please try again.',
+}
+
 function GithubIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -98,7 +106,8 @@ function HalftoneArt() {
 
 function SignInPage() {
   const searchParams = useSearchParams()
-  const sessionExpired = searchParams.get('error') === 'session_expired'
+  const authError = searchParams.get('error')
+  const authErrorMessage = authError ? AUTH_ERROR_MESSAGES[authError] : null
   const nextPath = safeInternalPath(searchParams.get('next'))
 
   const [email, setEmail] = useState('')
@@ -268,9 +277,9 @@ function SignInPage() {
               Sign in to connect your GitHub and submit your first project for verification.
             </p>
 
-            {sessionExpired && (
+            {authErrorMessage && (
               <div className="mb-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-sm text-amber-800 text-[12px]">
-                Your session expired. Please sign in again.
+                {authErrorMessage}
               </div>
             )}
 

@@ -101,11 +101,9 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
         </ScoreErrorBoundary>
       </motion.div>
 
-      {report.skills.length > 0 && (
-        <motion.div variants={fadeUp} className="mt-10">
-          <VerifiedSkillsSection skills={report.skills} />
-        </motion.div>
-      )}
+      <motion.div variants={fadeUp} className="mt-10">
+        <VerifiedSkillsSection skills={report.skills} />
+      </motion.div>
 
       {executionSlot && (
         <motion.div variants={fadeUp} className="mt-10">

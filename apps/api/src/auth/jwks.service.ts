@@ -42,6 +42,21 @@ export class JwksService implements OnModuleInit {
     return key
   }
 
+  diagnostics() {
+    const url = new URL(this.jwksUrl)
+    return {
+      jwksHost: url.host,
+      keyCount: this.keys.size,
+      fetchedAt: this.fetchedAt ? new Date(this.fetchedAt).toISOString() : null,
+      ageSeconds: this.fetchedAt ? Math.round((Date.now() - this.fetchedAt) / 1000) : null,
+    }
+  }
+
+  async refreshForHealth() {
+    await this.fetchKeys()
+    return this.diagnostics()
+  }
+
   private async fetchKeys() {
     this.logger.log(`Fetching JWKS from ${this.jwksUrl}`)
     const response = await fetch(this.jwksUrl)

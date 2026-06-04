@@ -22,7 +22,9 @@ export function VerifiedSkillsSection({ skills, reports = [] }: Props) {
     <div>
       <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">Verified skills</p>
       {sorted.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No verified skills yet.</p>
+        <p className="text-sm text-muted-foreground">
+          Skills unlock when a project reaches a verified verdict. Insufficient reports still show progress by category.
+        </p>
       ) : (
         <div className="flex flex-col gap-3">
           {sorted.map((skill) => {

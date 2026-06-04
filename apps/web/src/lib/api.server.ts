@@ -1,5 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 
+export class ServerApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly path: string,
+    public readonly requestId: string | null = null,
+  ) {
+    super(message)
+    this.name = 'ServerApiError'
+  }
+}
+
 export async function serverApiFetch<T>(
   path: string,
   options?: RequestInit
@@ -22,7 +34,9 @@ export async function serverApiFetch<T>(
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}))
-    throw new Error((body as { message?: string }).message ?? `API error ${response.status}`)
+    const message = (body as { message?: string }).message ?? `API error ${response.status}`
+    const requestId = response.headers.get('x-request-id')
+    throw new ServerApiError(message, response.status, path, requestId)
   }
 
   return response.json() as Promise<T>

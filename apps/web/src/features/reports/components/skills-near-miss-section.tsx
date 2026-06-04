@@ -10,47 +10,44 @@ type Props = {
   scores: ScoreItem[]
 }
 
-// Near floor miss: scored below the minimum but within this many points
-const NEAR_FLOOR_GAP = 2
-// Reuse the scoring mid threshold — scores at or below this are "low"
 const LOW_SCORE_THRESHOLD = SCORE_MID_THRESHOLD - 2
 
-type NearMissItem = { score: ScoreItem; reason: 'near-floor' | 'low-score' }
+type ProgressItem = { score: ScoreItem; reason: 'floor-missed' | 'low-score' }
 
-function collectNearMiss(scores: ScoreItem[]): NearMissItem[] {
-  const items: NearMissItem[] = []
-  for (const s of scores) {
-    const floor = s.minimumScore ?? 0
-    if (floor > 0 && s.score < floor && s.score >= floor - NEAR_FLOOR_GAP) {
-      items.push({ score: s, reason: 'near-floor' })
-    } else if (floor === 0 && s.score <= LOW_SCORE_THRESHOLD) {
-      items.push({ score: s, reason: 'low-score' })
+function collectProgressItems(scores: ScoreItem[]): ProgressItem[] {
+  const items: ProgressItem[] = []
+  for (const score of scores) {
+    const floor = score.minimumScore ?? 0
+    if (floor > 0 && score.score < floor) {
+      items.push({ score, reason: 'floor-missed' })
+    } else if (floor === 0 && score.score <= LOW_SCORE_THRESHOLD) {
+      items.push({ score, reason: 'low-score' })
     }
   }
   return items
 }
 
 export function SkillsNearMissSection({ scores }: Props) {
-  const items = collectNearMiss(scores)
+  const items = collectProgressItems(scores)
   if (items.length === 0) return null
 
   return (
     <motion.div variants={fadeUp} className="mt-6 rounded-lg border border-amber-200 bg-amber-50/50 p-5">
       <div className="flex items-center gap-2 mb-3">
         <IconTargetArrow size={15} className="text-amber-600 shrink-0" />
-        <p className="text-xs uppercase tracking-widest font-semibold text-amber-700">Areas to improve</p>
+        <p className="text-xs uppercase tracking-widest font-semibold text-amber-700">Skill progress</p>
       </div>
       <p className="text-xs text-amber-700 mb-3 leading-relaxed">
-        These categories scored low. Small improvements here would raise your composite score and unlock skill badges where applicable.
+        These categories blocked verification or scored low. Improve them to raise your score and unlock verified skill badges.
       </p>
       <div className="flex flex-col gap-2">
-        {items.map(({ score: s, reason }) => (
-          <div key={s.category} className="flex items-center justify-between gap-4">
-            <span className="text-sm font-medium text-amber-900">{s.category}</span>
+        {items.map(({ score, reason }) => (
+          <div key={score.category} className="flex items-center justify-between gap-4">
+            <span className="text-sm font-medium text-amber-900">{score.category}</span>
             <span className="text-xs text-amber-700 tabular-nums shrink-0">
-              {reason === 'near-floor'
-                ? `${s.score}/${s.minimumScore} — ${(s.minimumScore ?? 0) - s.score} point${(s.minimumScore ?? 0) - s.score !== 1 ? 's' : ''} below floor`
-                : `${s.score}/10 — low score`}
+              {reason === 'floor-missed'
+                ? `${score.score}/10, needs ${score.minimumScore}/10`
+                : `${score.score}/10, low score`}
             </span>
           </div>
         ))}

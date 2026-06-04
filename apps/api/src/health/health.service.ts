@@ -2,11 +2,13 @@ import { Injectable, OnModuleDestroy } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Queue } from 'bullmq'
 import IORedis from 'ioredis'
+import * as jwt from 'jsonwebtoken'
 import { DatabaseService } from '../database/database.service'
+import { JwksService } from '../auth/jwks.service'
 import { VERIFICATION_QUEUE_NAME } from '../verification/queue/queue.constants'
 import { redisConnectionOptions } from '../verification/queue/redis-connection'
 
-interface ComponentResult {
+export interface ComponentResult {
   status: 'ok' | 'fail'
   message?: string
 }
@@ -33,6 +35,7 @@ export class HealthService implements OnModuleDestroy {
   constructor(
     private readonly db: DatabaseService,
     private readonly config: ConfigService,
+    private readonly jwks: JwksService,
   ) {
     const redisUrl = config.get<string>('redis.url')
     if (!redisUrl) throw new Error('REDIS_URL is required')
@@ -61,6 +64,33 @@ export class HealthService implements OnModuleDestroy {
       status: allOk ? 'ok' : 'degraded',
       components: { database, redis, worker },
       queue: queueCounts ?? undefined,
+    }
+  }
+
+  async auth(authorization?: string) {
+    const configuredAlgorithms = ['ES256', 'RS256']
+    const hasHs256Secret = Boolean(this.config.get<string>('supabase.jwtSecret'))
+    if (hasHs256Secret) configuredAlgorithms.push('HS256')
+
+    let jwksStatus: ComponentResult = { status: 'ok' }
+    let jwks = this.jwks.diagnostics()
+    try {
+      jwks = await this.jwks.refreshForHealth()
+    } catch (err) {
+      jwksStatus = { status: 'fail', message: err instanceof Error ? err.message : 'unknown' }
+    }
+
+    const token = await this.validateSampleToken(authorization)
+
+    return {
+      status: jwksStatus.status === 'ok' && token.status !== 'invalid' ? 'ok' : 'degraded',
+      supabase: {
+        jwks,
+        jwksStatus,
+        configuredAlgorithms,
+        hasHs256Secret,
+      },
+      token,
     }
   }
 
@@ -102,6 +132,53 @@ export class HealthService implements OnModuleDestroy {
       return { waiting, active, failed }
     } catch {
       return null
+    }
+  }
+
+  private async validateSampleToken(authorization?: string) {
+    if (!authorization?.startsWith('Bearer ')) {
+      return { provided: false as const, status: 'not_provided' as const }
+    }
+
+    const token = authorization.split(' ')[1]
+    const decoded = jwt.decode(token, { complete: true })
+    if (!decoded || typeof decoded === 'string') {
+      return { provided: true as const, status: 'invalid' as const, message: 'Token could not be decoded' }
+    }
+
+    const algorithm = decoded.header.alg
+    const kid = decoded.header.kid ?? null
+
+    try {
+      let secret: jwt.Secret
+      if (algorithm === 'HS256') {
+        const jwtSecret = this.config.get<string>('supabase.jwtSecret')
+        if (!jwtSecret) {
+          return { provided: true as const, status: 'invalid' as const, alg: algorithm, kid, message: 'SUPABASE_JWT_SECRET is not configured' }
+        }
+        secret = jwtSecret
+      } else if (algorithm === 'ES256' || algorithm === 'RS256') {
+        if (!kid) {
+          return { provided: true as const, status: 'invalid' as const, alg: algorithm, kid, message: 'Token missing kid' }
+        }
+        secret = await this.jwks.getKey(kid)
+      } else {
+        return { provided: true as const, status: 'invalid' as const, alg: algorithm, kid, message: 'Unsupported JWT algorithm' }
+      }
+
+      jwt.verify(token, secret, {
+        algorithms: [algorithm as jwt.Algorithm],
+        audience: 'authenticated',
+      })
+      return { provided: true as const, status: 'valid' as const, alg: algorithm, kid }
+    } catch (err) {
+      return {
+        provided: true as const,
+        status: 'invalid' as const,
+        alg: algorithm,
+        kid,
+        message: err instanceof Error ? err.message : 'unknown',
+      }
     }
   }
 }
