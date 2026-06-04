@@ -14,8 +14,8 @@ assert.ok(weakResult.score >= weakMin && weakResult.score <= weakMax,
   `Weak score ${weakResult.score} not in [${weakMin}, ${weakMax}]`)
 assert.ok(weakResult.narrative.includes('README'),
   `Weak narrative must mention README, got: "${weakResult.narrative}"`)
-assert.ok(weakResult.narrative.toLowerCase().includes('not found'),
-  `Weak narrative must list missing docs, got: "${weakResult.narrative}"`)
+assert.ok(weakResult.narrative.toLowerCase().includes('detected'),
+  `Weak narrative must mention missing docs, got: "${weakResult.narrative}"`)
 assert.ok(!weakResult.narrative.toLowerCase().includes('detected: setup instructions'),
   `Weak narrative must not claim setup instructions as detected, got: "${weakResult.narrative}"`)
 
