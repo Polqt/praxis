@@ -15,32 +15,38 @@ interface UseLeaderboardResult {
  * Client-side hook for leaderboard data.
  * Fetches on mount and exposes a refresh() for live updates.
  */
-export function useLeaderboard(initial: LeaderboardEntry[] = []): UseLeaderboardResult {
+export function useLeaderboard(initial: LeaderboardEntry[] = [], initialPeriod: 'all' | 'month' | 'week' = 'all'): UseLeaderboardResult & { period: 'all' | 'month' | 'week'; setPeriod: (p: 'all' | 'month' | 'week') => void } {
+  const [period, setPeriodState] = useState<'all' | 'month' | 'week'>(initialPeriod)
   const needsFetch = initial.length === 0
   const [entries, setEntries] = useState<LeaderboardEntry[]>(initial)
   const [loading, setLoading] = useState(needsFetch)
   const [error, setError] = useState<string | null>(null)
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (p?: 'all' | 'month' | 'week') => {
     setLoading(true)
     setError(null)
     try {
-      const data = await apiClient.getLeaderboard()
+      const data = await apiClient.getLeaderboard(p ?? period)
       setEntries(data)
     } catch {
       setError('Failed to load leaderboard.')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [period])
+
+  const setPeriod = useCallback((p: 'all' | 'month' | 'week') => {
+    setPeriodState(p)
+    refresh(p)
+  }, [refresh])
 
   useEffect(() => {
     if (!needsFetch) return
-    apiClient.getLeaderboard()
+    apiClient.getLeaderboard(period)
       .then(setEntries)
       .catch(() => setError('Failed to load leaderboard.'))
       .finally(() => setLoading(false))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { entries, loading, error, refresh }
+  return { entries, loading, error, refresh, period, setPeriod }
 }

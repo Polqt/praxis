@@ -4,15 +4,25 @@ import { IconCheck } from '@tabler/icons-react'
 import { STATUS_CONFIG } from '@/features/reports/constants'
 import type { ReportStatus } from '@/features/reports/types'
 
+const LANGUAGE_LABEL: Record<string, string> = {
+  javascript: 'JavaScript',
+  typescript: 'TypeScript',
+  python: 'Python',
+  go: 'Go',
+  rust: 'Rust',
+}
+
 type Props = {
   repositoryName: string
   challengeTitle: string
   status: ReportStatus
   compositeScore: number
+  language?: string | null
 }
 
-export function ReportHero({ repositoryName, challengeTitle, status, compositeScore }: Props) {
+export function ReportHero({ repositoryName, challengeTitle, status, compositeScore, language }: Props) {
   const config = STATUS_CONFIG[status]
+  const langLabel = language ? (LANGUAGE_LABEL[language.toLowerCase()] ?? language) : null
 
   return (
     <div className="flex items-start justify-between gap-6">
@@ -23,9 +33,16 @@ export function ReportHero({ repositoryName, challengeTitle, status, compositeSc
         <h1 className="text-2xl font-semibold tracking-tight font-mono truncate">
           {repositoryName}
         </h1>
-        {challengeTitle && (
-          <p className="text-sm text-muted-foreground mt-1">{challengeTitle}</p>
-        )}
+        <div className="flex items-center gap-2 flex-wrap mt-1">
+          {challengeTitle && (
+            <p className="text-sm text-muted-foreground">{challengeTitle}</p>
+          )}
+          {langLabel && (
+            <span className="text-[10px] uppercase tracking-widest font-medium px-2 py-0.5 border rounded-sm bg-muted text-muted-foreground border-border">
+              {langLabel}
+            </span>
+          )}
+        </div>
       </div>
       <div className="shrink-0 flex flex-col items-end gap-2">
         <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-medium ${config.className}`}>

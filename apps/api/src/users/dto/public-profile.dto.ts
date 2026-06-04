@@ -17,6 +17,7 @@ export class VerifiedSkillDto {
 
 export class PublicProfileDto {
   username: string
+  bio: string | null
   verifiedSkills: VerifiedSkillDto[]
   reportsCount: number
   challengesCompleted: number

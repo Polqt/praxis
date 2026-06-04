@@ -3,6 +3,7 @@ import { User } from '@praxis/shared'
 import { SupabaseGuard } from '../auth/supabase.guard'
 import { GetUser } from '../auth/get-user.decorator'
 import { CreateSubmissionDto } from './dto/create-submission.dto'
+import { UpdateCommitDto } from './dto/update-commit.dto'
 import { SubmissionsService } from './submissions.service'
 
 @Controller('submissions')
@@ -56,6 +57,12 @@ export class SubmissionsController {
   @HttpCode(HttpStatus.OK)
   retrySubmission(@GetUser() user: User, @Param('id') id: string) {
     return this.submissionsService.retrySubmission(user.id, id)
+  }
+
+  @Patch(':id/commit')
+  @HttpCode(HttpStatus.OK)
+  updateCommit(@GetUser() user: User, @Param('id') id: string, @Body() dto: UpdateCommitDto) {
+    return this.submissionsService.updateCommitAndRetry(user.id, id, dto.commitSha)
   }
 
   @Patch(':id/viewed')

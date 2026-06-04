@@ -18,6 +18,7 @@ export interface VerifiedSkill {
 
 export interface PublicProfile {
   username: string
+  bio: string | null
   verifiedSkills: VerifiedSkill[]
   reportsCount: number
   challengesCompleted: number

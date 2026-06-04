@@ -22,13 +22,14 @@ type Props = {
   backLabel?: string
   actions?: React.ReactNode
   challengeId?: string
+  language?: string | null
   executionSlot?: React.ReactNode
   feedbackSlot?: React.ReactNode
   twitterSlot?: React.ReactNode
   viewCount?: number
 }
 
-export function ReportClient({ report, backHref = '/submissions', backLabel = 'Back to submissions', actions, challengeId, executionSlot, feedbackSlot, twitterSlot, viewCount }: Props) {
+export function ReportClient({ report, backHref = '/submissions', backLabel = 'Back to submissions', actions, challengeId, language, executionSlot, feedbackSlot, twitterSlot, viewCount }: Props) {
   return (
     <motion.div
       variants={staggerContainer}
@@ -63,6 +64,7 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
           challengeTitle={report.challengeTitle}
           status={report.status}
           compositeScore={report.compositeScore}
+          language={language}
         />
       </motion.div>
 
@@ -88,6 +90,12 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
         </motion.div>
       )}
 
+      {executionSlot && (
+        <motion.div variants={fadeUp} className="mt-10">
+          {executionSlot}
+        </motion.div>
+      )}
+
       <motion.div variants={fadeUp} className="mt-10">
         <StrengthsImprovementsSection
           strengths={report.strengths}
@@ -106,12 +114,6 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
 
       {report.status === 'insufficient' && (
         <SkillsNearMissSection scores={report.scores} />
-      )}
-
-      {executionSlot && (
-        <motion.div variants={fadeUp} className="mt-6">
-          {executionSlot}
-        </motion.div>
       )}
 
       {feedbackSlot && (

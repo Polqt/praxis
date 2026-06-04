@@ -7,7 +7,7 @@ import type { DocumentationSignals } from '../signals/documentation.signals'
 
 const scorer = new DocumentationScorer()
 
-// Weak fixture — README only → 2 points
+// Weak fixture — README (50 words) only → 1 point
 const weakResult = scorer.score(weakDocumentation)
 const { min: weakMin, max: weakMax } = weakRepoFixture.expectedScoreRanges.documentation
 assert.ok(weakResult.score >= weakMin && weakResult.score <= weakMax,
@@ -45,11 +45,11 @@ assert.equal(floorResult.score, 0, 'Missing README must score 0')
 assert.ok(floorResult.narrative.toLowerCase().includes('no readme'),
   `Floor narrative must mention no README, got: "${floorResult.narrative}"`)
 
-// README only scores 2, not 10
+// README only (50 words, no setup) scores 1 — above minimal threshold but no setup instructions
 const readmeOnly: DocumentationSignals = {
   hasReadme: true, readmeWordCount: 50, hasSetupInstructions: false, hasApiDocs: false,
   hasArchitectureDocs: false, hasContributionDocs: false, detectedDocFiles: ['README.md'],
 }
-assert.equal(scorer.score(readmeOnly).score, 2, 'README only must score exactly 2')
+assert.equal(scorer.score(readmeOnly).score, 1, 'README only (50 words, no setup) must score exactly 1')
 
 console.log('documentation.scorer: all tests passed')

@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
-import { and, count, desc, eq, inArray, max } from 'drizzle-orm'
+import { and, count, desc, eq, gte, inArray, max } from 'drizzle-orm'
 import { DatabaseService } from '../database/database.service'
 import {
   projectChallenges,
@@ -150,7 +150,17 @@ export class UsersService {
     }
   }
 
-  async getLeaderboard(limit = 50, offset = 0) {
+  async getLeaderboard(limit = 50, offset = 0, period: 'all' | 'month' | 'week' = 'all') {
+    const periodStart = period === 'week'
+      ? new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      : period === 'month'
+        ? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        : null
+
+    const whereClause = periodStart
+      ? and(eq(projectSubmissions.status, 'verified'), gte(projectSubmissions.completedAt, periodStart))
+      : eq(projectSubmissions.status, 'verified')
+
     const rows = await this.db.db
       .select({
         userId: projectSubmissions.userId,
@@ -162,7 +172,7 @@ export class UsersService {
       .from(projectSubmissions)
       .innerJoin(users, eq(projectSubmissions.userId, users.id))
       .innerJoin(projectVerificationReports, eq(projectVerificationReports.submissionId, projectSubmissions.id))
-      .where(eq(projectSubmissions.status, 'verified'))
+      .where(whereClause)
       .groupBy(projectSubmissions.userId, users.username)
       .orderBy(desc(count(projectSubmissions.id)), desc(max(projectVerificationReports.compositeScore)))
       .limit(limit)
@@ -182,9 +192,72 @@ export class UsersService {
       }))
   }
 
+  async getMyRank(userId: string) {
+    const rows = await this.db.db
+      .select({
+        userId: projectSubmissions.userId,
+        verifiedCount: count(projectSubmissions.id),
+        bestScore: max(projectVerificationReports.compositeScore),
+      })
+      .from(projectSubmissions)
+      .innerJoin(users, eq(projectSubmissions.userId, users.id))
+      .innerJoin(projectVerificationReports, eq(projectVerificationReports.submissionId, projectSubmissions.id))
+      .where(eq(projectSubmissions.status, 'verified'))
+      .groupBy(projectSubmissions.userId, users.username)
+      .orderBy(desc(count(projectSubmissions.id)), desc(max(projectVerificationReports.compositeScore)))
+
+    const rank = rows.findIndex((r) => r.userId === userId) + 1
+    return { rank: rank > 0 ? rank : null, total: rows.length }
+  }
+
+  async updateBio(userId: string, bio: string | undefined) {
+    const updated = await this.db.db
+      .update(users)
+      .set({ bio: bio?.trim() || null })
+      .where(eq(users.id, userId))
+      .returning()
+    if (!updated[0]) throw new NotFoundException()
+    return updated[0]
+  }
+
+  async getScoreHistory(userId: string) {
+    const rows = await this.db.db
+      .select({
+        challengeId: projectSubmissions.challengeId,
+        challengeTitle: projectChallenges.title,
+        compositeScore: projectVerificationReports.compositeScore,
+        completedAt: projectSubmissions.completedAt,
+      })
+      .from(projectSubmissions)
+      .innerJoin(projectVerificationReports, eq(projectVerificationReports.submissionId, projectSubmissions.id))
+      .innerJoin(projectChallenges, eq(projectChallenges.id, projectSubmissions.challengeId))
+      .where(and(
+        eq(projectSubmissions.userId, userId),
+        inArray(projectSubmissions.status, ['verified', 'insufficient']),
+      ))
+      .orderBy(desc(projectSubmissions.completedAt))
+      .limit(50)
+
+    // Group by challenge, ordered by date asc per challenge
+    const byChallenge = new Map<string, { title: string; scores: { score: number; completedAt: string }[] }>()
+    for (const row of rows.reverse()) {
+      if (!byChallenge.has(row.challengeId)) {
+        byChallenge.set(row.challengeId, { title: row.challengeTitle, scores: [] })
+      }
+      byChallenge.get(row.challengeId)!.scores.push({
+        score: row.compositeScore ?? 0,
+        completedAt: row.completedAt?.toISOString() ?? '',
+      })
+    }
+
+    return Array.from(byChallenge.entries())
+      .filter(([, v]) => v.scores.length > 1)
+      .map(([challengeId, v]) => ({ challengeId, title: v.title, scores: v.scores }))
+  }
+
   async findPublicProfile(username: string) {
     const userRows = await this.db.db
-      .select({ id: users.id, username: users.username })
+      .select({ id: users.id, username: users.username, bio: users.bio })
       .from(users)
       .where(eq(users.username, username))
       .limit(1)
@@ -248,6 +321,7 @@ export class UsersService {
 
     return {
       username: user.username as string,
+      bio: user.bio ?? null,
       verifiedSkills: earnedSkills.map((s) => ({ name: s.name, awardedAt: s.awardedAt.toISOString() })),
       reportsCount: verifiedCount,
       challengesCompleted: verifiedCount,

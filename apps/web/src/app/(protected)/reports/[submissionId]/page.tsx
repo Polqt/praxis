@@ -44,6 +44,7 @@ export default async function PrivateReportPage({ params }: Props) {
     <ReportClient
       report={toReport(raw)}
       challengeId={submission?.challengeId}
+      language={execution?.language ?? null}
       actions={
         <ReportVisibilityButton submissionId={raw.submissionId} isPublic={raw.isPublic} initialPublicToken={raw.publicToken} />
       }

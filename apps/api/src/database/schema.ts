@@ -62,6 +62,7 @@ export const users = pgTable('users', {
   supabaseUid: text('supabase_uid').unique().notNull(),
   email: text('email').notNull(),
   username: text('username').unique(),
+  bio: text('bio'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 

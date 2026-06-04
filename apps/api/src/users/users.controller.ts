@@ -14,6 +14,7 @@ import { SupabaseGuard } from '../auth/supabase.guard'
 import { GetUser } from '../auth/get-user.decorator'
 import { UsersService } from './users.service'
 import { UpdateUserDto } from './dto/update-user.dto'
+import { UpdateBioDto } from './dto/update-bio.dto'
 import { PublicProfileDto } from './dto/public-profile.dto'
 import { User } from '@praxis/shared'
 
@@ -25,10 +26,12 @@ export class UsersController {
   getLeaderboard(
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
+    @Query('period') period?: string,
   ) {
     const parsedLimit = Math.min(parseInt(limit ?? '50', 10) || 50, 100)
     const parsedOffset = parseInt(offset ?? '0', 10) || 0
-    return this.usersService.getLeaderboard(parsedLimit, parsedOffset)
+    const validPeriod = period === 'month' || period === 'week' ? period : 'all'
+    return this.usersService.getLeaderboard(parsedLimit, parsedOffset, validPeriod)
   }
 
   @Get('check-username')
@@ -73,5 +76,23 @@ export class UsersController {
   @Get('me/dashboard')
   getDashboard(@GetUser() user: User) {
     return this.usersService.getDashboardStats(user.id)
+  }
+
+  @UseGuards(SupabaseGuard)
+  @Get('me/rank')
+  getMyRank(@GetUser() user: User) {
+    return this.usersService.getMyRank(user.id)
+  }
+
+  @UseGuards(SupabaseGuard)
+  @Patch('me/bio')
+  updateBio(@GetUser() user: User, @Body() dto: UpdateBioDto) {
+    return this.usersService.updateBio(user.id, dto.bio)
+  }
+
+  @UseGuards(SupabaseGuard)
+  @Get('me/score-history')
+  getScoreHistory(@GetUser() user: User) {
+    return this.usersService.getScoreHistory(user.id)
   }
 }

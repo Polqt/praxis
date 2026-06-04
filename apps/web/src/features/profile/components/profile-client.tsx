@@ -26,8 +26,10 @@ export function ProfileClient({ profile, viewingUser }: Props) {
       <motion.div variants={fadeUp}>
         <ProfileHero
           username={profile.username}
+          bio={profile.bio}
           verifiedSkills={profile.verifiedSkills}
           reportsCount={profile.reportsCount}
+          isOwner={viewingUser?.username === profile.username}
         />
       </motion.div>
 

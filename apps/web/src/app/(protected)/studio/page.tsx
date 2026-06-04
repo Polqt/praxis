@@ -10,6 +10,7 @@ import type {
   User,
   VerificationReport,
 } from '@praxis/shared'
+import type { ScoreHistoryEntry } from '@/lib/api'
 
 type SubmissionStats = {
   totalSubmissions: number
@@ -22,7 +23,7 @@ export default async function StudioPage() {
   const user = await serverApiFetch<User>('/users/me')
   if (!user.username) redirect('/onboarding/username')
 
-  const [githubAccount, challenges, submissions, submissionStats, dashboard] = await Promise.all([
+  const [githubAccount, challenges, submissions, submissionStats, dashboard, scoreHistory] = await Promise.all([
     serverApiFetch<GitHubAccount>('/github/account').catch(() => null),
     serverApiFetch<ProjectChallenge[]>('/challenges').catch(() => []),
     serverApiFetch<ProjectSubmission[]>('/submissions').catch(() => []),
@@ -32,6 +33,7 @@ export default async function StudioPage() {
     serverApiFetch<DashboardStats>('/users/me/dashboard').catch(() => ({
       totalVerified: 0, totalAttempts: 0, verifiedSkills: [], recentSubmissions: [],
     })),
+    serverApiFetch<ScoreHistoryEntry[]>('/users/me/score-history').catch(() => [] as ScoreHistoryEntry[]),
   ])
 
   const challenge = challenges[0] ?? null
@@ -67,6 +69,9 @@ export default async function StudioPage() {
       completed={completed}
       total={total}
       proofReady={proofReady}
+      scoreHistory={scoreHistory}
+      challenges={challenges}
+      verifiedSubmissions={submissions.filter((s) => s.status === 'verified')}
     />
   )
 }

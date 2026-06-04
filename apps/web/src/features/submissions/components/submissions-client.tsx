@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { IconSend } from '@tabler/icons-react'
+import { IconSend, IconSearch } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -69,7 +69,14 @@ function tabCount(submissions: ProjectSubmission[], tab: FilterTab): number {
 
 export function SubmissionsClient({ submissions }: { submissions: ProjectSubmission[] }) {
   const [tab, setTab] = useState<FilterTab>('all')
-  const filtered = filterSubmissions(submissions, tab)
+  const [search, setSearch] = useState('')
+
+  const filtered = useMemo(() => {
+    const byTab = filterSubmissions(submissions, tab)
+    if (!search.trim()) return byTab
+    const q = search.toLowerCase()
+    return byTab.filter((s) => s.githubRepoFullName.toLowerCase().includes(q))
+  }, [submissions, tab, search])
 
   return (
     <div className="px-4 py-6 sm:px-6 md:px-10 md:py-10 w-full">
@@ -81,6 +88,16 @@ export function SubmissionsClient({ submissions }: { submissions: ProjectSubmiss
         <Button size="sm" variant="outline" asChild>
           <Link href="/challenges">Submit repository</Link>
         </Button>
+      </div>
+
+      <div className="relative mb-4">
+        <IconSearch size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by repository name…"
+          className="w-full pl-8 pr-4 py-2 text-sm bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+        />
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as FilterTab)}>

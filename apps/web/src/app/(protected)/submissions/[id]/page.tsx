@@ -5,11 +5,13 @@ import type { ProjectSubmission, ProjectSubmissionEvent } from '@praxis/shared'
 import { formatDate, githubRepoUrl, repoName, shortSha } from '@/lib/praxis-format'
 import { SubmissionTimeline } from '@/features/submissions/components/submission-timeline'
 import { SubmissionPoller } from '@/features/submissions/components/submission-poller'
+import { LiveStepIndicator } from '@/features/submissions/components/live-step-indicator'
 import { CancelSubmissionButton } from '@/features/submissions/components/cancel-submission-button'
 import { RequeueSubmissionButton } from '@/features/submissions/components/requeue-submission-button'
 import { RetrySubmissionButton } from '@/features/submissions/components/retry-submission-button'
+import { UpdateCommitButton } from '@/features/submissions/components/update-commit-button'
 import { StatusBadge } from '@/features/submissions/components/status-badge'
-import { IN_PROGRESS_STATUSES, STAGE_DESCRIPTION } from '@/features/submissions/constants'
+import { IN_PROGRESS_STATUSES } from '@/features/submissions/constants'
 import { IconArrowLeft, IconBrandGithub, IconAlertCircle, IconClock, IconExternalLink } from '@tabler/icons-react'
 import { ElapsedTime } from '@/features/submissions/components/elapsed-time'
 
@@ -107,6 +109,12 @@ export default async function SubmissionDetailPage(props: Props) {
                 <span className="text-xs text-muted-foreground">Status</span>
                 <StatusBadge status={submission.status} />
               </div>
+              {execution?.language && (
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-xs text-muted-foreground">Language</span>
+                  <span className="text-xs font-mono">{execution.language}</span>
+                </div>
+              )}
               {execution && (
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-xs text-muted-foreground">Tests ran</span>
@@ -128,22 +136,15 @@ export default async function SubmissionDetailPage(props: Props) {
           </div>
 
           {isInProgress && (
-            <div className="rounded-lg border bg-card p-5">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="size-2 rounded-full bg-primary animate-pulse shrink-0" />
-                  <p className="text-sm font-medium truncate">
-                    {STAGE_DESCRIPTION[submission.status] ?? 'Verification running…'}
-                  </p>
-                </div>
+            <>
+              <LiveStepIndicator status={submission.status} />
+              <div className="flex items-center justify-between gap-2 px-1">
+                <p className="text-xs text-muted-foreground">Typically 2–5 minutes. Updates automatically.</p>
                 <span className="text-xs text-muted-foreground tabular-nums shrink-0">
                   <ElapsedTime since={submission.submittedAt} />
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                This typically takes 2–5 minutes. The page updates automatically.
-              </p>
-            </div>
+            </>
           )}
 
           {isQueued && (
@@ -169,9 +170,7 @@ export default async function SubmissionDetailPage(props: Props) {
               </div>
               <div className="mt-4 space-y-2">
                 <RetrySubmissionButton submissionId={submission.id} />
-                <Button variant="ghost" size="sm" className="w-full text-muted-foreground" asChild>
-                  <Link href={`/submit?challengeId=${submission.challengeId}`}>Submit a different commit</Link>
-                </Button>
+                <UpdateCommitButton submissionId={submission.id} />
               </div>
             </div>
           )}
@@ -192,9 +191,7 @@ export default async function SubmissionDetailPage(props: Props) {
                 <p className="text-[11px] text-muted-foreground text-center">
                   Re-queuing will restart verification. Usually takes 2–5 minutes.
                 </p>
-                <Button variant="ghost" size="sm" className="w-full text-muted-foreground" asChild>
-                  <Link href={`/submit?challengeId=${submission.challengeId}`}>Submit a different commit</Link>
-                </Button>
+                <UpdateCommitButton submissionId={submission.id} />
               </div>
             </div>
           )}
@@ -210,9 +207,12 @@ export default async function SubmissionDetailPage(props: Props) {
                   </p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" className="mt-4 w-full" asChild>
-                <Link href={`/submit?challengeId=${submission.challengeId}`}>Submit again</Link>
-              </Button>
+              <div className="mt-4 space-y-2">
+                <UpdateCommitButton submissionId={submission.id} />
+                <Button variant="ghost" size="sm" className="w-full text-muted-foreground" asChild>
+                  <Link href={`/submit?challengeId=${submission.challengeId}`}>Submit as new</Link>
+                </Button>
+              </div>
             </div>
           )}
         </div>

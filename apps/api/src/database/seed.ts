@@ -219,6 +219,108 @@ Accepted examples include portfolio sites, landing pages, CRUD frontends, admin 
     await db.insert(projectChallenges).values([easyFrontendChallenge])
   }
 
+  // ── Intermediate backend: Auth System ───────────────────────────────────────
+  const authChallenge = {
+    trackId: backendTrack.id,
+    title: 'Build a Secure Auth System',
+    description: `## Build a Secure Auth System
+
+Submit a backend repository that implements a complete authentication and authorisation system. Accepted examples include JWT/session-based auth services, OAuth integrations, RBAC systems, and API gateways with identity management.
+
+The repository must demonstrate secure credential handling (hashed passwords, token signing), protected routes, and at minimum a registration + login flow.`,
+    projectType: 'backend' as const,
+    difficulty: 'intermediate' as const,
+    rubric: {
+      categories: [
+        { name: 'Authentication', weight: 35, floor: 6 },
+        { name: 'API Design', weight: 20, floor: 4 },
+        { name: 'Security', weight: 20, floor: 5 },
+        { name: 'Testing', weight: 15, floor: 3 },
+        { name: 'Documentation', weight: 10, floor: 2 },
+      ],
+    },
+    passingThreshold: 65,
+    version: 1,
+    isActive: true,
+  }
+
+  const existingAuth = await db.select().from(projectChallenges).where(eq(projectChallenges.title, authChallenge.title)).limit(1)
+  if (existingAuth[0]) {
+    await db.update(projectChallenges).set(authChallenge).where(eq(projectChallenges.id, existingAuth[0].id))
+  } else {
+    await db.insert(projectChallenges).values([authChallenge])
+  }
+
+  // ── Intermediate backend: Database Design ────────────────────────────────────
+  const dbDesignChallenge = {
+    trackId: backendTrack.id,
+    title: 'Design a Production Database Layer',
+    description: `## Design a Production Database Layer
+
+Submit a backend repository with a well-architected database layer. Accepted examples include inventory systems, booking platforms, e-commerce backends, CRM services, or any project with a non-trivial relational schema.
+
+The repository must show ORM usage (Prisma, Drizzle, TypeORM, Sequelize, or equivalent), migration files, and relational patterns — foreign keys, associations, and ideally transaction handling.`,
+    projectType: 'backend' as const,
+    difficulty: 'intermediate' as const,
+    rubric: {
+      categories: [
+        { name: 'Database Design', weight: 40, floor: 6 },
+        { name: 'API Design', weight: 20, floor: 3 },
+        { name: 'Architecture', weight: 20, floor: 3 },
+        { name: 'Testing', weight: 10, floor: 0 },
+        { name: 'Documentation', weight: 10, floor: 2 },
+      ],
+    },
+    passingThreshold: 65,
+    version: 1,
+    isActive: true,
+  }
+
+  const existingDbDesign = await db.select().from(projectChallenges).where(eq(projectChallenges.title, dbDesignChallenge.title)).limit(1)
+  if (existingDbDesign[0]) {
+    await db.update(projectChallenges).set(dbDesignChallenge).where(eq(projectChallenges.id, existingDbDesign[0].id))
+  } else {
+    await db.insert(projectChallenges).values([dbDesignChallenge])
+  }
+
+  // ── Ensure Architecture skill exists for DB design challenge ─────────────────
+  await db.insert(skills).values([
+    { trackId: backendTrack.id, name: 'Architecture', category: 'Architecture' },
+    { trackId: backendTrack.id, name: 'Security', category: 'Security' },
+  ]).onConflictDoNothing()
+
+  // ── Advanced frontend: Accessible Component Library ──────────────────────────
+  const accessibilityChallenge = {
+    trackId: frontendTrack.id,
+    title: 'Build an Accessible Frontend',
+    description: `## Build an Accessible Frontend
+
+Submit a React or Next.js application that demonstrates a strong commitment to web accessibility. Accepted examples include component libraries, design systems, dashboard UIs, and applications that have been audited or built with a11y-first principles.
+
+The repository must show semantic HTML, ARIA attribute usage, keyboard navigation support, and ideally tooling such as eslint-plugin-jsx-a11y or axe-core.`,
+    projectType: 'frontend' as const,
+    difficulty: 'intermediate' as const,
+    rubric: {
+      categories: [
+        { name: 'Accessibility', weight: 35, floor: 6 },
+        { name: 'Component Architecture', weight: 25, floor: 5 },
+        { name: 'Styling', weight: 15, floor: 3 },
+        { name: 'Frontend Testing', weight: 15, floor: 3 },
+        { name: 'Documentation', weight: 10, floor: 2 },
+      ],
+    },
+    passingThreshold: 65,
+    version: 1,
+    isActive: true,
+  }
+
+  const existingA11y = await db.select().from(projectChallenges).where(eq(projectChallenges.title, accessibilityChallenge.title)).limit(1)
+  if (existingA11y[0]) {
+    await db.update(projectChallenges).set(accessibilityChallenge).where(eq(projectChallenges.id, existingA11y[0].id))
+  } else {
+    await db.insert(projectChallenges).values([accessibilityChallenge])
+  }
+
   console.log('Seed complete')
   await client.end()
 }

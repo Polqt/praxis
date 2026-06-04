@@ -26,7 +26,8 @@ type Props = {
 }
 
 export function TestExecutionOutput({ execution }: Props) {
-  const [open, setOpen] = useState(false)
+  const hasResults = execution.passed > 0 || execution.failed > 0 || execution.timedOut
+  const [open, setOpen] = useState(hasResults)
 
   const stdout = execution.stdout?.trim() ?? ''
   const stderr = execution.stderr?.trim() ?? ''

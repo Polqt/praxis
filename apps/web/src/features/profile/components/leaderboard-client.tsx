@@ -4,7 +4,15 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { IconTrophy, IconMedal, IconAward } from '@tabler/icons-react'
 import { fadeUp, staggerContainer } from '@/lib/animations'
+import { useLeaderboard } from '../hooks/use-leaderboard'
+import { useMyRank } from '../hooks/use-my-rank'
 import type { LeaderboardEntry } from '@/lib/api'
+
+const PERIOD_LABELS: Record<'all' | 'month' | 'week', string> = {
+  all: 'All time',
+  month: 'This month',
+  week: 'This week',
+}
 
 type Props = {
   entries: LeaderboardEntry[]
@@ -95,7 +103,10 @@ function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
   )
 }
 
-export function LeaderboardClient({ entries }: Props) {
+export function LeaderboardClient({ entries: initialEntries }: Props) {
+  const { entries, period, setPeriod, loading } = useLeaderboard(initialEntries)
+  const { rank, loaded: rankLoaded } = useMyRank()
+
   return (
     <div className="bg-background">
       <section className="min-h-screen bg-muted flex flex-col items-center justify-center text-center px-6 pt-14 border-b border-border">
@@ -140,6 +151,25 @@ export function LeaderboardClient({ entries }: Props) {
             verified challenges, tiebreak by best composite score.
           </p>
 
+          <div className="flex items-center gap-1.5 mb-6">
+            {(['all', 'month', 'week'] as const).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPeriod(p)}
+                className={[
+                  'text-[11px] font-medium px-3 py-1.5 rounded-sm border transition-colors',
+                  period === p
+                    ? 'bg-foreground text-background border-foreground'
+                    : 'border-border text-muted-foreground hover:bg-muted',
+                ].join(' ')}
+              >
+                {PERIOD_LABELS[p]}
+              </button>
+            ))}
+            {loading && <span className="text-[11px] text-muted-foreground ml-2">Loading…</span>}
+          </div>
+
           <div className="flex items-center gap-5 px-6 py-3 border border-b-0 border-border bg-muted/50">
             <div className="w-8 shrink-0" />
             <div className="flex-1">
@@ -153,6 +183,13 @@ export function LeaderboardClient({ entries }: Props) {
           <p className="text-[11px] text-muted-foreground px-1 pt-2 pb-0">
             Rankings update automatically after each verification completes.
           </p>
+          {rankLoaded && rank !== null && (
+            <div className="mt-2 px-1">
+              <span className="text-[11px] text-muted-foreground">
+                You are ranked <span className="font-semibold text-foreground">#{rank}</span> all time.
+              </span>
+            </div>
+          )}
 
           <div className="border border-border">
             {entries.length === 0 && (
@@ -166,6 +203,14 @@ export function LeaderboardClient({ entries }: Props) {
                   <LeaderboardRow key={entry.username} entry={entry} />
                 ))}
               </motion.div>
+            )}
+            {rankLoaded && rank !== null && rank > entries.length && (
+              <div className="flex items-center gap-3 sm:gap-5 px-4 sm:px-6 py-3 border-t border-dashed border-border bg-muted/20">
+                <div className="w-8 flex justify-center shrink-0">
+                  <span className="text-sm font-mono text-muted-foreground">#{rank}</span>
+                </div>
+                <p className="text-sm text-muted-foreground flex-1">You</p>
+              </div>
             )}
           </div>
         </div>

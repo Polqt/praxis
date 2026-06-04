@@ -53,15 +53,26 @@ export default async function ChallengeDetailPage(props: Props) {
       </section>
 
       <section className="mt-8 space-y-3">
-        <h2 className="text-sm font-semibold">Rubric categories</h2>
-        <ul className="space-y-2">
+        <h2 className="text-sm font-semibold">What gets scored</h2>
+        <p className="text-xs text-muted-foreground">Each category has a weight and a minimum floor score. Failing any floor disqualifies the submission.</p>
+        <ul className="space-y-3 mt-4">
           {challenge.rubric.categories.map((cat) => (
-            <li key={cat.name} className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <IconCircleCheck size={14} className="text-muted-foreground shrink-0" />
-                <span className="text-sm">{cat.name}</span>
+            <li key={cat.name}>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="flex items-center gap-2">
+                  <IconCircleCheck size={13} className="text-muted-foreground shrink-0" />
+                  <span className="text-sm font-medium">{cat.name}</span>
+                  {cat.floor > 0 && (
+                    <span className="text-[10px] text-muted-foreground border border-border px-1.5 py-0.5 rounded-sm">
+                      floor {cat.floor}/10
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs font-semibold tabular-nums">{cat.weight}%</span>
               </div>
-              <span className="text-xs text-muted-foreground tabular-nums">{cat.weight}%</span>
+              <div className="h-1 rounded-full bg-muted overflow-hidden">
+                <div className="h-full rounded-full bg-primary/60" style={{ width: `${cat.weight}%` }} />
+              </div>
             </li>
           ))}
         </ul>

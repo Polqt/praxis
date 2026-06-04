@@ -79,6 +79,11 @@ export const apiClient = {
   cancelSubmission: (id: string) => apiFetch<ProjectSubmission>(`/submissions/${id}/cancel`, { method: 'PATCH' }),
   requeueSubmission: (id: string) => apiFetch<ProjectSubmission>(`/submissions/${id}/requeue`, { method: 'PATCH' }),
   retrySubmission: (id: string) => apiFetch<ProjectSubmission>(`/submissions/${id}/retry`, { method: 'PATCH' }),
+  updateCommitAndRetry: (id: string, commitSha: string) =>
+    apiFetch<ProjectSubmission>(`/submissions/${id}/commit`, {
+      method: 'PATCH',
+      body: JSON.stringify({ commitSha }),
+    }),
   markSubmissionViewed: (id: string) => apiFetch<ProjectSubmission>(`/submissions/${id}/viewed`, { method: 'PATCH' }),
   getReportBySubmissionId: (submissionId: string) => apiFetch<VerificationReport>(`/reports/submissions/${submissionId}`),
   setReportVisibility: (submissionId: string, isPublic: boolean) =>
@@ -95,7 +100,11 @@ export const apiClient = {
   disconnectGitHub: () => apiFetch<void>('/github/account', { method: 'DELETE' }),
   checkUsernameAvailability: (username: string) =>
     apiFetch<{ available: boolean }>(`/users/check-username?username=${encodeURIComponent(username)}`),
-  getLeaderboard: () => apiFetch<LeaderboardEntry[]>('/users/leaderboard'),
+  getLeaderboard: (period: 'all' | 'month' | 'week' = 'all') =>
+    apiFetch<LeaderboardEntry[]>(`/users/leaderboard?period=${period}`),
+  getScoreHistory: () => apiFetch<ScoreHistoryEntry[]>('/users/me/score-history'),
+  updateBio: (bio: string) => apiFetch<void>('/users/me/bio', { method: 'PATCH', body: JSON.stringify({ bio }) }),
+  getMyRank: () => apiFetch<{ rank: number | null; total: number }>('/users/me/rank'),
   getPublicProofs: () => apiFetch<PublicProofEntry[]>('/proof'),
   submitReportFeedback: (
     submissionId: string,
@@ -113,6 +122,12 @@ export interface LeaderboardEntry {
   bestScore: number
   lastVerifiedAt: string | null
   recentlyActive: boolean
+}
+
+export interface ScoreHistoryEntry {
+  challengeId: string
+  title: string
+  scores: { score: number; completedAt: string }[]
 }
 
 export interface PublicProofEntry {

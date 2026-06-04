@@ -35,10 +35,18 @@ export interface PipelineStage {
 export const PIPELINE_STAGES: PipelineStage[] = [
   { key: 'created',           label: 'Submission created',  toStatus: null },
   { key: 'queued',            label: 'Queued',              toStatus: 'queued' },
-  { key: 'ingesting',         label: 'Repository ingested', toStatus: 'ingesting' },
-  { key: 'analyzing',         label: 'Analysis started',    toStatus: 'analyzing' },
-  { key: 'generating_report', label: 'Report generating',   toStatus: 'generating_report' },
+  { key: 'ingesting',         label: 'Ingesting repo',      toStatus: 'ingesting' },
+  { key: 'analyzing',         label: 'Analyzing signals',   toStatus: 'analyzing' },
+  { key: 'generating_report', label: 'Generating report',   toStatus: 'generating_report' },
 ]
+
+export const PIPELINE_STAGE_DESCRIPTIONS: Partial<Record<string, string>> = {
+  created:           'Your submission is queued for processing.',
+  queued:            'Waiting for an available worker…',
+  ingesting:         'Cloning repository and reading files…',
+  analyzing:         'Extracting code signals with E2B sandbox…',
+  generating_report: 'Scoring rubric categories and writing report…',
+}
 
 export const TERMINAL_STAGE_LABELS: Partial<Record<SubmissionStatus, string>> = {
   verified:     'Verified',

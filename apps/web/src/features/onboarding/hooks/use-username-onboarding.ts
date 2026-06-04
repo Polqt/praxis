@@ -70,7 +70,7 @@ export function useUsernameOnboarding(): UseUsernameOnboardingReturn {
     setSaving(true)
     try {
       await apiClient.patchMe({ username: value })
-      router.push('/studio')
+      router.push('/onboarding/challenge')
     } catch (err) {
       const message =
         err instanceof ApiError && err.status === 409

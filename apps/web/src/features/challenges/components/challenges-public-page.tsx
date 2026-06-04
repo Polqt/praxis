@@ -8,8 +8,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { ChallengeCard } from '@/features/challenges/components/challenge-card'
 import { staggerContainer } from '@/lib/animations'
+import { DIFFICULTY_LABEL } from '@/features/challenges/constants'
 import { CATEGORY_LABEL } from '@/features/submissions/constants'
-import type { Challenge, ChallengeCategory } from '@/features/challenges/types'
+import type { Challenge, ChallengeCategory, ChallengeDifficulty } from '@/features/challenges/types'
 
 type Props = {
   challenges: Challenge[]
@@ -78,32 +79,60 @@ function ChallengeList({ challenges, isAuthenticated }: { challenges: Challenge[
 
 // ── Authenticated view (matches Studio / Submissions aesthetic) ───────────────
 
+const DIFFICULTY_ORDER: ChallengeDifficulty[] = ['junior', 'intermediate', 'senior']
+
+function filterByDifficulty(list: Challenge[], difficulty: ChallengeDifficulty | 'all'): Challenge[] {
+  if (difficulty === 'all') return list
+  return list.filter((c) => c.difficulty === difficulty)
+}
+
 function ChallengesAppView({ challenges, isAuthenticated }: Props) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
   const rawTab = searchParams.get('tab')
+  const rawDiff = searchParams.get('difficulty')
   const tab: ChallengeCategory = rawTab === 'backend' ? 'backend' : 'frontend'
+  const difficulty: ChallengeDifficulty | 'all' = (DIFFICULTY_ORDER as string[]).includes(rawDiff ?? '') ? rawDiff as ChallengeDifficulty : 'all'
 
-  const setTab = useCallback((value: string) => {
+  const setParam = useCallback((key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString())
-    params.set('tab', value)
+    params.set(key, value)
     router.replace(`${pathname}?${params.toString()}`, { scroll: false })
   }, [searchParams, router, pathname])
 
-  const frontend = challenges.filter((c) => c.category === 'frontend')
-  const backend = challenges.filter((c) => c.category === 'backend')
+  const frontend = filterByDifficulty(challenges.filter((c) => c.category === 'frontend'), difficulty)
+  const backend = filterByDifficulty(challenges.filter((c) => c.category === 'backend'), difficulty)
 
   return (
     <div className="px-4 py-6 sm:px-6 md:px-10 md:py-10 w-full">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Challenges</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Choose a challenge, submit a repository, earn verified proof of work.
-        </p>
+      <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Challenges</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Choose a challenge, submit a repository, earn verified proof of work.
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {(['all', ...DIFFICULTY_ORDER] as const).map((d) => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => setParam('difficulty', d)}
+              className={[
+                'text-[11px] font-medium px-2.5 py-1 rounded-sm border transition-colors',
+                difficulty === d
+                  ? 'bg-foreground text-background border-foreground'
+                  : 'border-border text-muted-foreground hover:bg-muted',
+              ].join(' ')}
+            >
+              {d === 'all' ? 'All' : DIFFICULTY_LABEL[d]}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as ChallengeCategory)}>
+      <Tabs value={tab} onValueChange={(v) => setParam('tab', v)}>
         <TabsList className="bg-transparent p-0 h-auto gap-0 border-0">
           {(['frontend', 'backend'] as const).map((category) => (
             <TabsTrigger

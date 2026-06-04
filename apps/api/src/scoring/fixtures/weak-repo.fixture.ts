@@ -16,7 +16,7 @@ export const weakTesting: TestingSignals = {
 
 export const weakDocumentation: DocumentationSignals = {
   hasReadme: true,
-  readmeWordCount: 10,
+  readmeWordCount: 50,
   hasSetupInstructions: false,
   hasApiDocs: false,
   hasArchitectureDocs: false,
@@ -62,7 +62,7 @@ export const weakRepoFixture = {
   architecture: weakArchitecture,
   expectedScoreRanges: {
     testing: { min: 3, max: 3 },
-    documentation: { min: 2, max: 2 },
+    documentation: { min: 1, max: 1 },
     deployment: { min: 0, max: 0 },
     security: { min: 0, max: 0 },
     architecture: { min: 0, max: 0 },

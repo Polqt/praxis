@@ -7,12 +7,15 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { ProofProfileSection } from './proof-profile-section'
 import { GreetingHeading } from './greeting-heading'
+import { ScoreHistoryCard } from './score-history-card'
+import { NextStepCard } from './next-step-card'
 import { StatusBadge } from '@/features/submissions/components/status-badge'
 import { FormattedDate } from '@/components/ui/formatted-date'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import { ONBOARDING_GUIDANCE_GITHUB_CONNECTED, ONBOARDING_GUIDANCE_GITHUB_DISCONNECTED, CARD_LABEL_CLASS } from '../constants'
 import { repoName } from '@/lib/praxis-format'
 import type { DashboardStats, GitHubAccount, ProjectChallenge, ProjectSubmission, VerificationReport } from '@praxis/shared'
+import type { ScoreHistoryEntry } from '@/lib/api'
 
 type SubmissionStats = {
   totalSubmissions: number
@@ -35,14 +38,19 @@ type Props = {
   completed: number
   total: number
   proofReady: boolean
+  scoreHistory: ScoreHistoryEntry[]
+  challenges: ProjectChallenge[]
+  verifiedSubmissions: ProjectSubmission[]
 }
 
 
 export function StudioClient({
   displayName, githubAccount, activeSubmission, activeChallenge,
   latestTerminalSubmission, latestReport, submissionStats, dashboard,
-  username, progress, completed, total, proofReady,
+  username, progress, completed, total, proofReady, scoreHistory,
+  challenges, verifiedSubmissions,
 }: Props) {
+  const verifiedChallengeIds = verifiedSubmissions.map((s) => s.challengeId)
   return (
     <motion.div
       variants={staggerContainer}
@@ -178,6 +186,20 @@ export function StudioClient({
           />
         </motion.div>
       </motion.div>
+
+      <motion.div variants={fadeUp} className="mt-4">
+        <NextStepCard
+          verifiedSkills={dashboard.verifiedSkills}
+          challenges={challenges}
+          verifiedChallengeIds={verifiedChallengeIds}
+        />
+      </motion.div>
+
+      {scoreHistory.length > 0 && (
+        <motion.div variants={fadeUp} className="mt-4">
+          <ScoreHistoryCard history={scoreHistory} />
+        </motion.div>
+      )}
     </motion.div>
   )
 }

@@ -233,6 +233,38 @@ export class SubmissionsService {
     return updated[0]
   }
 
+  async updateCommitAndRetry(userId: string, submissionId: string, commitSha: string) {
+    const submission = await this.getForUser(userId, submissionId)
+
+    const retryableStatuses = ['ingestion_failed', 'analysis_failed', 'report_generation_failed', 'failed', 'expired', 'cancelled']
+    if (!retryableStatuses.includes(submission.status)) {
+      throw new ConflictException('Can only update the commit on a failed, expired, or cancelled submission')
+    }
+
+    const { accessToken } = await this.githubService.getActiveToken(userId)
+    const { owner, repo } = parseRepoFullName(submission.githubRepoFullName)
+    const commit = await this.githubApi.getCommit(accessToken, owner, repo, commitSha)
+    if (!commit) throw new BadRequestException('Commit SHA not found in repository')
+
+    const updated = await this.db.db
+      .update(projectSubmissions)
+      .set({ commitSha, status: 'queued', failureReason: null, completedAt: null })
+      .where(eq(projectSubmissions.id, submissionId))
+      .returning()
+
+    await this.db.db.insert(projectSubmissionEvents).values({
+      submissionId,
+      fromStatus: submission.status,
+      toStatus: 'queued',
+      reason: 'submission_retried',
+    })
+
+    this.audit.log(userId, 'submission_commit_updated', { submissionId, commitSha })
+    await this.verificationQueue.enqueueIngestRepo(submissionId)
+
+    return updated[0]
+  }
+
   async cancelSubmission(userId: string, submissionId: string) {
     const submission = await this.getForUser(userId, submissionId)
 
