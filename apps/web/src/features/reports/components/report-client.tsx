@@ -81,7 +81,7 @@ export function ReportClient({
           {report.isPublic && report.publicToken && (
             <ShareProofButton publicToken={report.publicToken} />
           )}
-          {actions && actions}
+          {actions}
           {report.status === 'insufficient' && (
             <ResubmitAfterFixesButton
               challengeId={challengeId}
@@ -157,14 +157,8 @@ export function ReportClient({
             </>
           )}
 
-          {feedbackSlot && (
-            <motion.div variants={fadeUp} className="mt-6">
-              {feedbackSlot}
-            </motion.div>
-          )}
-
           {twitterSlot && (
-            <motion.div variants={fadeUp} className="mt-6">
+            <motion.div variants={fadeUp} className="mt-6 flex items-center gap-3">
               {twitterSlot}
             </motion.div>
           )}
@@ -189,11 +183,11 @@ export function ReportClient({
           </motion.div>
         </div>
 
-        {/* Right column — sticky score card */}
-        <div className="w-72 shrink-0 self-start sticky top-10 hidden lg:block">
-          <div className="rounded-lg border bg-card p-5 flex flex-col gap-4">
+        {/* Right column — sticky score card + feedback */}
+        <div className="w-72 shrink-0 self-start sticky top-10 hidden lg:flex lg:flex-col lg:gap-4">
 
-            {/* Verdict badge */}
+          {/* Score card */}
+          <div className="rounded-lg border bg-card p-5 flex flex-col gap-4">
             <div className="flex justify-center">
               <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md border text-sm font-medium ${statusConfig.className}`}>
                 {report.status === 'verified' && <IconCheck size={13} strokeWidth={2.5} />}
@@ -201,13 +195,11 @@ export function ReportClient({
               </span>
             </div>
 
-            {/* Composite score */}
             <p className="text-5xl font-semibold tabular-nums text-center">
               {report.compositeScore ?? 0}
               <span className="text-xl font-normal text-muted-foreground">/100</span>
             </p>
 
-            {/* Score meta rows */}
             {passingThreshold != null && (
               <div className="space-y-1.5">
                 <div className="flex justify-between text-xs">
@@ -231,16 +223,21 @@ export function ReportClient({
               </div>
             )}
 
-            <Separator />
-
-            {/* Actions */}
-            <div className="flex flex-col gap-2">
-              {report.isPublic && report.publicToken && (
-                <ShareProofButton publicToken={report.publicToken} />
-              )}
-              {actions && <div className="flex flex-col gap-2">{actions}</div>}
-            </div>
+            {actions && (
+              <>
+                <Separator />
+                <div className="flex flex-col gap-2">{actions}</div>
+              </>
+            )}
           </div>
+
+          {/* Feedback card — moved to right column */}
+          {feedbackSlot && (
+            <div className="rounded-lg border bg-card p-4">
+              <p className={`${SECTION_LABEL_CLASS} mb-3`}>Report feedback</p>
+              {feedbackSlot}
+            </div>
+          )}
         </div>
       </div>
     </motion.div>

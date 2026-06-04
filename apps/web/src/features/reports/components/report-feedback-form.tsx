@@ -9,7 +9,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { apiClient } from '@/lib/api'
 import { fadeUp } from '@/lib/animations'
-import { SECTION_LABEL_CLASS } from '@/features/reports/constants'
 
 type Props = {
   submissionId: string
@@ -70,8 +69,6 @@ export function ReportFeedbackForm({ submissionId, challengeId }: Props) {
 
   return (
     <motion.div variants={fadeUp} className="rounded-lg border bg-card p-5">
-      <p className={`${SECTION_LABEL_CLASS} mb-4`}>Report feedback</p>
-
       <div className="space-y-4">
         <div>
           <p className="text-sm font-medium mb-2">How accurate was this report?</p>

@@ -26,7 +26,7 @@ export function SiteHeader() {
           <div className="flex items-center gap-8">
             <Link
               href="/"
-              className="text-[16px] font-semibold tracking-tight text-foreground"
+              className="text-[16px] font-semibold tracking-tight text-foreground shrink-0"
             >
               Praxis
             </Link>

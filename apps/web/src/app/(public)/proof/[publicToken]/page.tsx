@@ -97,7 +97,7 @@ export default async function PublicProofPage({ params }: Props) {
       </div>
 
       {/* ── HERO SECTION ── */}
-      <section className="min-h-[60vh] bg-muted flex flex-col justify-center px-6 pt-8 pb-16 border-b border-border">
+      <section className="bg-muted px-6 pt-12 pb-16 border-b border-border">
         <div className="max-w-4xl mx-auto w-full">
           <SectionLabel text="Verification Report" />
 

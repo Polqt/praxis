@@ -92,9 +92,9 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
                 <Progress
                   value={scorePercent}
                   className={`h-1 *:data-[slot=progress-indicator]:transition-none ${
-                    item.score >= 8
+                    item.status === 'pass'
                       ? '*:data-[slot=progress-indicator]:bg-green-500'
-                      : item.score >= 6
+                      : item.status === 'floor'
                         ? '*:data-[slot=progress-indicator]:bg-amber-500'
                         : '*:data-[slot=progress-indicator]:bg-red-500'
                   }`}
