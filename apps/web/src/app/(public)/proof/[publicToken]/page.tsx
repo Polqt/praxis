@@ -157,13 +157,8 @@ export default async function PublicProofPage({ params }: Props) {
       </section>
 
       {/* ── RUBRIC RESULTS ── */}
-      <section className="bg-background flex flex-col justify-center border-b border-border py-24">
+      <section className="bg-background border-b border-border py-16">
         <div className="max-w-4xl mx-auto px-6 w-full">
-          <SectionLabel text="Rubric Results" />
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-2 mb-10 text-foreground">
-            Six dimensions. All deterministic. No human bias.
-          </h2>
-
           <ScoreErrorBoundary>
             <ScoreOverview
               scores={report.scores}
@@ -175,12 +170,9 @@ export default async function PublicProofPage({ params }: Props) {
       </section>
 
       {/* ── STRENGTHS & IMPROVEMENTS ── */}
-      <section className="bg-muted flex flex-col justify-center border-b border-border py-24">
+      <section className="bg-muted border-b border-border py-16">
         <div className="max-w-4xl mx-auto px-6 w-full">
           <SectionLabel text="Analysis" />
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-2 mb-10 text-foreground">
-            Strengths and areas for improvement.
-          </h2>
           <StrengthsImprovementsSection
             strengths={report.strengths}
             improvements={report.improvements}
@@ -191,7 +183,7 @@ export default async function PublicProofPage({ params }: Props) {
       </section>
 
       {/* ── METADATA ── */}
-      <section className="bg-background flex flex-col justify-center border-b border-border py-24">
+      <section className="bg-background border-b border-border py-16">
         <div className="max-w-4xl mx-auto px-6 w-full">
           <SectionLabel text="Report Details" />
           <div className="border-t border-border mt-2">

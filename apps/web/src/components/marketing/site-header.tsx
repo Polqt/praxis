@@ -23,15 +23,15 @@ export function SiteHeader() {
         )}
       >
         <div className="max-w-7xl mx-auto px-6 md:px-10 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-8 min-w-0">
             <Link
               href="/"
-              className="text-[16px] font-semibold tracking-tight text-foreground shrink-0"
+              className="text-[16px] font-semibold tracking-tight text-foreground shrink-0 whitespace-nowrap"
             >
               Praxis
             </Link>
 
-            <nav className="hidden md:flex items-center gap-0">
+            <nav className="hidden md:flex items-center gap-0 shrink-0">
               <Link
                 href="/why"
                 className="text-[12px] font-medium uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors px-4 py-1"

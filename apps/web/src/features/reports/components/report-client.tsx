@@ -11,7 +11,6 @@ import { NextBestFixesSection } from './next-best-fixes-section'
 import { VerifiedSkillsSection } from './verified-skills-section'
 import { StrengthsImprovementsSection } from './strengths-improvements-section'
 import { ReportFooter } from './report-footer'
-import { ShareProofButton } from './share-proof-button'
 import { ReportClaritySection } from './report-clarity-section'
 import { ResubmitAfterFixesButton } from './resubmit-after-fixes-button'
 import {
@@ -72,24 +71,13 @@ export function ReportClient({
           <IconArrowLeft size={14} />
           {backLabel}
         </Link>
-        <div className="flex items-center gap-2">
-          {viewCount !== undefined && viewCount > 0 && (
-            <span className="text-[11px] text-muted-foreground tabular-nums">
-              {viewCount.toLocaleString()} {viewCount === 1 ? 'view' : 'views'}
-            </span>
-          )}
-          {report.isPublic && report.publicToken && (
-            <ShareProofButton publicToken={report.publicToken} />
-          )}
-          {actions}
-          {report.status === 'insufficient' && (
-            <ResubmitAfterFixesButton
-              challengeId={challengeId}
-              repositoryName={report.repositoryName}
-              commitSha={report.commitSha}
-            />
-          )}
-        </div>
+        {report.status === 'insufficient' && (
+          <ResubmitAfterFixesButton
+            challengeId={challengeId}
+            repositoryName={report.repositoryName}
+            commitSha={report.commitSha}
+          />
+        )}
       </div>
 
       {/* Two-column layout */}
