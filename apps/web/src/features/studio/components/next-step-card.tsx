@@ -18,11 +18,16 @@ export function NextStepCard({ verifiedSkills, challenges, verifiedChallengeIds 
   const earnedSkillNames = new Set(verifiedSkills.map((s) => s.skill.name.toLowerCase()))
   const completedIds = new Set(verifiedChallengeIds)
 
-  // Find a challenge that introduces the most new skills
   const uncompletedChallenges = challenges.filter((c) => !completedIds.has(c.id))
   if (uncompletedChallenges.length === 0) return null
 
-  const scored = uncompletedChallenges.map((c) => {
+  const candidateChallenges = verifiedSkills.length === 0
+    ? (uncompletedChallenges.filter((c) => c.difficulty === 'beginner').length > 0
+        ? uncompletedChallenges.filter((c) => c.difficulty === 'beginner')
+        : uncompletedChallenges)
+    : uncompletedChallenges
+
+  const scored = candidateChallenges.map((c) => {
     const newSkills = c.rubric.categories.filter((cat) => !earnedSkillNames.has(cat.name.toLowerCase()))
     return { challenge: c, newSkillCount: newSkills.length, newSkills: newSkills.map((s) => s.name) }
   })
