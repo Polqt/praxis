@@ -15,6 +15,11 @@ export class GitHubController {
     return this.githubService.getAccount(user.id)
   }
 
+  @Get('repos')
+  getUserRepos(@GetUser() user: User) {
+    return this.githubService.getUserRepos(user.id)
+  }
+
   @Post('sync')
   @HttpCode(204)
   async syncAccount(@GetUser() user: User, @Body() dto: SyncGitHubAccountDto) {

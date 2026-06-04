@@ -105,6 +105,17 @@ export class GitHubService {
     }
   }
 
+  async getUserRepos(userId: string): Promise<string[]> {
+    const rows = await this.db.db
+      .select({ accessToken: githubAccounts.accessToken, isActive: githubAccounts.isActive })
+      .from(githubAccounts)
+      .where(eq(githubAccounts.userId, userId))
+      .limit(1)
+    if (!rows[0] || !rows[0].isActive) return []
+    const token = this.tokenService.decrypt(rows[0].accessToken)
+    return this.githubApi.listUserRepos(token)
+  }
+
   async disconnect(userId: string) {
     const rows = await this.db.db
       .select({ githubUsername: githubAccounts.githubUsername })

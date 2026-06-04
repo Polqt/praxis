@@ -65,6 +65,16 @@ export class GitHubApiService {
     return response.json() as Promise<{ sha: string; author: { id: number | null; login: string | null } | null }>
   }
 
+  async listUserRepos(accessToken: string): Promise<string[]> {
+    const response = await this.githubFetch(
+      'https://api.github.com/user/repos?sort=pushed&per_page=100&type=owner',
+      accessToken,
+    )
+    if (!response.ok) return []
+    const body = await response.json() as Array<{ full_name: string }>
+    return body.map((r) => r.full_name)
+  }
+
   async getTree(accessToken: string, owner: string, repo: string, commitSha: string) {
     const response = await this.githubFetch(
       `https://api.github.com/repos/${owner}/${repo}/git/trees/${commitSha}?recursive=1`,
