@@ -5,7 +5,7 @@ import { SubmitClient } from '@/features/submissions/components/submit-client'
 import { hasRequiredScopes } from '@/features/github/utils'
 
 type Props = {
-  searchParams: Promise<{ challengeId?: string | string[]; repo?: string | string[]; commit?: string | string[] }>
+  searchParams: Promise<{ challengeId?: string | string[]; repo?: string | string[]; commit?: string | string[]; recommended?: string | string[] }>
 }
 
 export default async function SubmitPage(props: Props) {
@@ -13,6 +13,7 @@ export default async function SubmitPage(props: Props) {
   const challengeId = typeof searchParams.challengeId === 'string' ? searchParams.challengeId : null
   const repo = typeof searchParams.repo === 'string' ? searchParams.repo : ''
   const commit = typeof searchParams.commit === 'string' ? searchParams.commit : ''
+  const isRecommended = searchParams.recommended === '1'
 
   if (!challengeId) redirect('/challenges')
 
@@ -48,6 +49,7 @@ export default async function SubmitPage(props: Props) {
             githubHasScopes={githubHasScopes}
             initialRepoUrl={repo}
             initialCommitSha={commit}
+            isRecommended={isRecommended}
           />
         </div>
 

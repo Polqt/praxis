@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { IconBrandGithub } from '@tabler/icons-react'
+import { IconBrandGithub, IconInfoCircle } from '@tabler/icons-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,8 @@ import { ConnectGitHubButton } from '@/features/github/components/connect-github
 import { useSubmitForm } from '../hooks/use-submit-form'
 import { CATEGORY_LABEL } from '../constants'
 import { staggerContainer, fadeUp } from '@/lib/animations'
+import { useGitHubRepos } from '@/features/github/hooks/use-github-repos'
+import { RepoCombobox } from './repo-combobox'
 import type { ProjectChallenge } from '@praxis/shared'
 
 type Props = {
@@ -18,14 +20,17 @@ type Props = {
   githubHasScopes: boolean
   initialRepoUrl?: string
   initialCommitSha?: string
+  isRecommended?: boolean
 }
 
-export function SubmitClient({ challenge, githubConnected, githubHasScopes, initialRepoUrl, initialCommitSha }: Props) {
+export function SubmitClient({ challenge, githubConnected, githubHasScopes, initialRepoUrl, initialCommitSha, isRecommended }: Props) {
   const { repoUrl, commitSha, submitting, error, setRepoUrl, setCommitSha, handleSubmit } =
     useSubmitForm(challenge.id, {
       repoUrl: initialRepoUrl,
       commitSha: initialCommitSha,
     })
+
+  const { repos, loading: reposLoading } = useGitHubRepos(githubConnected && githubHasScopes)
 
   const categoryLabel = CATEGORY_LABEL[challenge.projectType] ?? challenge.projectType
 
@@ -82,25 +87,30 @@ export function SubmitClient({ challenge, githubConnected, githubHasScopes, init
           </div>
         </motion.div>
       ) : (
-        <motion.form
-          variants={fadeUp}
-          onSubmit={handleSubmit}
-          className="rounded-lg border bg-card p-6 space-y-6"
-        >
+        <>
+          {isRecommended && (
+            <motion.div variants={fadeUp} className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+              <IconInfoCircle size={14} className="shrink-0 mt-0.5 text-blue-500" />
+              Recommended for first-time users — submit any project that fits this challenge&apos;s criteria.
+            </motion.div>
+          )}
+          <motion.form
+            variants={fadeUp}
+            onSubmit={handleSubmit}
+            className="rounded-lg border bg-card p-6 space-y-6"
+          >
           <div className="space-y-2">
             <label htmlFor="repo-url" className="text-xs uppercase tracking-widest font-semibold text-muted-foreground">
               Repository URL
             </label>
-            <Input
-              id="repo-url"
-              placeholder="https://github.com/your-org/your-repo"
+            <RepoCombobox
               value={repoUrl}
-              onChange={(e) => setRepoUrl(e.target.value)}
-              required
-              className="h-10"
+              onChange={setRepoUrl}
+              repos={repos}
+              loading={reposLoading}
             />
             <p className="text-xs text-muted-foreground">
-              Enter the full GitHub repository URL for the project you want to verify.
+              Select from your connected repos or paste a GitHub URL.
             </p>
           </div>
 
@@ -126,12 +136,13 @@ export function SubmitClient({ challenge, githubConnected, githubHasScopes, init
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <div className="flex items-center justify-between pt-2 border-t">
-            <p className="text-xs text-muted-foreground">Verification typically takes 2–5 minutes.</p>
+            <p className="text-xs text-muted-foreground">Verification usually takes 3–8 minutes.</p>
             <Button type="submit" disabled={submitting}>
               {submitting ? 'Submitting...' : 'Submit for verification'}
             </Button>
           </div>
         </motion.form>
+        </>
       )}
     </motion.div>
   )

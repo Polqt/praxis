@@ -92,6 +92,7 @@ export const apiClient = {
       body: JSON.stringify({ isPublic }),
     }),
   getGitHubAccount: () => apiFetch<GitHubAccount>('/github/account'),
+  getGitHubRepos: (): Promise<string[]> => apiFetch<string[]>('/github/repos'),
   syncGitHub: (accessToken: string) =>
     apiFetch<void>('/github/sync', {
       method: 'POST',
