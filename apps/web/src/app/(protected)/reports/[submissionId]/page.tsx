@@ -6,7 +6,7 @@ import { ReportFeedbackForm } from '@/features/reports/components/report-feedbac
 import { ShareOnTwitterButton } from '@/features/reports/components/share-on-twitter-button'
 import { TestExecutionOutput } from '@/features/reports/components/test-execution-output'
 import { toReport } from '@/features/reports/utils/to-report'
-import type { VerificationReport, ProjectSubmission } from '@praxis/shared'
+import type { VerificationReport, ProjectSubmission, ProjectChallenge } from '@praxis/shared'
 
 type Props = {
   params: Promise<{ submissionId: string }>
@@ -27,6 +27,10 @@ export default async function PrivateReportPage({ params }: Props) {
     serverApiFetch<ExecutionOutput | null>(`/reports/submissions/${submissionId}/execution`).catch(() => null),
   ])
 
+  const challenge = submission?.challengeId
+    ? await serverApiFetch<ProjectChallenge>(`/challenges/${submission.challengeId}`).catch(() => null)
+    : null
+
   if (!raw) notFound()
 
   const showTwitterShare = raw.verdict === 'verified' || raw.verdict === 'insufficient'
@@ -45,11 +49,16 @@ export default async function PrivateReportPage({ params }: Props) {
       report={toReport(raw)}
       challengeId={submission?.challengeId}
       language={execution?.language ?? null}
+      passingThreshold={challenge?.passingThreshold ?? null}
       actions={
         <ReportVisibilityButton submissionId={raw.submissionId} isPublic={raw.isPublic} initialPublicToken={raw.publicToken} />
       }
       executionSlot={execution ? <TestExecutionOutput execution={execution} /> : undefined}
-      feedbackSlot={<ReportFeedbackForm submissionId={submissionId} challengeId={submission?.challengeId} />}
+      feedbackSlot={
+        (raw.verdict === 'insufficient' || raw.compositeScore < 70)
+          ? <ReportFeedbackForm submissionId={submissionId} challengeId={submission?.challengeId} />
+          : undefined
+      }
       twitterSlot={showTwitterShare ? (
         <ShareOnTwitterButton
           verdict={raw.verdict as 'verified' | 'insufficient'}

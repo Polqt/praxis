@@ -160,6 +160,7 @@ export default async function PublicProofPage({ params }: Props) {
             strengths={report.strengths}
             improvements={report.improvements}
             derived={report.derivedStrengthsAndImprovements}
+            categories={report.scores.map((s) => s.category)}
           />
         </div>
       </section>

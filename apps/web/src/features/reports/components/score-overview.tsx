@@ -73,8 +73,9 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
           const fixSteps = CATEGORY_FIX_INSTRUCTIONS[item.category] ?? []
           const scorePercent = (item.score / 10) * 100
 
+          const categoryId = item.category.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
           return (
-            <motion.div key={item.category} variants={fadeUp} className="p-5">
+            <motion.div key={item.category} id={categoryId} variants={fadeUp} className="p-5">
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-sm font-medium flex-1">{item.category}</span>
                 {item.status && (

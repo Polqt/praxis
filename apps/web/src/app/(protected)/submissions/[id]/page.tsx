@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { serverApiFetch } from '@/lib/api.server'
 import { Button } from '@/components/ui/button'
-import type { ProjectSubmission, ProjectSubmissionEvent } from '@praxis/shared'
+import type { ProjectChallenge, ProjectSubmission, ProjectSubmissionEvent } from '@praxis/shared'
 import { formatDate, githubRepoUrl, repoName, shortSha } from '@/lib/praxis-format'
 import { SubmissionTimeline } from '@/features/submissions/components/submission-timeline'
 import { SubmissionPoller } from '@/features/submissions/components/submission-poller'
@@ -12,7 +12,7 @@ import { RetrySubmissionButton } from '@/features/submissions/components/retry-s
 import { UpdateCommitButton } from '@/features/submissions/components/update-commit-button'
 import { StatusBadge } from '@/features/submissions/components/status-badge'
 import { IN_PROGRESS_STATUSES } from '@/features/submissions/constants'
-import { IconArrowLeft, IconBrandGithub, IconAlertCircle, IconClock, IconExternalLink } from '@tabler/icons-react'
+import { IconArrowLeft, IconBrandGithub, IconAlertCircle, IconAlertTriangle, IconClock, IconExternalLink } from '@tabler/icons-react'
 import { ElapsedTime } from '@/features/submissions/components/elapsed-time'
 
 type Props = {
@@ -35,22 +35,26 @@ export default async function SubmissionDetailPage(props: Props) {
   const isFailed = ['failed', 'ingestion_failed', 'analysis_failed', 'report_generation_failed'].includes(submission.status)
   const isQueued = submission.status === 'queued'
 
-  // Fetch report existence and execution result in parallel — only when submission is terminal
+  // Fetch report, execution, and challenge in parallel — only when submission is terminal
   type ExecutionSummary = { passed: number; failed: number; skipped: number; timedOut: boolean; language: string } | null
-  const [reportExists, execution] = statusHasReport || isFailed
+  type ReportSummary = { compositeScore: number; verdict: string }
+  const [reportData, execution, challenge] = statusHasReport || isFailed
     ? await Promise.all([
         statusHasReport
-          ? serverApiFetch(`/reports/submissions/${id}`).then(() => true).catch(() => false)
-          : Promise.resolve(false),
+          ? serverApiFetch<ReportSummary>(`/reports/submissions/${id}`).catch(() => null)
+          : Promise.resolve(null),
         serverApiFetch<ExecutionSummary>(`/reports/submissions/${id}/execution`).catch(() => null),
+        serverApiFetch<ProjectChallenge>(`/challenges/${submission.challengeId}`).catch(() => null),
       ])
-    : [false, null] as const
+    : [null, null, null]
+
+  const reportExists = reportData !== null
 
   const hasReport = statusHasReport && reportExists
 
   return (
     <div className="px-4 py-6 sm:px-6 md:px-10 md:py-10 w-full">
-      <SubmissionPoller isInProgress={isInProgress} />
+      <SubmissionPoller isInProgress={isInProgress} submittedAt={submission.submittedAt} />
 
       <div className="mb-8">
         <Link
@@ -109,6 +113,20 @@ export default async function SubmissionDetailPage(props: Props) {
                 <span className="text-xs text-muted-foreground">Status</span>
                 <StatusBadge status={submission.status} />
               </div>
+              {challenge?.passingThreshold != null && (
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-xs text-muted-foreground">Threshold</span>
+                  <span className="text-xs tabular-nums font-medium">{challenge.passingThreshold}/100</span>
+                </div>
+              )}
+              {reportData && challenge?.passingThreshold != null && submission.status === 'insufficient' && (
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-xs text-muted-foreground">Gap</span>
+                  <span className="text-xs tabular-nums text-amber-600 font-medium">
+                    {Math.max(0, challenge.passingThreshold - (reportData.compositeScore ?? 0))} points to pass
+                  </span>
+                </div>
+              )}
               {execution?.language && (
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-xs text-muted-foreground">Language</span>
@@ -149,6 +167,15 @@ export default async function SubmissionDetailPage(props: Props) {
 
           {isQueued && (
             <CancelSubmissionButton submissionId={submission.id} />
+          )}
+
+          {execution?.timedOut && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-2.5">
+              <IconAlertTriangle size={14} className="text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-800 leading-relaxed">
+                Test execution timed out. Scores are based on file detection only — running tests could raise your score.
+              </p>
+            </div>
           )}
 
           {hasReport && (

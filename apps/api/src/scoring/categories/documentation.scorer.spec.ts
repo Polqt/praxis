@@ -26,8 +26,8 @@ assert.ok(avgResult.score >= avgMin && avgResult.score <= avgMax,
   `Average score ${avgResult.score} not in [${avgMin}, ${avgMax}]`)
 assert.ok(avgResult.narrative.includes('setup instructions'),
   `Average narrative must mention setup instructions, got: "${avgResult.narrative}"`)
-assert.ok(avgResult.narrative.toLowerCase().includes('api documentation'),
-  `Average narrative must note missing API docs, got: "${avgResult.narrative}"`)
+assert.ok(!avgResult.narrative.toLowerCase().includes('api documentation'),
+  `Average narrative must not claim missing API docs as found (hasApiDocs is false), got: "${avgResult.narrative}"`)
 
 // Strong fixture — all signals → 10
 const strongResult = scorer.score(strongDocumentation)

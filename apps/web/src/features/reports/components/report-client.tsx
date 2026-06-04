@@ -23,13 +23,14 @@ type Props = {
   actions?: React.ReactNode
   challengeId?: string
   language?: string | null
+  passingThreshold?: number | null
   executionSlot?: React.ReactNode
   feedbackSlot?: React.ReactNode
   twitterSlot?: React.ReactNode
   viewCount?: number
 }
 
-export function ReportClient({ report, backHref = '/submissions', backLabel = 'Back to submissions', actions, challengeId, language, executionSlot, feedbackSlot, twitterSlot, viewCount }: Props) {
+export function ReportClient({ report, backHref = '/submissions', backLabel = 'Back to submissions', actions, challengeId, language, passingThreshold, executionSlot, feedbackSlot, twitterSlot, viewCount }: Props) {
   return (
     <motion.div
       variants={staggerContainer}
@@ -70,6 +71,22 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
 
       <hr className="border-border my-8" />
 
+      {passingThreshold != null && (
+        <motion.div variants={fadeUp} className="flex items-center gap-4 mb-6 text-xs text-muted-foreground">
+          <span>Threshold: <span className="font-semibold text-foreground">{passingThreshold}/100</span></span>
+          <span>·</span>
+          <span>Your score: <span className="font-semibold text-foreground">{report.compositeScore}/100</span></span>
+          {report.status === 'insufficient' && (
+            <>
+              <span>·</span>
+              <span className="text-amber-600 font-semibold">
+                {Math.max(0, passingThreshold - report.compositeScore)} points to pass
+              </span>
+            </>
+          )}
+        </motion.div>
+      )}
+
       <motion.p variants={fadeUp} className="text-sm text-muted-foreground leading-relaxed max-w-3xl">
         {report.summary}
       </motion.p>
@@ -101,6 +118,7 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
           strengths={report.strengths}
           improvements={report.improvements}
           derived={report.derivedStrengthsAndImprovements}
+          categories={report.scores.map((s) => s.category)}
         />
       </motion.div>
 

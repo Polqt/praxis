@@ -1,13 +1,21 @@
 'use client'
 
 import { IconCircleCheckFilled } from '@tabler/icons-react'
-import type { VerifiedSkill } from '../types'
+import { repoName } from '@/lib/praxis-format'
+import type { ProfileReport, VerifiedSkill } from '../types'
 
 type Props = {
   skills: VerifiedSkill[]
+  reports?: ProfileReport[]
 }
 
-export function VerifiedSkillsSection({ skills }: Props) {
+function skillSource(skillName: string, reports: ProfileReport[]): string | null {
+  const verified = reports.find((r) => r.submissionStatus === 'verified')
+  if (!verified) return null
+  return `${repoName(verified.repositoryName)} · ${verified.challengeTitle}`
+}
+
+export function VerifiedSkillsSection({ skills, reports = [] }: Props) {
   const sorted = [...skills].sort((a, b) => a.name.localeCompare(b.name))
 
   return (
@@ -16,18 +24,26 @@ export function VerifiedSkillsSection({ skills }: Props) {
       {sorted.length === 0 ? (
         <p className="text-sm text-muted-foreground">No verified skills yet.</p>
       ) : (
-        <div className="flex flex-col gap-2">
-          {sorted.map((skill) => (
-            <div key={skill.name} className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <IconCircleCheckFilled size={14} className="text-green-500 shrink-0" />
-                <span className="text-sm font-medium">{skill.name}</span>
+        <div className="flex flex-col gap-3">
+          {sorted.map((skill) => {
+            const source = skillSource(skill.name, reports)
+            return (
+              <div key={skill.name} className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2">
+                  <IconCircleCheckFilled size={14} className="text-green-500 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-sm font-medium">{skill.name}</span>
+                    {source && (
+                      <p className="text-xs text-muted-foreground mt-0.5">{source}</p>
+                    )}
+                  </div>
+                </div>
+                <span className="text-xs text-muted-foreground shrink-0" suppressHydrationWarning>
+                  {new Date(skill.awardedAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                </span>
               </div>
-              <span className="text-xs text-muted-foreground shrink-0" suppressHydrationWarning>
-                {new Date(skill.awardedAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
-              </span>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

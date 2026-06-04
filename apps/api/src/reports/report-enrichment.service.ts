@@ -59,7 +59,7 @@ function buildSummaryPrompt(
   return `Repository: ${repositoryName}
 Challenge: ${challengeTitle}
 Verdict: ${verdict}
-Composite score: ${compositeScore}/10
+Composite score: ${compositeScore}/100
 Top strengths: ${strengths.join(', ') || 'none'}
 Areas below threshold: ${weaknesses.join(', ') || 'none'}
 
@@ -74,7 +74,7 @@ export class ReportEnrichmentService {
 
   constructor(private readonly config: ConfigService) {
     const apiKey = this.config.get<string>('anthropic.apiKey')
-    this.model = this.config.get<string>('anthropic.model') ?? 'claude-haiku-4-5-20251001'
+    this.model = this.config.get<string>('anthropic.model') ?? 'claude-haiku-4-5'
     this.client = apiKey ? new Anthropic({ apiKey, defaultHeaders: { 'anthropic-beta': 'prompt-caching-2024-07-31' } }) : null
 
     if (!this.client) {

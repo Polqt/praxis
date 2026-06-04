@@ -31,7 +31,8 @@ async function seed() {
       { trackId: backendTrack.id, name: 'Testing', category: 'Testing' },
       { trackId: backendTrack.id, name: 'Documentation', category: 'Documentation' },
       { trackId: backendTrack.id, name: 'Deployment', category: 'Deployment' },
-      { trackId: backendTrack.id, name: 'Code Architecture', category: 'Code Architecture' },
+      { trackId: backendTrack.id, name: 'Architecture', category: 'Architecture' },
+      { trackId: backendTrack.id, name: 'Security', category: 'Security' },
     ])
     .onConflictDoNothing()
 
@@ -147,7 +148,7 @@ Accepted examples include note-taking APIs, task managers, blog backends, contac
     rubric: {
       categories: [
         // Architecture: just needs some folder structure — floor 0 means any score passes
-        { name: 'Code Architecture', weight: 25, floor: 0 },
+        { name: 'Architecture', weight: 25, floor: 0 },
         // Authentication: floor 0 — auth is optional for a basic CRUD project
         { name: 'Authentication', weight: 10, floor: 0 },
         // Database Design: floor 3 — needs an ORM or schema file at minimum
@@ -282,12 +283,6 @@ The repository must show ORM usage (Prisma, Drizzle, TypeORM, Sequelize, or equi
   } else {
     await db.insert(projectChallenges).values([dbDesignChallenge])
   }
-
-  // ── Ensure Architecture skill exists for DB design challenge ─────────────────
-  await db.insert(skills).values([
-    { trackId: backendTrack.id, name: 'Architecture', category: 'Architecture' },
-    { trackId: backendTrack.id, name: 'Security', category: 'Security' },
-  ]).onConflictDoNothing()
 
   // ── Advanced frontend: Accessible Component Library ──────────────────────────
   const accessibilityChallenge = {

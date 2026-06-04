@@ -12,9 +12,12 @@ import { DIFFICULTY_LABEL } from '@/features/challenges/constants'
 import { CATEGORY_LABEL } from '@/features/submissions/constants'
 import type { Challenge, ChallengeCategory, ChallengeDifficulty } from '@/features/challenges/types'
 
+type SubmissionStatus = 'verified' | 'in-progress' | 'attempted'
+
 type Props = {
   challenges: Challenge[]
   isAuthenticated: boolean
+  submissionStatusMap?: Record<string, SubmissionStatus>
 }
 
 // ── Shared primitives ────────────────────────────────────────────────────────
@@ -59,7 +62,15 @@ function MarqueeBand({ text }: { text: string }) {
   )
 }
 
-function ChallengeList({ challenges, isAuthenticated }: { challenges: Challenge[]; isAuthenticated: boolean }) {
+function ChallengeList({
+  challenges,
+  isAuthenticated,
+  submissionStatusMap = {},
+}: {
+  challenges: Challenge[]
+  isAuthenticated: boolean
+  submissionStatusMap?: Record<string, SubmissionStatus>
+}) {
   if (challenges.length === 0) {
     return <p className="text-sm text-muted-foreground mt-3">No challenges available.</p>
   }
@@ -71,7 +82,12 @@ function ChallengeList({ challenges, isAuthenticated }: { challenges: Challenge[
       className="flex flex-col gap-3 mt-6"
     >
       {challenges.map((challenge) => (
-        <ChallengeCard key={challenge.id} challenge={challenge} isAuthenticated={isAuthenticated} />
+        <ChallengeCard
+          key={challenge.id}
+          challenge={challenge}
+          isAuthenticated={isAuthenticated}
+          submissionStatus={submissionStatusMap[challenge.id]}
+        />
       ))}
     </motion.div>
   )
@@ -86,7 +102,7 @@ function filterByDifficulty(list: Challenge[], difficulty: ChallengeDifficulty |
   return list.filter((c) => c.difficulty === difficulty)
 }
 
-function ChallengesAppView({ challenges, isAuthenticated }: Props) {
+function ChallengesAppView({ challenges, isAuthenticated, submissionStatusMap = {} }: Props) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
@@ -146,10 +162,10 @@ function ChallengesAppView({ challenges, isAuthenticated }: Props) {
         </TabsList>
         <Separator className="mt-0" />
         <TabsContent value="frontend">
-          <ChallengeList challenges={frontend} isAuthenticated={isAuthenticated} />
+          <ChallengeList challenges={frontend} isAuthenticated={isAuthenticated} submissionStatusMap={submissionStatusMap} />
         </TabsContent>
         <TabsContent value="backend">
-          <ChallengeList challenges={backend} isAuthenticated={isAuthenticated} />
+          <ChallengeList challenges={backend} isAuthenticated={isAuthenticated} submissionStatusMap={submissionStatusMap} />
         </TabsContent>
       </Tabs>
     </div>
@@ -158,21 +174,23 @@ function ChallengesAppView({ challenges, isAuthenticated }: Props) {
 
 // ── Public marketing view (matches why / how-it-works aesthetic) ──────────────
 
-function ChallengesMarketingView({ challenges, isAuthenticated }: Props) {
+function ChallengesMarketingView({ challenges, isAuthenticated, submissionStatusMap = {} }: Props) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
   const rawTab = searchParams.get('tab')
+  const rawDiff = searchParams.get('difficulty')
   const tab: ChallengeCategory = rawTab === 'backend' ? 'backend' : 'frontend'
+  const difficulty: ChallengeDifficulty | 'all' = (DIFFICULTY_ORDER as string[]).includes(rawDiff ?? '') ? rawDiff as ChallengeDifficulty : 'all'
 
-  const setTab = useCallback((value: string) => {
+  const setParam = useCallback((key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString())
-    params.set('tab', value)
+    params.set(key, value)
     router.replace(`${pathname}?${params.toString()}`, { scroll: false })
   }, [searchParams, router, pathname])
 
-  const frontend = challenges.filter((c) => c.category === 'frontend')
-  const backend = challenges.filter((c) => c.category === 'backend')
+  const frontend = filterByDifficulty(challenges.filter((c) => c.category === 'frontend'), difficulty)
+  const backend = filterByDifficulty(challenges.filter((c) => c.category === 'backend'), difficulty)
 
   return (
     <div className="bg-background">
@@ -222,24 +240,45 @@ function ChallengesMarketingView({ challenges, isAuthenticated }: Props) {
             No surprises. No ambiguity. The report reflects what was actually in your repository.
           </p>
 
-          <Tabs value={tab} onValueChange={(v) => setTab(v as ChallengeCategory)}>
-            <TabsList className="bg-transparent p-0 h-auto gap-0 border-0 mb-0">
-              {(['frontend', 'backend'] as const).map((category) => (
-                <TabsTrigger
-                  key={category}
-                  value={category}
-                  className="px-4 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:text-foreground text-muted-foreground bg-transparent shadow-none"
+          <div className="flex items-center justify-between gap-4 mb-0 flex-wrap">
+            <Tabs value={tab} onValueChange={(v) => setParam('tab', v as ChallengeCategory)} className="flex-1">
+              <TabsList className="bg-transparent p-0 h-auto gap-0 border-0 mb-0">
+                {(['frontend', 'backend'] as const).map((category) => (
+                  <TabsTrigger
+                    key={category}
+                    value={category}
+                    className="px-4 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:text-foreground text-muted-foreground bg-transparent shadow-none"
+                  >
+                    {CATEGORY_LABEL[category] ?? category}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+            <div className="flex items-center gap-1.5 pb-2">
+              {(['all', ...DIFFICULTY_ORDER] as const).map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setParam('difficulty', d)}
+                  className={[
+                    'text-[11px] font-medium px-2.5 py-1 rounded-sm border transition-colors',
+                    difficulty === d
+                      ? 'bg-foreground text-background border-foreground'
+                      : 'border-border text-muted-foreground hover:bg-muted',
+                  ].join(' ')}
                 >
-                  {CATEGORY_LABEL[category] ?? category}
-                </TabsTrigger>
+                  {d === 'all' ? 'All' : DIFFICULTY_LABEL[d]}
+                </button>
               ))}
-            </TabsList>
-            <Separator className="mt-0" />
+            </div>
+          </div>
+          <Separator className="mb-0" />
+          <Tabs value={tab} onValueChange={(v) => setParam('tab', v as ChallengeCategory)}>
             <TabsContent value="frontend">
-              <ChallengeList challenges={frontend} isAuthenticated={isAuthenticated} />
+              <ChallengeList challenges={frontend} isAuthenticated={isAuthenticated} submissionStatusMap={submissionStatusMap} />
             </TabsContent>
             <TabsContent value="backend">
-              <ChallengeList challenges={backend} isAuthenticated={isAuthenticated} />
+              <ChallengeList challenges={backend} isAuthenticated={isAuthenticated} submissionStatusMap={submissionStatusMap} />
             </TabsContent>
           </Tabs>
         </div>
@@ -311,9 +350,6 @@ function ChallengesMarketingView({ challenges, isAuthenticated }: Props) {
 
 // ── Entry point ───────────────────────────────────────────────────────────────
 
-export function ChallengesPublicPage({ challenges, isAuthenticated }: Props) {
-  if (isAuthenticated) {
-    return <ChallengesAppView challenges={challenges} isAuthenticated={isAuthenticated} />
-  }
-  return <ChallengesMarketingView challenges={challenges} isAuthenticated={isAuthenticated} />
+export function ChallengesPublicPage({ challenges, isAuthenticated, submissionStatusMap }: Props) {
+  return <ChallengesMarketingView challenges={challenges} isAuthenticated={isAuthenticated} submissionStatusMap={submissionStatusMap} />
 }

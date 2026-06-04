@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { serverApiFetch } from '@/lib/api.server'
 import { ChallengesPublicPage } from '@/features/challenges/components/challenges-public-page'
-import type { ProjectChallenge } from '@praxis/shared'
+import type { ProjectChallenge, ProjectSubmission } from '@praxis/shared'
 import type { Challenge } from '@/features/challenges/types'
 
 const DIFFICULTY_MAP: Record<string, Challenge['difficulty']> = {
@@ -26,8 +26,31 @@ export default async function ChallengesPage() {
   const { data: { user } } = await supabase.auth.getUser()
   const isAuthenticated = !!user
 
-  const raw = await serverApiFetch<ProjectChallenge[]>('/challenges').catch(() => [] as ProjectChallenge[])
+  const [raw, submissions] = await Promise.all([
+    serverApiFetch<ProjectChallenge[]>('/challenges').catch(() => [] as ProjectChallenge[]),
+    isAuthenticated
+      ? serverApiFetch<ProjectSubmission[]>('/submissions').catch(() => [] as ProjectSubmission[])
+      : Promise.resolve([] as ProjectSubmission[]),
+  ])
+
   const challenges = raw.map(toChallenge)
 
-  return <ChallengesPublicPage challenges={challenges} isAuthenticated={isAuthenticated} />
+  // Build a map of challengeId → best status for the card indicator
+  const submissionStatusMap: Record<string, 'verified' | 'in-progress' | 'attempted'> = {}
+  for (const s of submissions) {
+    if (s.status === 'verified') {
+      submissionStatusMap[s.challengeId] = 'verified'
+    } else if (!submissionStatusMap[s.challengeId]) {
+      const isActive = ['created', 'queued', 'ingesting', 'analyzing', 'generating_report'].includes(s.status)
+      submissionStatusMap[s.challengeId] = isActive ? 'in-progress' : 'attempted'
+    }
+  }
+
+  return (
+    <ChallengesPublicPage
+      challenges={challenges}
+      isAuthenticated={isAuthenticated}
+      submissionStatusMap={submissionStatusMap}
+    />
+  )
 }

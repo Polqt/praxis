@@ -362,9 +362,9 @@ export class ReportsService implements OnModuleInit {
   ) {
     const scores = (report.categoryScores ?? {}) as Record<string, StoredCategoryScore>
 
-    const safeScores: Record<string, { score: number; narrative: string; citations: string[]; minimumScore?: number }> = {}
+    const safeScores: Record<string, { score: number; narrative: string; citations: string[]; minimumScore?: number; status?: string }> = {}
     for (const [name, v] of Object.entries(scores)) {
-      safeScores[name] = { score: v.score, narrative: v.narrative, citations: v.citations, minimumScore: v.minimumScore }
+      safeScores[name] = { score: v.score, narrative: v.narrative, citations: v.citations, minimumScore: v.minimumScore, status: v.status }
     }
 
     return {

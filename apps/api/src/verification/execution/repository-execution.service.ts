@@ -73,10 +73,19 @@ function detectRuntime(ingestionData: RepositoryIngestionData): DetectedRuntime 
       }
     }
 
+    const isTypeScript = hasFile('tsconfig.json') || hasFile('tsconfig.base.json') || (() => {
+      if (!manifest?.content) return false
+      try {
+        const pkg = JSON.parse(manifest.content) as { devDependencies?: Record<string, string>; dependencies?: Record<string, string> }
+        const allDeps = { ...pkg.devDependencies, ...pkg.dependencies }
+        return 'typescript' in allDeps
+      } catch { return false }
+    })()
+
     return {
-      language: 'javascript',
+      language: isTypeScript ? 'typescript' : 'javascript',
       testCommand,
-      installCommand: 'npm install --prefer-offline 2>&1',
+      installCommand: 'npm install --no-fund --no-audit 2>&1',
     }
   }
 
@@ -118,7 +127,7 @@ function parseTestOutput(stdout: string, language: string, exitCode: number): Pa
   let skipped = 0
   let parsed = false
 
-  if (language === 'javascript') {
+  if (language === 'javascript' || language === 'typescript') {
     if (/Tests:/i.test(stdout)) {
       const passedMatch = stdout.match(/(\d+)\s+passed/i)
       const failedMatch = stdout.match(/(\d+)\s+failed/i)

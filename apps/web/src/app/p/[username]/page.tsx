@@ -50,12 +50,18 @@ export default async function PublicProfilePage({ params }: Props) {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-170 mx-auto px-6 pt-12 pb-20">
-        <div className="mb-10">
+        <div className="mb-10 flex items-center justify-between">
           <Link
             href={viewingUser ? '/studio' : '/'}
             className="text-sm font-semibold tracking-tight text-foreground hover:opacity-80 transition-opacity"
           >
             Praxis
+          </Link>
+          <Link
+            href="/proof"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            View all proofs →
           </Link>
         </div>
         <ProfileClient profile={profile} viewingUser={viewingUser} />

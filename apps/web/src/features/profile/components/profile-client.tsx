@@ -36,7 +36,7 @@ export function ProfileClient({ profile, viewingUser }: Props) {
       <hr className="border-border" />
 
       <motion.div variants={fadeUp}>
-        <VerifiedSkillsSection skills={profile.verifiedSkills} />
+        <VerifiedSkillsSection skills={profile.verifiedSkills} reports={profile.latestReports} />
       </motion.div>
 
       <motion.div variants={fadeUp}>

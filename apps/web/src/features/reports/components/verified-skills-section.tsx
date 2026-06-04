@@ -10,7 +10,8 @@ export function VerifiedSkillsSection({ skills }: Props) {
   if (skills.length === 0) return null
   return (
     <div>
-      <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-4">Verified skills</p>
+      <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-1">Verified skills</p>
+      <p className="text-xs text-muted-foreground mb-3">Awarded for scoring above the floor threshold in each category.</p>
       <div className="flex flex-wrap gap-2">
         {skills.map((skill) => (
           <span key={skill} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border bg-card text-sm font-medium">

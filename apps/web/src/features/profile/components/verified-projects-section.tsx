@@ -18,8 +18,12 @@ type Props = {
 }
 
 export function VerifiedProjectsSection({ reports, profileUsername, viewingUser }: Props) {
+  const isOwner = viewingUser?.username === profileUsername
   const verified = reports.filter((r) => r.submissionStatus === 'verified')
-  const insufficient = reports.filter((r) => r.submissionStatus === 'insufficient')
+  // Insufficient projects are only shown to the profile owner — not to public visitors
+  const insufficient = isOwner
+    ? reports.filter((r) => r.submissionStatus === 'insufficient')
+    : []
 
   return (
     <div className="flex flex-col gap-6">
