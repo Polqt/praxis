@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { Sandbox } from '@e2b/code-interpreter'
 import { DatabaseService } from '../../database/database.service'
 import { repositoryExecutions, repositoryIngestions } from '../../database/schema'
@@ -139,9 +139,34 @@ export class RepositoryExecutionService {
     return this.apiKey !== null
   }
 
+  private rowToResult(row: typeof repositoryExecutions.$inferSelect): ExecutionResult {
+    return {
+      language: row.language,
+      framework: row.framework,
+      testCommand: row.testCommand,
+      exitCode: row.exitCode,
+      passed: row.passed,
+      failed: row.failed,
+      skipped: row.skipped,
+      durationMs: row.durationMs,
+      stdout: row.stdout ?? '',
+      stderr: row.stderr ?? '',
+      timedOut: row.timedOut,
+      publicSummary: row.publicSummary ?? '',
+      commandSummary: (row.commandSummary ?? []) as ExecutionResult['commandSummary'],
+      installResult: row.installResult as CommandResult | null,
+      testResult: row.testResult as CommandResult | null,
+      buildResult: row.buildResult as CommandResult | null,
+      lintResult: row.lintResult as CommandResult | null,
+      typecheckResult: row.typecheckResult as CommandResult | null,
+      doctorResult: row.doctorResult as CommandResult | null,
+    }
+  }
+
   async executeForIngestion(ingestionId: string, githubToken?: string): Promise<ExecutionResult | null> {
     if (!this.apiKey) return null
 
+    // Primary cache: same ingestion
     const existing = await this.db.db
       .select()
       .from(repositoryExecutions)
@@ -150,27 +175,7 @@ export class RepositoryExecutionService {
 
     if (existing[0]) {
       this.logger.log(`E2B: cache hit for ingestion ${ingestionId}`)
-      return {
-        language: existing[0].language,
-        framework: existing[0].framework,
-        testCommand: existing[0].testCommand,
-        exitCode: existing[0].exitCode,
-        passed: existing[0].passed,
-        failed: existing[0].failed,
-        skipped: existing[0].skipped,
-        durationMs: existing[0].durationMs,
-        stdout: existing[0].stdout ?? '',
-        stderr: existing[0].stderr ?? '',
-        timedOut: existing[0].timedOut,
-        publicSummary: existing[0].publicSummary ?? '',
-        commandSummary: (existing[0].commandSummary ?? []) as ExecutionResult['commandSummary'],
-        installResult: existing[0].installResult as CommandResult | null,
-        testResult: existing[0].testResult as CommandResult | null,
-        buildResult: existing[0].buildResult as CommandResult | null,
-        lintResult: existing[0].lintResult as CommandResult | null,
-        typecheckResult: existing[0].typecheckResult as CommandResult | null,
-        doctorResult: existing[0].doctorResult as CommandResult | null,
-      }
+      return this.rowToResult(existing[0])
     }
 
     const ingestionRows = await this.db.db
@@ -181,6 +186,23 @@ export class RepositoryExecutionService {
 
     const ingestion = ingestionRows[0]
     if (!ingestion) return null
+
+    // Cross-ingestion cache: same commitSha + repoFullName from a prior ingestion.
+    // This avoids re-running E2B when a user retries a failed submission with the same commit.
+    const crossCacheRows = await this.db.db
+      .select({ execution: repositoryExecutions })
+      .from(repositoryIngestions)
+      .innerJoin(repositoryExecutions, eq(repositoryExecutions.repositoryIngestionId, repositoryIngestions.id))
+      .where(and(
+        eq(repositoryIngestions.commitSha, ingestion.commitSha),
+        eq(repositoryIngestions.repoFullName, ingestion.repoFullName),
+      ))
+      .limit(1)
+
+    if (crossCacheRows[0]) {
+      this.logger.log(`E2B: cross-ingestion cache hit for ${ingestion.repoFullName}@${ingestion.commitSha}`)
+      return this.rowToResult(crossCacheRows[0].execution)
+    }
 
     const ingestionData = ingestion.ingestedData as RepositoryIngestionData
     const plan = planExecution(ingestionData)

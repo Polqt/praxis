@@ -15,12 +15,17 @@ type Props = {
 export default async function PrivateReportPage({ params }: Props) {
   const { submissionId } = await params
 
+  type PhaseResult = { phase: string; label: string; exitCode: number; timedOut: boolean; stdout?: string; stderr?: string }
   type ExecutionOutput = {
     language: string; framework?: string | null; testCommand: string; publicSummary?: string | null
     commandSummary?: { phase: string; label: string; exitCode: number; timedOut: boolean }[]
     exitCode: number
     passed: number; failed: number; skipped: number
     durationMs: number | null; stdout: string | null; stderr: string | null; timedOut: boolean
+    installResult?: PhaseResult | null
+    buildResult?: PhaseResult | null
+    lintResult?: PhaseResult | null
+    typecheckResult?: PhaseResult | null
   }
 
   const [raw, submission, execution] = await Promise.all([

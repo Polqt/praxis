@@ -26,6 +26,9 @@ interface EnrichmentResult {
   improvements: string[]
 }
 
+export const FALLBACK_SUMMARY_VERIFIED = 'This project meets the Praxis verification threshold.'
+export const FALLBACK_SUMMARY_INSUFFICIENT = 'This project does not yet meet the Praxis verification threshold.'
+
 const SYSTEM_PROMPT = `You are a senior engineer writing concise, honest verification report narratives for a developer skill platform. You receive deterministic signal data extracted from a real GitHub repository and write clear prose that explains what was found and why it matters. Be direct and specific. Never invent signals that aren't in the data. Never pad with filler. Max 2 sentences per category narrative. When asked for JSON, respond with only the raw JSON object — no markdown fences, no explanation.`
 
 function buildCategoryPrompt(
@@ -36,16 +39,16 @@ function buildCategoryPrompt(
   citations: string[],
   signals: Record<string, unknown>,
 ): string {
-  const citationList = citations.slice(0, 5).join(', ') || 'none'
+  const top3Citations = citations.slice(0, 3).join(', ') || 'none'
   const signalSummary = JSON.stringify(signals, null, 0).slice(0, 400)
   const floorNote = status === 'floor' ? ` (floor threshold of ${minimumScore} not met — this alone causes insufficient verdict)` : ''
 
   return `Category: ${categoryName}
 Score: ${score}/10${floorNote}
-Cited files: ${citationList}
+Top evidence files (reference these paths in your narrative): ${top3Citations}
 Signals: ${signalSummary}
 
-Write a 1–2 sentence narrative explaining what was found in this category and what the developer should know. Be specific to the signals above.`
+Write a 1–2 sentence narrative explaining what was found in this category and what the developer should know. Be specific to the evidence files and signals above.`
 }
 
 function buildSummaryPrompt(
@@ -198,8 +201,8 @@ Respond with a JSON object in exactly this shape (no markdown, no extra text):
       .map(([name]) => `Improve coverage in ${name}`)
 
     const publicSummary = input.verdict === 'verified'
-      ? 'This project meets the Praxis verification threshold.'
-      : 'This project does not yet meet the Praxis verification threshold.'
+      ? FALLBACK_SUMMARY_VERIFIED
+      : FALLBACK_SUMMARY_INSUFFICIENT
 
     return {
       categoryScores: input.categoryScores,

@@ -8,6 +8,15 @@ import { motion, AnimatePresence } from 'framer-motion'
 const STDOUT_CAP = 5000
 const STDERR_CAP = 2000
 
+interface CommandResult {
+  phase: string
+  label: string
+  exitCode: number
+  timedOut: boolean
+  stdout?: string
+  stderr?: string
+}
+
 interface ExecutionOutput {
   language: string
   framework?: string | null
@@ -22,15 +31,39 @@ interface ExecutionOutput {
   stdout: string | null
   stderr: string | null
   timedOut: boolean
+  installResult?: CommandResult | null
+  buildResult?: CommandResult | null
+  lintResult?: CommandResult | null
+  typecheckResult?: CommandResult | null
 }
 
 type Props = {
   execution: ExecutionOutput
 }
 
+function PhaseFailureBanner({ label, result }: { label: string; result: CommandResult }) {
+  const errText = result.stderr?.trim() || result.stdout?.trim()
+  return (
+    <div className="mt-3 rounded-md bg-amber-50 border border-amber-200 px-3 py-2.5">
+      <div className="flex items-center gap-1.5 mb-1">
+        <IconAlertTriangle size={12} className="text-amber-600 shrink-0" />
+        <p className="text-xs font-semibold text-amber-700 uppercase tracking-widest">{label} failed</p>
+      </div>
+      {errText && (
+        <pre className="text-[11px] font-mono text-amber-900 whitespace-pre-wrap break-all max-h-24 overflow-y-auto mt-1">
+          {errText.slice(0, 500)}{errText.length > 500 ? '…' : ''}
+        </pre>
+      )}
+    </div>
+  )
+}
+
 export function TestExecutionOutput({ execution }: Props) {
   const hasResults = execution.passed > 0 || execution.failed > 0 || execution.timedOut
-  const [open, setOpen] = useState(hasResults)
+  const noTests = !hasResults && !execution.timedOut
+  const installFailed = noTests && execution.installResult != null && execution.installResult.exitCode !== 0
+  const buildFailed = noTests && !installFailed && execution.buildResult != null && execution.buildResult.exitCode !== 0
+  const [open, setOpen] = useState(hasResults || installFailed || buildFailed)
 
   const stdout = execution.stdout?.trim() ?? ''
   const stderr = execution.stderr?.trim() ?? ''
@@ -72,12 +105,32 @@ export function TestExecutionOutput({ execution }: Props) {
             className="overflow-hidden"
           >
             <div className="px-5 pb-4 border-t border-border space-y-3">
-              {/* Timeout banner — shown prominently when execution was killed */}
+              {/* Timeout banner */}
               {execution.timedOut && (
                 <div className="flex items-center gap-2 mt-3 rounded-md bg-amber-50 border border-amber-200 px-3 py-2">
                   <IconAlertTriangle size={13} className="text-amber-600 shrink-0" />
                   <p className="text-xs text-amber-700">
                     Test execution timed out. The test runner exceeded the time limit — scores are based on file detection only.
+                  </p>
+                </div>
+              )}
+
+              {/* Install failure banner — shown when install failed and 0 tests ran */}
+              {installFailed && execution.installResult && (
+                <PhaseFailureBanner label="Dependency install" result={execution.installResult} />
+              )}
+
+              {/* Build failure banner — shown when build failed and 0 tests ran */}
+              {buildFailed && execution.buildResult && (
+                <PhaseFailureBanner label="Build" result={execution.buildResult} />
+              )}
+
+              {/* No tests and no failures = test runner likely didn't start */}
+              {noTests && !installFailed && !buildFailed && execution.exitCode !== 0 && (
+                <div className="flex items-center gap-2 mt-3 rounded-md bg-muted border border-border px-3 py-2">
+                  <IconAlertTriangle size={13} className="text-muted-foreground shrink-0" />
+                  <p className="text-xs text-muted-foreground">
+                    Test runner may have failed to start — 0 tests detected with a non-zero exit code.
                   </p>
                 </div>
               )}

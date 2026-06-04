@@ -203,7 +203,31 @@ export class ReportsService implements OnModuleInit {
 
     const submission = await this.getSubmission(reports[0].submissionId)
     const challenge = await this.getChallenge(submission.challengeId)
-    return this.toPublicProof({ ...reports[0], viewCount: (reports[0].viewCount ?? 0) + 1 }, submission, challenge)
+
+    // Fetch execution summary for public display (test counts + language)
+    const execRows = await this.db.db
+      .select({
+        passed: repositoryExecutions.passed,
+        failed: repositoryExecutions.failed,
+        skipped: repositoryExecutions.skipped,
+        language: repositoryExecutions.language,
+        framework: repositoryExecutions.framework,
+        durationMs: repositoryExecutions.durationMs,
+        timedOut: repositoryExecutions.timedOut,
+      })
+      .from(repositoryExecutions)
+      .innerJoin(repositoryIngestions, eq(repositoryExecutions.repositoryIngestionId, repositoryIngestions.id))
+      .where(eq(repositoryIngestions.commitSha, submission.commitSha))
+      .limit(1)
+
+    const executionSummary = execRows[0] ?? null
+
+    return this.toPublicProof(
+      { ...reports[0], viewCount: (reports[0].viewCount ?? 0) + 1 },
+      submission,
+      challenge,
+      executionSummary,
+    )
   }
 
   async listPublicProofs(limit = 50) {
@@ -377,6 +401,7 @@ export class ReportsService implements OnModuleInit {
     report: typeof projectVerificationReports.$inferSelect,
     submission: typeof projectSubmissions.$inferSelect,
     challenge: typeof projectChallenges.$inferSelect,
+    executionSummary?: { passed: number; failed: number; skipped: number; language: string; framework: string | null; durationMs: number | null; timedOut: boolean } | null,
   ) {
     const scores = (report.categoryScores ?? {}) as Record<string, StoredCategoryScore>
 
@@ -400,6 +425,7 @@ export class ReportsService implements OnModuleInit {
       generatedAt: report.generatedAt,
       publicToken: report.publicToken,
       viewCount: report.viewCount ?? 0,
+      executionSummary: executionSummary ?? null,
     }
   }
 
