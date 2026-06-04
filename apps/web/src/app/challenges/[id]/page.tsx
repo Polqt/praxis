@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { buildAuthRedirect } from '@/shared/utils/build-auth-redirect'
 import { IconArrowLeft, IconCircleCheck } from '@tabler/icons-react'
 import { CATEGORY_LABEL } from '@/features/submissions/constants'
+import { stripMarkdown } from '@/features/challenges/utils'
 import type { ProjectChallenge } from '@praxis/shared'
 
 type Props = {
@@ -49,7 +50,14 @@ export default async function ChallengeDetailPage(props: Props) {
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold">What this challenge verifies</h2>
-        <p className="text-sm text-muted-foreground leading-relaxed">{challenge.description}</p>
+        <div className="space-y-2">
+          {stripMarkdown(challenge.description)
+            .split('\n')
+            .filter((p) => p.trim().length > 0)
+            .map((para, i) => (
+              <p key={i} className="text-sm text-muted-foreground leading-relaxed">{para}</p>
+            ))}
+        </div>
       </section>
 
       <section className="mt-8 space-y-3">
