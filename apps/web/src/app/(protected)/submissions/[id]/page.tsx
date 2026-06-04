@@ -157,7 +157,7 @@ export default async function SubmissionDetailPage(props: Props) {
             <>
               <LiveStepIndicator status={submission.status} />
               <div className="flex items-center justify-between gap-2 px-1">
-                <p className="text-xs text-muted-foreground">Typically 2–5 minutes. Updates automatically.</p>
+                <p className="text-xs text-muted-foreground">Usually 3–8 minutes, up to 15 for large repos. Updates automatically.</p>
                 <span className="text-xs text-muted-foreground tabular-nums shrink-0">
                   <ElapsedTime since={submission.submittedAt} />
                 </span>

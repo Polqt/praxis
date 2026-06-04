@@ -19,10 +19,19 @@ export function ElapsedTime({ since }: Props) {
   const [elapsed, setElapsed] = useState(() => Date.now() - new Date(since).getTime())
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setElapsed(Date.now() - new Date(since).getTime())
-    }, 5_000)
-    return () => clearInterval(id)
+    const tick = () => setElapsed(Date.now() - new Date(since).getTime())
+
+    const id = setInterval(tick, 5_000)
+
+    function handleVisibility() {
+      if (document.visibilityState === 'visible') tick()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
   }, [since])
 
   return <span suppressHydrationWarning>{formatElapsed(elapsed)}</span>
