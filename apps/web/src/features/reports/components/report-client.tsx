@@ -38,7 +38,7 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
       variants={staggerContainer}
       initial="hidden"
       animate="visible"
-      className="px-4 py-6 sm:px-6 md:px-10 md:py-10 w-full"
+      className="px-4 py-6 sm:px-6 md:px-10 md:py-10 w-full max-w-4xl mx-auto"
     >
       <div className="flex items-center justify-between mb-8">
         <Link
@@ -111,7 +111,7 @@ export function ReportClient({ report, backHref = '/submissions', backLabel = 'B
       </motion.div>
 
       <motion.div variants={fadeUp} className="mt-10">
-        <VerifiedSkillsSection skills={report.skills} />
+        <VerifiedSkillsSection skills={report.skills} scores={report.scores} />
       </motion.div>
 
       {executionSlot && (
