@@ -14,6 +14,7 @@ export type AuditEventType =
   | 'submission_cancelled'
   | 'submission_requeued'
   | 'submission_retried'
+  | 'submission_commit_updated'
 
 type AuditContext = {
   ipAddress?: string
