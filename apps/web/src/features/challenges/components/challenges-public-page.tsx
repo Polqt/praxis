@@ -1,16 +1,16 @@
 'use client'
 
 import Link from 'next/link'
+import { useState, useTransition, useEffect } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
-import { useCallback } from 'react'
-import { motion } from 'framer-motion'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Separator } from '@/components/ui/separator'
+import { motion, AnimatePresence } from 'framer-motion'
 import { ChallengeCard } from '@/features/challenges/components/challenge-card'
-import { staggerContainer } from '@/lib/animations'
 import { DIFFICULTY_LABEL } from '@/features/challenges/constants'
 import { CATEGORY_LABEL } from '@/features/submissions/constants'
+import { fadeUp } from '@/lib/animations'
 import type { Challenge, ChallengeCategory, ChallengeDifficulty } from '@/features/challenges/types'
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 type SubmissionStatus = 'verified' | 'in-progress' | 'attempted'
 
@@ -20,19 +20,30 @@ type Props = {
   submissionStatusMap?: Record<string, SubmissionStatus>
 }
 
-// ── Shared primitives ────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const DIFFICULTY_ORDER: ChallengeDifficulty[] = ['junior', 'intermediate', 'senior']
+const CATEGORIES: ChallengeCategory[] = ['frontend', 'backend']
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+
+function filterChallenges(
+  all: Challenge[],
+  category: ChallengeCategory,
+  difficulty: ChallengeDifficulty | 'all',
+): Challenge[] {
+  return all.filter(
+    (c) => c.category === category && (difficulty === 'all' || c.difficulty === difficulty),
+  )
+}
+
+// ── Shared primitives ─────────────────────────────────────────────────────────
 
 function SectionLabel({ text, light = false }: { text: string; light?: boolean }) {
   return (
     <div className="inline-flex items-center gap-2.5 mb-6">
-      <div
-        className="rounded-[1px] shrink-0"
-        style={{ width: '8px', height: '10px', background: light ? 'rgba(255,255,255,0.4)' : 'var(--primary)' }}
-      />
-      <span
-        className="text-[13px] uppercase tracking-widest"
-        style={{ color: light ? 'rgba(255,255,255,0.4)' : 'var(--muted-foreground)' }}
-      >
+      <div className={`w-2 h-2.5 rounded-[1px] shrink-0 ${light ? 'bg-white/40' : 'bg-primary'}`} />
+      <span className={`text-[13px] uppercase tracking-widest ${light ? 'text-white/40' : 'text-muted-foreground'}`}>
         {text}
       </span>
     </div>
@@ -42,155 +53,147 @@ function SectionLabel({ text, light = false }: { text: string; light?: boolean }
 function MarqueeBand({ text }: { text: string }) {
   const repeated = text.repeat(6)
   return (
-    <div
-      className="w-full overflow-hidden flex items-center border-t border-b border-border"
-      style={{ background: 'var(--foreground)', height: '80px' }}
-    >
+    <div className="w-full h-20 overflow-hidden flex items-center border-t border-b border-border bg-foreground">
       <div
-        className="flex whitespace-nowrap"
+        className="flex whitespace-nowrap text-white/20"
         style={{ animation: 'marquee 22s linear infinite', willChange: 'transform' }}
       >
-        <span className="text-[13px] uppercase tracking-widest font-medium px-4" style={{ color: 'rgba(255,255,255,0.2)' }}>
-          {repeated}
-        </span>
-        <span className="text-[13px] uppercase tracking-widest font-medium px-4" style={{ color: 'rgba(255,255,255,0.2)' }}>
-          {repeated}
-        </span>
+        <span className="text-[13px] uppercase tracking-widest font-medium px-4">{repeated}</span>
+        <span className="text-[13px] uppercase tracking-widest font-medium px-4">{repeated}</span>
       </div>
       <style>{`@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }`}</style>
     </div>
   )
 }
 
-function ChallengeList({
-  challenges,
-  isAuthenticated,
-  submissionStatusMap = {},
-}: {
-  challenges: Challenge[]
-  isAuthenticated: boolean
-  submissionStatusMap?: Record<string, SubmissionStatus>
-}) {
-  if (challenges.length === 0) {
-    return <p className="text-sm text-muted-foreground mt-3">No challenges available.</p>
-  }
-  return (
-    <motion.div
-      variants={staggerContainer}
-      initial="hidden"
-      animate="visible"
-      className="flex flex-col gap-3 mt-6"
-    >
-      {challenges.map((challenge) => (
-        <ChallengeCard
-          key={challenge.id}
-          challenge={challenge}
-          isAuthenticated={isAuthenticated}
-          submissionStatus={submissionStatusMap[challenge.id]}
-        />
-      ))}
-    </motion.div>
-  )
+// ── Filter bar ────────────────────────────────────────────────────────────────
+
+type FilterBarProps = {
+  category: ChallengeCategory
+  difficulty: ChallengeDifficulty | 'all'
+  onCategory: (c: ChallengeCategory) => void
+  onDifficulty: (d: ChallengeDifficulty | 'all') => void
 }
 
-// ── Authenticated view (matches Studio / Submissions aesthetic) ───────────────
-
-const DIFFICULTY_ORDER: ChallengeDifficulty[] = ['junior', 'intermediate', 'senior']
-
-function filterByDifficulty(list: Challenge[], difficulty: ChallengeDifficulty | 'all'): Challenge[] {
-  if (difficulty === 'all') return list
-  return list.filter((c) => c.difficulty === difficulty)
-}
-
-function ChallengesAppView({ challenges, isAuthenticated, submissionStatusMap = {} }: Props) {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const pathname = usePathname()
-  const rawTab = searchParams.get('tab')
-  const rawDiff = searchParams.get('difficulty')
-  const tab: ChallengeCategory = rawTab === 'backend' ? 'backend' : 'frontend'
-  const difficulty: ChallengeDifficulty | 'all' = (DIFFICULTY_ORDER as string[]).includes(rawDiff ?? '') ? rawDiff as ChallengeDifficulty : 'all'
-
-  const setParam = useCallback((key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set(key, value)
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-  }, [searchParams, router, pathname])
-
-  const frontend = filterByDifficulty(challenges.filter((c) => c.category === 'frontend'), difficulty)
-  const backend = filterByDifficulty(challenges.filter((c) => c.category === 'backend'), difficulty)
-
+function FilterBar({ category, difficulty, onCategory, onDifficulty }: FilterBarProps) {
   return (
-    <div className="px-4 py-6 sm:px-6 md:px-10 md:py-10 w-full">
-      <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Challenges</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Choose a challenge, submit a repository, earn verified proof of work.
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5">
-          {(['all', ...DIFFICULTY_ORDER] as const).map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => setParam('difficulty', d)}
-              className={[
-                'text-[11px] font-medium px-2.5 py-1 rounded-sm border transition-colors',
-                difficulty === d
-                  ? 'bg-foreground text-background border-foreground'
-                  : 'border-border text-muted-foreground hover:bg-muted',
-              ].join(' ')}
-            >
-              {d === 'all' ? 'All' : DIFFICULTY_LABEL[d]}
-            </button>
-          ))}
-        </div>
+    <div className="flex items-center justify-between gap-4 flex-wrap">
+      {/* Category pills */}
+      <div className="flex items-center gap-1">
+        {CATEGORIES.map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => onCategory(c)}
+            className={[
+              'px-4 py-2 text-xs font-medium border-b-2 transition-colors',
+              category === c
+                ? 'border-foreground text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
+            ].join(' ')}
+          >
+            {CATEGORY_LABEL[c] ?? c}
+          </button>
+        ))}
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setParam('tab', v)}>
-        <TabsList className="bg-transparent p-0 h-auto gap-0 border-0">
-          {(['frontend', 'backend'] as const).map((category) => (
-            <TabsTrigger
-              key={category}
-              value={category}
-              className="px-4 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:text-foreground text-muted-foreground bg-transparent shadow-none capitalize"
-            >
-              {CATEGORY_LABEL[category] ?? category}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        <Separator className="mt-0" />
-        <TabsContent value="frontend">
-          <ChallengeList challenges={frontend} isAuthenticated={isAuthenticated} submissionStatusMap={submissionStatusMap} />
-        </TabsContent>
-        <TabsContent value="backend">
-          <ChallengeList challenges={backend} isAuthenticated={isAuthenticated} submissionStatusMap={submissionStatusMap} />
-        </TabsContent>
-      </Tabs>
+      {/* Difficulty pills */}
+      <div className="flex items-center gap-1.5">
+        {(['all', ...DIFFICULTY_ORDER] as const).map((d) => (
+          <button
+            key={d}
+            type="button"
+            onClick={() => onDifficulty(d)}
+            className={[
+              'text-[11px] font-medium px-2.5 py-1 rounded-sm border transition-colors',
+              difficulty === d
+                ? 'bg-foreground text-background border-foreground'
+                : 'border-border text-muted-foreground hover:bg-muted',
+            ].join(' ')}
+          >
+            {d === 'all' ? 'All' : DIFFICULTY_LABEL[d]}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
 
-// ── Public marketing view (matches why / how-it-works aesthetic) ──────────────
+// ── Challenge list ────────────────────────────────────────────────────────────
 
-function ChallengesMarketingView({ challenges, isAuthenticated, submissionStatusMap = {} }: Props) {
+type ChallengeListProps = {
+  challenges: Challenge[]
+  isAuthenticated: boolean
+  submissionStatusMap: Record<string, SubmissionStatus>
+  listKey: string
+}
+
+function ChallengeList({ challenges, isAuthenticated, submissionStatusMap, listKey }: ChallengeListProps) {
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={listKey}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -4 }}
+        transition={{ duration: 0.15 }}
+        className="flex flex-col gap-3 mt-6 min-h-[120px]"
+      >
+        {challenges.length === 0 ? (
+          <motion.p variants={fadeUp} className="text-sm text-muted-foreground">
+            No challenges in this category.
+          </motion.p>
+        ) : (
+          challenges.map((challenge, i) => (
+            <motion.div
+              key={challenge.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.12, delay: i * 0.04 }}
+            >
+              <ChallengeCard
+                challenge={challenge}
+                isAuthenticated={isAuthenticated}
+                submissionStatus={submissionStatusMap[challenge.id]}
+              />
+            </motion.div>
+          ))
+        )}
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
+export function ChallengesPublicPage({ challenges, isAuthenticated, submissionStatusMap = {} }: Props) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
-  const rawTab = searchParams.get('tab')
-  const rawDiff = searchParams.get('difficulty')
-  const tab: ChallengeCategory = rawTab === 'backend' ? 'backend' : 'frontend'
-  const difficulty: ChallengeDifficulty | 'all' = (DIFFICULTY_ORDER as string[]).includes(rawDiff ?? '') ? rawDiff as ChallengeDifficulty : 'all'
+  const [, startTransition] = useTransition()
 
-  const setParam = useCallback((key: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set(key, value)
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-  }, [searchParams, router, pathname])
+  // Local state drives instant filtering — URL is kept in sync but never blocks UI
+  const [category, setCategory] = useState<ChallengeCategory>(
+    searchParams.get('tab') === 'backend' ? 'backend' : 'frontend',
+  )
+  const [difficulty, setDifficulty] = useState<ChallengeDifficulty | 'all'>(
+    (DIFFICULTY_ORDER as string[]).includes(searchParams.get('difficulty') ?? '')
+      ? (searchParams.get('difficulty') as ChallengeDifficulty)
+      : 'all',
+  )
 
-  const frontend = filterByDifficulty(challenges.filter((c) => c.category === 'frontend'), difficulty)
-  const backend = filterByDifficulty(challenges.filter((c) => c.category === 'backend'), difficulty)
+  // Sync state → URL without blocking the UI
+  useEffect(() => {
+    startTransition(() => {
+      const params = new URLSearchParams()
+      params.set('tab', category)
+      if (difficulty !== 'all') params.set('difficulty', difficulty)
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    })
+  }, [category, difficulty, pathname, router])
+
+  const filtered = filterChallenges(challenges, category, difficulty)
+  const listKey = `${category}-${difficulty}`
 
   return (
     <div className="bg-background">
@@ -210,9 +213,8 @@ function ChallengesMarketingView({ challenges, isAuthenticated, submissionStatus
           </p>
           <div className="flex items-center justify-center gap-3">
             <Link
-              href="/sign-in"
-              className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none hover:opacity-90 transition-opacity"
-              style={{ background: 'var(--foreground)', color: 'var(--background)' }}
+              href={isAuthenticated ? '/submit' : '/sign-in'}
+              className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none bg-foreground text-background hover:opacity-90 transition-opacity"
             >
               Get started
             </Link>
@@ -240,45 +242,20 @@ function ChallengesMarketingView({ challenges, isAuthenticated, submissionStatus
             No surprises. No ambiguity. The report reflects what was actually in your repository.
           </p>
 
-          <Tabs value={tab} onValueChange={(v) => setParam('tab', v as ChallengeCategory)}>
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <TabsList className="bg-transparent p-0 h-auto gap-0 border-0 mb-0">
-                {(['frontend', 'backend'] as const).map((category) => (
-                  <TabsTrigger
-                    key={category}
-                    value={category}
-                    className="px-4 py-2 text-xs font-medium rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:text-foreground text-muted-foreground bg-transparent shadow-none"
-                  >
-                    {CATEGORY_LABEL[category] ?? category}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              <div className="flex items-center gap-1.5 pb-2">
-                {(['all', ...DIFFICULTY_ORDER] as const).map((d) => (
-                  <button
-                    key={d}
-                    type="button"
-                    onClick={() => setParam('difficulty', d)}
-                    className={[
-                      'text-[11px] font-medium px-2.5 py-1 rounded-sm border transition-colors',
-                      difficulty === d
-                        ? 'bg-foreground text-background border-foreground'
-                        : 'border-border text-muted-foreground hover:bg-muted',
-                    ].join(' ')}
-                  >
-                    {d === 'all' ? 'All' : DIFFICULTY_LABEL[d]}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <Separator className="mt-0" />
-            <TabsContent value="frontend">
-              <ChallengeList challenges={frontend} isAuthenticated={isAuthenticated} submissionStatusMap={submissionStatusMap} />
-            </TabsContent>
-            <TabsContent value="backend">
-              <ChallengeList challenges={backend} isAuthenticated={isAuthenticated} submissionStatusMap={submissionStatusMap} />
-            </TabsContent>
-          </Tabs>
+          <FilterBar
+            category={category}
+            difficulty={difficulty}
+            onCategory={setCategory}
+            onDifficulty={setDifficulty}
+          />
+          <div className="border-b border-border" />
+
+          <ChallengeList
+            challenges={filtered}
+            isAuthenticated={isAuthenticated}
+            submissionStatusMap={submissionStatusMap}
+            listKey={listKey}
+          />
         </div>
       </section>
 
@@ -308,35 +285,27 @@ function ChallengesMarketingView({ challenges, isAuthenticated, submissionStatus
       </section>
 
       {/* ── CLOSING CTA ── */}
-      <section
-        className="min-h-screen flex flex-col justify-center px-6 py-24 border-t border-border"
-        style={{ background: 'var(--foreground)' }}
-      >
+      <section className="min-h-screen flex flex-col justify-center px-6 py-24 border-t border-border bg-foreground">
         <div className="max-w-4xl mx-auto w-full">
           <SectionLabel text="Ready" light />
-          <h2
-            className="text-5xl md:text-7xl font-bold tracking-tight leading-tight mb-10 max-w-3xl"
-            style={{ color: 'var(--background)' }}
-          >
+          <h2 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight mb-10 max-w-3xl text-background">
             Connect. Submit. Get verified.
           </h2>
           <div className="flex items-center gap-3 mb-6">
             <Link
-              href="/sign-in"
-              className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none hover:opacity-90 transition-opacity"
-              style={{ background: 'var(--background)', color: 'var(--foreground)' }}
+              href={isAuthenticated ? '/submit' : '/sign-in'}
+              className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none bg-background text-foreground hover:opacity-90 transition-opacity"
             >
               Get started
             </Link>
             <Link
               href="/example-report"
-              className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none border hover:bg-white/10 transition-colors"
-              style={{ borderColor: 'rgba(255,255,255,0.3)', color: 'var(--background)' }}
+              className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none border border-white/30 text-background hover:bg-white/10 transition-colors"
             >
               See an example report
             </Link>
           </div>
-          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          <p className="text-sm text-white/50">
             Free to start. No credit card required.
           </p>
         </div>
@@ -344,10 +313,4 @@ function ChallengesMarketingView({ challenges, isAuthenticated, submissionStatus
 
     </div>
   )
-}
-
-// ── Entry point ───────────────────────────────────────────────────────────────
-
-export function ChallengesPublicPage({ challenges, isAuthenticated, submissionStatusMap }: Props) {
-  return <ChallengesMarketingView challenges={challenges} isAuthenticated={isAuthenticated} submissionStatusMap={submissionStatusMap} />
 }

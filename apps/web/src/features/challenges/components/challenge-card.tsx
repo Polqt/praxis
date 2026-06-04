@@ -1,14 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { motion } from 'framer-motion'
 import { IconCircleCheck } from '@tabler/icons-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DIFFICULTY_CLASS, DIFFICULTY_LABEL } from '@/features/challenges/constants'
 import { buildAuthRedirect } from '@/shared/utils/build-auth-redirect'
 import { stripMarkdown } from '@/features/challenges/utils'
-import { fadeUp } from '@/lib/animations'
 import type { Challenge } from '@/features/challenges/types'
 
 type SubmissionStatus = 'verified' | 'in-progress' | 'attempted'
@@ -34,7 +32,7 @@ export function ChallengeCard({ challenge, isAuthenticated, submissionStatus }: 
   const statusBadge = submissionStatus ? STATUS_BADGE[submissionStatus] : null
 
   return (
-    <motion.div variants={fadeUp} className={`rounded-lg border bg-card ${isVerified ? 'border-green-200' : ''}`}>
+    <div className={`rounded-lg border bg-card ${isVerified ? 'border-green-200' : ''}`}>
       <div className="px-5 py-4">
         <div className="flex items-start justify-between gap-3">
           <p className="text-sm font-semibold">{challenge.title}</p>
@@ -66,6 +64,6 @@ export function ChallengeCard({ challenge, isAuthenticated, submissionStatus }: 
           </Link>
         </Button>
       </div>
-    </motion.div>
+    </div>
   )
 }
