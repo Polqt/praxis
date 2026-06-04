@@ -6,6 +6,7 @@ import { deriveEngineerTitle } from '../utils/derive-engineer-title'
 import { deriveEngineerTitleTooltip } from '../utils/derive-engineer-title'
 import { apiClient } from '@/lib/api'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { CopyProfileUrlButton } from './copy-profile-url-button'
 import type { VerifiedSkill } from '../types'
 
 type Props = {
@@ -48,7 +49,10 @@ export function ProfileHero({
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold tracking-tight">@{username}</h1>
+      <div className="flex items-center gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight">@{username}</h1>
+        <CopyProfileUrlButton />
+      </div>
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
