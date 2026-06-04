@@ -25,3 +25,14 @@ export const VERDICT_CLASS: Record<string, string> = {
   insufficient: 'text-amber-700 bg-amber-50 border-amber-200',
   failed: 'text-red-700 bg-red-50 border-red-200',
 }
+
+export const SKILL_TRACK_MAP: Record<string, string> = {
+  'API Design': 'Backend Engineering',
+  'Authentication': 'Backend Engineering',
+  'Database Design': 'Backend Engineering',
+  'Testing': 'Backend Engineering',
+  'Documentation': 'Backend Engineering',
+  'Deployment': 'Backend Engineering',
+  'Architecture': 'Backend Engineering',
+  'Security': 'Backend Engineering',
+}
