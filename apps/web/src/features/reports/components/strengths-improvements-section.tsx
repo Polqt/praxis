@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { IconArrowUpRight, IconArrowRight } from '@tabler/icons-react'
 import { staggerContainer, fadeUp } from '@/lib/animations'
+import { SECTION_LABEL_CLASS } from '@/features/reports/constants'
 
 function categorySlug(text: string): string {
   return text.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
@@ -31,10 +32,7 @@ function ItemList({ items, icon, empty, categories }: ItemListProps) {
           <div key={i} className="flex items-start gap-2">
             {icon}
             {cat ? (
-              <Link
-                href={`#${categorySlug(cat)}`}
-                className="text-sm hover:underline underline-offset-2"
-              >
+              <Link href={`#${categorySlug(cat)}`} className="text-sm hover:underline underline-offset-2">
                 {item}
               </Link>
             ) : (
@@ -60,11 +58,11 @@ export function StrengthsImprovementsSection({ strengths, improvements, derived,
       variants={staggerContainer}
       initial="hidden"
       animate="visible"
-      className="grid grid-cols-1 md:grid-cols-2 gap-6"
+      className="grid grid-cols-1 md:grid-cols-2 gap-8"
     >
-      <motion.div variants={fadeUp} className="rounded-lg border bg-card p-5">
-        <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-1">Strengths</p>
-        {derived && <p className="text-[11px] text-muted-foreground mb-3">Derived from rubric results</p>}
+      <motion.div variants={fadeUp}>
+        <p className={`${SECTION_LABEL_CLASS} mb-1`}>Strengths</p>
+        {derived && <p className="text-xs text-muted-foreground mb-3">Derived from rubric results</p>}
         {!derived && <div className="mb-3" />}
         <ItemList
           items={strengths}
@@ -73,9 +71,9 @@ export function StrengthsImprovementsSection({ strengths, improvements, derived,
           categories={categories}
         />
       </motion.div>
-      <motion.div variants={fadeUp} className="rounded-lg border bg-card p-5">
-        <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-1">Improvements</p>
-        {derived && <p className="text-[11px] text-muted-foreground mb-3">Derived from rubric results</p>}
+      <motion.div variants={fadeUp}>
+        <p className={`${SECTION_LABEL_CLASS} mb-1`}>Improvements</p>
+        {derived && <p className="text-xs text-muted-foreground mb-3">Derived from rubric results</p>}
         {!derived && <div className="mb-3" />}
         <ItemList
           items={improvements}

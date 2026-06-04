@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { IconAlertTriangle, IconChevronDown, IconChevronRight } from '@tabler/icons-react'
 import { Progress } from '@/components/ui/progress'
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
-import { CATEGORY_STATUS_CLASS, CATEGORY_FIX_INSTRUCTIONS } from '@/features/reports/constants'
+import { CATEGORY_STATUS_CLASS, CATEGORY_FIX_INSTRUCTIONS, SECTION_LABEL_CLASS } from '@/features/reports/constants'
 import { formatSignalKey } from '@/features/reports/utils/format-signal-key'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import type { ScoreItem } from '@/features/reports/types'
@@ -49,7 +49,7 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
   if (scores.length === 0) {
     return (
       <div>
-        <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-6">Rubric results</p>
+        <p className={`${SECTION_LABEL_CLASS} mb-6`}>Rubric results</p>
         <div className="rounded-lg border p-8 text-center">
           <p className="text-sm text-muted-foreground">No category scores available.</p>
         </div>
@@ -59,7 +59,7 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
 
   return (
     <div>
-      <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-6">Rubric results</p>
+      <p className={`${SECTION_LABEL_CLASS} mb-6`}>Rubric results</p>
       <motion.div
         variants={staggerContainer}
         initial="hidden"
@@ -91,12 +91,12 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
               <div className="mb-3">
                 <Progress
                   value={scorePercent}
-                  className={`h-1 [&>[data-slot=progress-indicator]]:transition-none ${
+                  className={`h-1 *:data-[slot=progress-indicator]:transition-none ${
                     item.score >= 8
-                      ? '[&>[data-slot=progress-indicator]]:bg-green-500'
+                      ? '*:data-[slot=progress-indicator]:bg-green-500'
                       : item.score >= 6
-                        ? '[&>[data-slot=progress-indicator]]:bg-amber-500'
-                        : '[&>[data-slot=progress-indicator]]:bg-red-500'
+                        ? '*:data-[slot=progress-indicator]:bg-amber-500'
+                        : '*:data-[slot=progress-indicator]:bg-red-500'
                   }`}
                 />
               </div>

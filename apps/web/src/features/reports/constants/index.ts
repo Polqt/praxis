@@ -1,5 +1,7 @@
 import type { ReportStatus, Report } from '@/features/reports/types'
 
+export const SECTION_LABEL_CLASS = 'text-xs font-medium uppercase tracking-wider text-muted-foreground'
+
 export const REPORT_DISCLAIMER_TEXT =
   'Praxis uses deterministic repository signals. Reports are evidence-based, not a replacement for human review.'
 

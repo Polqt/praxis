@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { IconAlertTriangle, IconBulb, IconSearch, IconEyeOff, IconChecklist, IconArrowRight } from '@tabler/icons-react'
-import { CATEGORY_FIX_INSTRUCTIONS } from '@/features/reports/constants'
+import { CATEGORY_FIX_INSTRUCTIONS, SECTION_LABEL_CLASS } from '@/features/reports/constants'
 import { fadeUp } from '@/lib/animations'
 import type { ScoreItem, ReportStatus } from '@/features/reports/types'
 
@@ -44,7 +44,7 @@ export function ReportClaritySection({ status, scores, allCitedFiles, challengeI
 
   return (
     <div className="mt-10 flex flex-col gap-4">
-      <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground">Verification analysis</p>
+      <p className={SECTION_LABEL_CLASS}>Verification analysis</p>
 
       {/* Why this did not verify */}
       <Block icon={<IconAlertTriangle size={14} />} title="Why this did not verify">

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { IconArrowUpRight } from '@tabler/icons-react'
 import { fadeUp } from '@/lib/animations'
+import { SECTION_LABEL_CLASS } from '@/features/reports/constants'
 import { deriveNextBestFixes } from '../utils/derive-next-best-fixes'
 import type { ScoreItem } from '../types'
 
@@ -18,9 +19,7 @@ export function NextBestFixesSection({ scores }: Props) {
     <motion.div variants={fadeUp} className="mt-6 rounded-lg border bg-card p-5">
       <div className="flex items-center gap-2 mb-3">
         <IconArrowUpRight size={15} className="text-primary shrink-0" />
-        <p className="text-xs uppercase tracking-widest font-semibold text-muted-foreground">
-          Fastest path to verification
-        </p>
+        <p className={SECTION_LABEL_CLASS}>Fastest path to verification</p>
       </div>
       <ol className="space-y-2">
         {fixes.map((fix, index) => (
