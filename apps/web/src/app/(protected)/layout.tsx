@@ -11,11 +11,16 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user) redirect('/sign-in?next=/studio')
 
-  let localUser: User
-  try {
-    localUser = await serverApiFetch<User>('/users/me')
-  } catch {
-    redirect('/sign-in?next=/studio')
+  // Retry once — the API may be briefly unavailable immediately after OAuth callback
+  let localUser: User = null!
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      localUser = await serverApiFetch<User>('/users/me')
+      break
+    } catch {
+      if (attempt === 1) redirect('/sign-in?next=/studio')
+      await new Promise((r) => setTimeout(r, 500))
+    }
   }
 
   const githubAccount = await serverApiFetch<GitHubAccount>('/github/account').catch(

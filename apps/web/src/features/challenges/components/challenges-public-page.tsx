@@ -240,8 +240,8 @@ function ChallengesMarketingView({ challenges, isAuthenticated, submissionStatus
             No surprises. No ambiguity. The report reflects what was actually in your repository.
           </p>
 
-          <div className="flex items-center justify-between gap-4 mb-0 flex-wrap">
-            <Tabs value={tab} onValueChange={(v) => setParam('tab', v as ChallengeCategory)} className="flex-1">
+          <Tabs value={tab} onValueChange={(v) => setParam('tab', v as ChallengeCategory)}>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
               <TabsList className="bg-transparent p-0 h-auto gap-0 border-0 mb-0">
                 {(['frontend', 'backend'] as const).map((category) => (
                   <TabsTrigger
@@ -253,27 +253,25 @@ function ChallengesMarketingView({ challenges, isAuthenticated, submissionStatus
                   </TabsTrigger>
                 ))}
               </TabsList>
-            </Tabs>
-            <div className="flex items-center gap-1.5 pb-2">
-              {(['all', ...DIFFICULTY_ORDER] as const).map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => setParam('difficulty', d)}
-                  className={[
-                    'text-[11px] font-medium px-2.5 py-1 rounded-sm border transition-colors',
-                    difficulty === d
-                      ? 'bg-foreground text-background border-foreground'
-                      : 'border-border text-muted-foreground hover:bg-muted',
-                  ].join(' ')}
-                >
-                  {d === 'all' ? 'All' : DIFFICULTY_LABEL[d]}
-                </button>
-              ))}
+              <div className="flex items-center gap-1.5 pb-2">
+                {(['all', ...DIFFICULTY_ORDER] as const).map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setParam('difficulty', d)}
+                    className={[
+                      'text-[11px] font-medium px-2.5 py-1 rounded-sm border transition-colors',
+                      difficulty === d
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'border-border text-muted-foreground hover:bg-muted',
+                    ].join(' ')}
+                  >
+                    {d === 'all' ? 'All' : DIFFICULTY_LABEL[d]}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-          <Separator className="mb-0" />
-          <Tabs value={tab} onValueChange={(v) => setParam('tab', v as ChallengeCategory)}>
+            <Separator className="mt-0" />
             <TabsContent value="frontend">
               <ChallengeList challenges={frontend} isAuthenticated={isAuthenticated} submissionStatusMap={submissionStatusMap} />
             </TabsContent>
