@@ -25,6 +25,8 @@ function compactBody(body: string) {
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
+  const tokenHash = searchParams.get('token_hash')
+  const type = searchParams.get('type')
   const error = searchParams.get('error')
   const nextPath = safeInternalPath(searchParams.get('next'))
 
@@ -33,8 +35,8 @@ export async function GET(request: NextRequest) {
     return signInRedirect(origin, 'auth_failed', nextPath)
   }
 
-  if (!code) {
-    console.warn('[auth/callback] Missing OAuth code', { nextPath })
+  if (!code && !tokenHash) {
+    console.warn('[auth/callback] Missing OAuth code and token_hash', { nextPath })
     return signInRedirect(origin, 'missing_code', nextPath)
   }
 
@@ -57,10 +59,26 @@ export async function GET(request: NextRequest) {
     }
   )
 
-  const { data: { session }, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+  let session: Awaited<ReturnType<typeof supabase.auth.exchangeCodeForSession>>['data']['session'] = null
+  let exchangeError: { message: string } | null = null
+
+  if (tokenHash) {
+    // Email magic link / OTP — uses verifyOtp with token_hash
+    const { data, error: err } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: (type as 'email' | 'magiclink' | 'email_change' | 'recovery') ?? 'magiclink',
+    })
+    session = data.session
+    exchangeError = err
+  } else {
+    // GitHub OAuth / PKCE — uses code exchange
+    const { data, error: err } = await supabase.auth.exchangeCodeForSession(code!)
+    session = data.session
+    exchangeError = err
+  }
 
   if (exchangeError || !session) {
-    console.warn('[auth/callback] Code exchange failed', { message: exchangeError?.message, nextPath })
+    console.warn('[auth/callback] Session exchange failed', { message: exchangeError?.message, nextPath, hasTokenHash: Boolean(tokenHash) })
     return signInRedirect(origin, 'auth_failed', nextPath)
   }
 
