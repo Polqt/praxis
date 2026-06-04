@@ -129,6 +129,29 @@ export default async function PublicProofPage({ params }: Props) {
               {report.summary}
             </p>
           )}
+
+          {/* Compact test execution summary */}
+          {(raw as { executionSummary?: { passed: number; failed: number; language: string; framework: string | null; durationMs: number | null; timedOut: boolean } | null }).executionSummary && (() => {
+            const ex = (raw as { executionSummary: { passed: number; failed: number; language: string; framework: string | null; durationMs: number | null; timedOut: boolean } }).executionSummary
+            const lang = ex.framework ?? ex.language
+            const duration = ex.durationMs ? `${(ex.durationMs / 1000).toFixed(1)}s` : null
+            return (
+              <div className="flex items-center gap-3 mt-4 flex-wrap">
+                {ex.timedOut ? (
+                  <span className="text-[11px] px-2.5 py-1 rounded-sm border border-amber-200 bg-amber-50 text-amber-700">Execution timed out</span>
+                ) : (
+                  <>
+                    {ex.passed > 0 && <span className="text-[11px] px-2.5 py-1 rounded-sm border border-green-200 bg-green-50 text-green-700">{ex.passed} tests passed</span>}
+                    {ex.failed > 0 && <span className="text-[11px] px-2.5 py-1 rounded-sm border border-red-200 bg-red-50 text-red-700">{ex.failed} failed</span>}
+                    {ex.passed === 0 && ex.failed === 0 && <span className="text-[11px] px-2.5 py-1 rounded-sm border border-border bg-muted text-muted-foreground">No tests detected</span>}
+                  </>
+                )}
+                <span className="text-[11px] px-2.5 py-1 rounded-sm border border-border bg-muted text-muted-foreground uppercase tracking-wider">{lang}</span>
+                {duration && <span className="text-[11px] text-muted-foreground">{duration}</span>}
+              </div>
+            )
+          })()}
+
           <ProofSafetyLabels status={report.status} />
         </div>
       </section>

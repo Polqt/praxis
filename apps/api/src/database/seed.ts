@@ -135,8 +135,8 @@ async function seed() {
       { trackId: frontendTrack.id, name: 'State Management', category: 'State Management' },
       { trackId: frontendTrack.id, name: 'Accessibility', category: 'Accessibility' },
       { trackId: frontendTrack.id, name: 'Styling', category: 'Styling' },
-      { trackId: frontendTrack.id, name: 'Frontend Performance', category: 'Performance' },
-      { trackId: frontendTrack.id, name: 'Frontend Testing', category: 'Testing' },
+      { trackId: frontendTrack.id, name: 'Performance', category: 'Performance' },
+      { trackId: frontendTrack.id, name: 'Frontend Testing', category: 'Frontend Testing' },
     ])
     .onConflictDoNothing()
 
