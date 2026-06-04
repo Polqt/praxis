@@ -183,7 +183,7 @@ export function LeaderboardClient({ entries: initialEntries }: Props) {
           <p className="text-[11px] text-muted-foreground px-1 pt-2 pb-0">
             Rankings update automatically after each verification completes.
           </p>
-          {rankLoaded && rank !== null && (
+          {rankLoaded && rank !== null && period === 'all' && (
             <div className="mt-2 px-1">
               <span className="text-[11px] text-muted-foreground">
                 You are ranked <span className="font-semibold text-foreground">#{rank}</span> all time.
@@ -204,7 +204,7 @@ export function LeaderboardClient({ entries: initialEntries }: Props) {
                 ))}
               </motion.div>
             )}
-            {rankLoaded && rank !== null && rank > entries.length && (
+            {rankLoaded && rank !== null && rank > entries.length && period === 'all' && (
               <div className="flex items-center gap-3 sm:gap-5 px-4 sm:px-6 py-3 border-t border-dashed border-border bg-muted/20">
                 <div className="w-8 flex justify-center shrink-0">
                   <span className="text-sm font-mono text-muted-foreground">#{rank}</span>
