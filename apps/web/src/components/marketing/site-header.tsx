@@ -40,13 +40,6 @@ export function SiteHeader() {
               </Link>
               <span className="text-border select-none">|</span>
               <Link
-                href="/challenges"
-                className="text-[12px] font-medium uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors px-4 py-1"
-              >
-                CHALLENGES
-              </Link>
-              <span className="text-border select-none">|</span>
-              <Link
                 href="/how-it-works"
                 className="text-[12px] font-medium uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors px-4 py-1"
               >
@@ -113,7 +106,6 @@ export function SiteHeader() {
             <nav className="flex flex-col">
               {[
                 { href: '/why', label: 'WHY' },
-                { href: '/challenges', label: 'CHALLENGES' },
                 { href: '/how-it-works', label: 'HOW' },
                 { href: '/leaderboard', label: 'LEADERBOARD' },
                 { href: '/proof', label: 'PROOF' },
