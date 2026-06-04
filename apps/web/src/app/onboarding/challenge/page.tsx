@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { DIFFICULTY_LABEL, DIFFICULTY_CLASS } from '@/features/challenges/constants'
 import { stripMarkdown } from '@/features/challenges/utils'
 import { CATEGORY_LABEL } from '@/features/submissions/constants'
+import { ConnectGitHubButton } from '@/features/github/components/connect-github-button'
+import { IconBrandGithub } from '@tabler/icons-react'
 import type { ProjectChallenge, User } from '@praxis/shared'
 
 const DIFFICULTY_MAP: Record<string, string> = {
@@ -25,9 +27,13 @@ export default async function OnboardingChallengePage() {
 
   if (!user.username) redirect('/onboarding/username')
 
-  const challenges = await serverApiFetch<ProjectChallenge[]>('/challenges').catch(() => [] as ProjectChallenge[])
+  const [challenges, githubAccount] = await Promise.all([
+    serverApiFetch<ProjectChallenge[]>('/challenges').catch(() => [] as ProjectChallenge[]),
+    serverApiFetch<{ connected: boolean }>('/github/account').catch(() => ({ connected: false })),
+  ])
 
-  // Sort: beginner first so the recommended pick is an easy one
+  const githubConnected = githubAccount.connected
+
   const sorted = [...challenges].sort((a, b) => {
     const order: Record<string, number> = { beginner: 0, intermediate: 1, advanced: 2 }
     return (order[a.difficulty] ?? 1) - (order[b.difficulty] ?? 1)
@@ -43,9 +49,20 @@ export default async function OnboardingChallengePage() {
         </div>
 
         <h1 className="text-2xl font-semibold tracking-tight mb-2">Pick your first challenge</h1>
-        <p className="text-sm text-muted-foreground mb-8">
+        <p className="text-sm text-muted-foreground mb-6">
           Choose a challenge that matches a project you&apos;ve already built. You&apos;ll submit a GitHub repository and get a verified report.
         </p>
+
+        {!githubConnected && (
+          <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 mb-6">
+            <IconBrandGithub size={16} className="text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm text-amber-800 font-medium">You&apos;ll need GitHub connected to submit</p>
+              <p className="text-xs text-amber-700 mt-0.5 mb-2">Connect it now or on the next step.</p>
+              <ConnectGitHubButton nextPath="/onboarding/challenge" label="Connect GitHub" />
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col gap-3 mb-6">
           {sorted.map((challenge, i) => {
@@ -54,7 +71,7 @@ export default async function OnboardingChallengePage() {
             return (
               <Link
                 key={challenge.id}
-                href={`/submit?challengeId=${challenge.id}`}
+                href={isRecommended ? `/submit?challengeId=${challenge.id}&recommended=1` : `/submit?challengeId=${challenge.id}`}
                 className={[
                   'rounded-lg border bg-card px-5 py-4 hover:bg-accent/30 transition-colors',
                   isRecommended ? 'border-primary/50 ring-1 ring-primary/20' : '',
