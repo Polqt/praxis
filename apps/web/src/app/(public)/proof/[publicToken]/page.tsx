@@ -132,7 +132,7 @@ export default async function PublicProofPage({ params }: Props) {
 
           {/* Compact test execution summary */}
           {(raw as { executionSummary?: { passed: number; failed: number; language: string; framework: string | null; durationMs: number | null; timedOut: boolean } | null }).executionSummary && (() => {
-            const ex = (raw as { executionSummary: { passed: number; failed: number; language: string; framework: string | null; durationMs: number | null; timedOut: boolean } }).executionSummary
+            const ex = (raw as unknown as { executionSummary: { passed: number; failed: number; language: string; framework: string | null; durationMs: number | null; timedOut: boolean } }).executionSummary
             const lang = ex.framework ?? ex.language
             const duration = ex.durationMs ? `${(ex.durationMs / 1000).toFixed(1)}s` : null
             return (
