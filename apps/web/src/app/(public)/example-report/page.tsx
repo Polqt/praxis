@@ -9,12 +9,7 @@ export const metadata: Metadata = {
 
 export default function ExampleReportPage() {
   return (
-    <div>
-      <div className="w-full bg-muted/60 border-b border-border py-2.5">
-        <p className="text-center text-xs text-muted-foreground">
-          This is an example verification report. It does not represent a real submission.
-        </p>
-      </div>
+    <div className="pt-14">
       <ReportClient
         report={exampleReport}
         backHref="/challenges"

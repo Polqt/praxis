@@ -1,8 +1,5 @@
-'use client'
-
-import { useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, ArrowLeft, ArrowRight } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import {
   Accordion,
@@ -109,11 +106,11 @@ function MockupWindow() {
               Verified project
             </p>
             <p className="text-base font-mono text-foreground font-medium">jordan-lee/saas-platform</p>
-            <p className="text-sm text-muted-foreground mt-1.5">847 commits · May 2025</p>
+            <p className="text-sm text-muted-foreground mt-1.5">847 commits / May 2025</p>
           </div>
         </div>
 
-        {/* Right — scores */}
+        {/* Right side scores */}
         <div className="p-10">
           <div className="flex items-center justify-between mb-8">
             <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-medium">
@@ -127,9 +124,9 @@ function MockupWindow() {
 
           <div className="space-y-6">
             {[
-              { label: 'Original authorship', score: 94 },
-              { label: 'Production architecture', score: 88 },
-              { label: 'Real-world complexity', score: 81 },
+              { label: 'Code architecture', score: 88 },
+              { label: 'Test evidence', score: 76 },
+              { label: 'Deployment readiness', score: 81 },
             ].map(({ label, score }) => (
               <div key={label}>
                 <div className="flex items-center justify-between mb-2">
@@ -148,8 +145,8 @@ function MockupWindow() {
 
           <div className="border-t border-border mt-8 pt-7">
             <p className="text-xs text-muted-foreground leading-relaxed text-center">
-              Original commit history spanning 14 months. No AI-generated boilerplate detected.
-              Production-grade architecture confirmed.
+              Generated from repository evidence: source files, tests, CI,
+              deployment configuration, and cited implementation patterns.
             </p>
           </div>
         </div>
@@ -158,31 +155,7 @@ function MockupWindow() {
   )
 }
 
-const testimonials = [
-  {
-    quote:
-      'I spent six months building a production app. Praxis was the first tool that let me show exactly what I built and why it mattered. Not a badge. Actual proof.',
-    name: 'Marcus Reid',
-    role: 'Backend engineer',
-  },
-  {
-    quote:
-      'Every recruiter asked me to do another take-home test. I sent them my Praxis report instead. Two of them skipped the coding round entirely.',
-    name: 'Seo-Yeon Park',
-    role: 'Full-stack developer',
-  },
-  {
-    quote:
-      'The verification report showed things I had not thought to mention in my resume. Architectural decisions, dependency choices, commit discipline. It made my work legible.',
-    name: 'Diego Ferreira',
-    role: 'Senior engineer, previously at fintech startup',
-  },
-]
-
-function TestimonySection() {
-  const [index, setIndex] = useState(0)
-  const t = testimonials[index]
-
+function ShareWorkflowSection() {
   return (
     <section className="bg-background border-t border-border md:min-h-screen flex flex-col">
       <div className="flex flex-1 md:min-h-screen">
@@ -191,33 +164,32 @@ function TestimonySection() {
             <HalftoneDots width={260} height={280} opacity={0.18} />
           </div>
           <p className="font-heading font-bold text-6xl text-muted-foreground/20 leading-none select-none mt-4">
-            {index + 1}/{testimonials.length}
+            URL
           </p>
         </div>
 
         <div className="flex-1 px-10 md:px-16 py-24 md:py-0 flex flex-col justify-center">
-          <SectionLabel text="What verified developers say" />
-          <blockquote className="font-heading font-light text-3xl md:text-4xl leading-relaxed text-foreground max-w-2xl mb-8 transition-all duration-300">
-            {t.quote}
-          </blockquote>
-          <p className="text-sm text-muted-foreground mb-6">
-            {t.name}, {t.role}
+          <SectionLabel text="Where the proof goes" />
+          <h2 className="font-heading font-light text-4xl md:text-5xl tracking-tight text-foreground mb-8 leading-[1.1] max-w-2xl">
+            One public link for the places hiring teams already look.
+          </h2>
+          <p className="text-base text-muted-foreground leading-relaxed max-w-xl mb-10">
+            Praxis does not ask employers to adopt a new system first. Your
+            report is a public URL you can add to the existing hiring flow.
           </p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIndex((i) => (i - 1 + testimonials.length) % testimonials.length)}
-              aria-label="Previous"
-              className="inline-flex items-center justify-center w-9 h-9 border border-border rounded-none text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <ArrowLeft size={15} />
-            </button>
-            <button
-              onClick={() => setIndex((i) => (i + 1) % testimonials.length)}
-              aria-label="Next"
-              className="inline-flex items-center justify-center w-9 h-9 border border-border rounded-none text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <ArrowRight size={15} />
-            </button>
+          <div className="grid sm:grid-cols-2 gap-px bg-border max-w-2xl border border-border">
+            {[
+              'Resume project section',
+              'LinkedIn featured links',
+              'Portfolio case studies',
+              'Job application forms',
+              'Recruiter outreach',
+              'Take-home alternatives',
+            ].map((item) => (
+              <div key={item} className="bg-background px-5 py-4">
+                <p className="text-sm font-medium text-foreground">{item}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -234,14 +206,15 @@ export default function LandingPage() {
 
           <div className="max-w-3xl mx-auto">
             <h1 className="font-heading font-bold tracking-tight text-foreground leading-tight mb-6 pb-2 text-4xl md:text-5xl lg:text-6xl">
-              <span className="block">Developers build real things.</span>
-              <span className="block">Hiring systems cannot see them.</span>
+              <span className="block">Turn your GitHub project</span>
+              <span className="block">into a shareable proof report.</span>
             </h1>
           </div>
 
           <p className="max-w-lg text-base text-muted-foreground leading-relaxed mb-8 mx-auto text-center">
-            Connect your GitHub, submit your real projects, get an independent
-            verification report. Share proof that speaks for itself.
+            Praxis analyzes your code, tests, architecture, and deployment
+            evidence, then creates a public URL you can add to resumes,
+            LinkedIn, portfolios, and job applications.
           </p>
 
           <div className="flex items-center justify-center gap-3 mb-14">
@@ -277,7 +250,7 @@ export default function LandingPage() {
           <div className="w-full md:w-1/2 border-l border-border px-10 md:px-16 py-24 flex flex-col justify-center">
             <SectionLabel text="The Problem" />
             <h2 className="font-heading font-light text-4xl md:text-5xl tracking-tight text-foreground mb-10 leading-[1.1]">
-              Resumes list React.<br />Everyone lists React.<br />The signal is gone.
+              Resumes list skills.<br />Projects show evidence.<br />Hiring needs both.
             </h2>
 
             <div>
@@ -285,22 +258,22 @@ export default function LandingPage() {
                 {
                   n: '01',
                   title: 'The resume problem',
-                  body: 'A resume is a document anyone can write. Applicant tracking systems reward keyword density not demonstrated ability.',
+                  body: 'A resume can say React, APIs, or PostgreSQL. It rarely shows how those skills were applied in a real codebase.',
                 },
                 {
                   n: '02',
                   title: 'The certificate problem',
-                  body: 'Online certifications signal completion of a course not execution under real constraints. They have become table stakes.',
+                  body: 'Online certifications signal course completion, not execution under real constraints. They are useful context, not work evidence.',
                 },
                 {
                   n: '03',
-                  title: 'The AI problem',
-                  body: 'Any developer can ship a portfolio of polished GitHub repos in an afternoon using AI. The signal is broken.',
+                  title: 'The evidence problem',
+                  body: 'AI can help generate code quickly. Hiring teams still need to see repository evidence: tests, structure, deployment, and cited implementation details.',
                 },
               ].map(({ n, title, body }, i) => (
                 <div key={n} className={`py-7 ${i < 2 ? 'border-b border-border' : ''}`}>
                   <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground mb-1.5">
-                    {n} — {title}
+                    {n} / {title}
                   </p>
                   <p className="text-[14px] text-muted-foreground leading-relaxed">{body}</p>
                 </div>
@@ -324,17 +297,17 @@ export default function LandingPage() {
               {
                 n: '01',
                 title: 'Connect your GitHub',
-                body: 'Link your account and choose a real project you built. Not a tutorial. Not a fork. Your actual work.',
+                body: 'Link your account and choose the repository you want evaluated. Public and private repositories are supported.',
               },
               {
                 n: '02',
                 title: 'Praxis analyzes your repository',
-                body: 'Our verification engine reads commit history, code structure, and architecture. Claude provides an independent analysis.',
+                body: 'The verification engine reads repository evidence: source structure, tests, CI, deployment files, documentation, and implementation patterns.',
               },
               {
                 n: '03',
                 title: 'Your proof page goes live',
-                body: 'A permanent public URL. Share it with anyone. It shows exactly what was verified, why it passed, and what score it received.',
+                body: 'Publish a public URL that shows the score, citations, category results, and what the report did and did not verify.',
               },
             ].map(({ n, title, body }, i) => (
               <div key={n} className={`relative py-12 px-8 ${i > 0 ? 'md:border-l border-border' : ''}`}>
@@ -362,7 +335,7 @@ export default function LandingPage() {
         </SectionContainer>
       </section>
 
-      <TestimonySection />
+      <ShareWorkflowSection />
 
       <section className="bg-background border-t border-border min-h-screen flex flex-col justify-center py-24">
         <div className="max-w-3xl mx-auto w-full px-6 md:px-8 lg:px-12">
@@ -378,7 +351,7 @@ export default function LandingPage() {
               {
                 value: 'what',
                 q: 'What exactly does Praxis verify?',
-                a: 'Praxis analyzes your GitHub repository using deterministic signals: folder structure, test file presence, migration files, authentication patterns, CI configuration, documentation, and deployment evidence. The result is a scored report based on what is actually in the repository — not subjective judgment.',
+                a: 'Praxis analyzes your GitHub repository using deterministic signals: folder structure, test file presence, migration files, authentication patterns, CI configuration, documentation, deployment evidence, and cited implementation patterns. The result is a scored report based on repository evidence, not self-reported claims.',
               },
               {
                 value: 'time',
@@ -393,7 +366,7 @@ export default function LandingPage() {
               {
                 value: 'public',
                 q: 'Can hiring teams view my proof page without an account?',
-                a: 'Yes. Your proof page at praxis.dev/p/username is fully public and requires no login to view. It is designed to be shared in job applications, LinkedIn profiles, and portfolio sites.',
+                a: 'Yes. Published proof pages are fully public and require no login to view. They are designed to be shared in job applications, LinkedIn profiles, resume project sections, and portfolio sites.',
               },
               {
                 value: 'fail',
@@ -407,8 +380,8 @@ export default function LandingPage() {
               },
               {
                 value: 'ai',
-                q: 'Does Praxis detect AI-generated code?',
-                a: 'Praxis does not make claims about authorship or AI usage. It evaluates what is present in the repository: structure, tests, migrations, authentication, deployment configuration. A well-structured repository with real evidence of engineering practice scores well regardless of how it was written.',
+                q: 'Does Praxis verify authorship?',
+                a: 'Praxis does not make claims about authorship or AI usage. It evaluates what is present in the repository: structure, tests, migrations, authentication, deployment configuration, documentation, and other evidence of engineering practice.',
               },
               {
                 value: 'free',
@@ -431,14 +404,13 @@ export default function LandingPage() {
 
       <section className="border-t border-border py-24 md:min-h-screen md:py-0 flex flex-col justify-center" style={{ background: 'var(--foreground)' }}>
         <SectionContainer>
-          <SectionLabel text="Any Questions?" light />
+          <SectionLabel text="Ready" light />
 
           <h2
             className="font-heading font-light text-5xl md:text-7xl tracking-tight leading-[1.05] mb-10"
             style={{ color: 'var(--background)' }}
           >
-            <span className="block">Stop collecting.</span>
-            <span className="block">Certificates.</span>
+            <span className="block">Stop collecting certificates.</span>
             <span className="block font-bold">Start proving work.</span>
           </h2>
 

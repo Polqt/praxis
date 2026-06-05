@@ -12,7 +12,6 @@ import { VerifiedSkillsSection } from './verified-skills-section'
 import { StrengthsImprovementsSection } from './strengths-improvements-section'
 import { ReportFooter } from './report-footer'
 import { ReportClaritySection } from './report-clarity-section'
-import { ResubmitAfterFixesButton } from './resubmit-after-fixes-button'
 import {
   REPORT_DISCLAIMER_TEXT,
   REPORT_DISCLAIMER_LINK_LABEL,
@@ -49,7 +48,6 @@ export function ReportClient({
   executionSlot,
   feedbackSlot,
   twitterSlot,
-  viewCount,
 }: Props) {
   const statusConfig = STATUS_CONFIG[report.status]
   const pointsToPass = passingThreshold != null ? Math.max(0, passingThreshold - report.compositeScore) : 0
@@ -71,19 +69,17 @@ export function ReportClient({
           <IconArrowLeft size={14} />
           {backLabel}
         </Link>
-        {report.status === 'insufficient' && (
-          <ResubmitAfterFixesButton
-            challengeId={challengeId}
-            repositoryName={report.repositoryName}
-            commitSha={report.commitSha}
-          />
+        {actions && (
+          <div className="flex items-center gap-2">
+            {actions}
+          </div>
         )}
       </div>
 
       {/* Two-column layout */}
       <div className="flex gap-8 items-start">
 
-        {/* Left column — main content */}
+        {/* Left column */}
         <div className="flex-1 min-w-0">
           <motion.div variants={fadeUp}>
             <ReportHero
@@ -171,8 +167,8 @@ export function ReportClient({
           </motion.div>
         </div>
 
-        {/* Right column — sticky score card + feedback */}
-        <div className="w-72 shrink-0 self-start sticky top-10 hidden lg:flex lg:flex-col lg:gap-4">
+        {/* Right column — sticky score + feedback */}
+        <div className="w-72 shrink-0 self-start sticky top-20 hidden lg:flex lg:flex-col lg:gap-4">
 
           {/* Score card */}
           <div className="rounded-lg border bg-card p-5 flex flex-col gap-4">
@@ -210,16 +206,9 @@ export function ReportClient({
                 </div>
               </div>
             )}
-
-            {actions && (
-              <>
-                <Separator />
-                <div className="flex flex-col gap-2">{actions}</div>
-              </>
-            )}
           </div>
 
-          {/* Feedback card — moved to right column */}
+          {/* Feedback card */}
           {feedbackSlot && (
             <div className="rounded-lg border bg-card p-4">
               <p className={`${SECTION_LABEL_CLASS} mb-3`}>Report feedback</p>

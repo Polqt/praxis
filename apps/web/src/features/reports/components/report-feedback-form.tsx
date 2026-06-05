@@ -46,17 +46,17 @@ export function ReportFeedbackForm({ submissionId, challengeId }: Props) {
 
   if (submitted) {
     return (
-      <motion.div variants={fadeUp} className="rounded-lg border bg-card p-5">
-        <div className="flex items-center gap-3 mb-4">
-          <IconCheck size={16} className="text-green-500 shrink-0" />
-          <p className="text-sm text-muted-foreground">Thanks for your feedback. It helps improve the verification engine.</p>
+      <motion.div variants={fadeUp}>
+        <div className="flex items-center gap-2 mb-3">
+          <IconCheck size={14} className="text-green-500 shrink-0" />
+          <p className="text-sm text-muted-foreground">Thanks — this helps improve the engine.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" asChild>
+        <div className="flex flex-col gap-2">
+          <Button variant="outline" size="sm" className="w-full" asChild>
             <Link href="/submissions">Back to submissions</Link>
           </Button>
           {challengeId && (
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="ghost" size="sm" className="w-full" asChild>
               <Link href={`/submit?challengeId=${challengeId}`}>Resubmit with improvements</Link>
             </Button>
           )}
@@ -68,7 +68,7 @@ export function ReportFeedbackForm({ submissionId, challengeId }: Props) {
   const displayRating = hover ?? rating
 
   return (
-    <motion.div variants={fadeUp} className="rounded-lg border bg-card p-5">
+    <motion.div variants={fadeUp}>
       <div className="space-y-4">
         <div>
           <p className="text-sm font-medium mb-2">How accurate was this report?</p>
@@ -146,7 +146,7 @@ export function ReportFeedbackForm({ submissionId, challengeId }: Props) {
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <Button onClick={handleSubmit} disabled={rating === null || submitting} size="sm">
+        <Button onClick={handleSubmit} disabled={rating === null || submitting} size="sm" className="w-full">
           {submitting ? 'Submitting…' : 'Submit feedback'}
         </Button>
       </div>

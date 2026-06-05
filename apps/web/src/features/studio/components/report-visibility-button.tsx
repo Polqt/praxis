@@ -1,10 +1,9 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { IconCheck, IconCopy, IconShare } from '@tabler/icons-react'
+import { IconCheck, IconShare } from '@tabler/icons-react'
 import { apiClient } from '@/lib/api'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 
 type Props = {
   submissionId: string
@@ -99,17 +98,6 @@ export function ReportVisibilityButton({ submissionId, isPublic, initialPublicTo
         {copied ? <IconCheck size={13} /> : <IconShare size={13} />}
         {copied ? 'Copied!' : 'Copy proof link'}
       </Button>
-      {proofUrl && (
-        <>
-          <Separator />
-          <div className="flex items-center gap-1.5 px-1">
-            <span className="text-xs font-mono text-muted-foreground truncate flex-1">{proofUrl}</span>
-            <button type="button" onClick={handleCopy} className="shrink-0 text-muted-foreground hover:text-foreground transition-colors" aria-label="Copy proof URL">
-              {copied ? <IconCheck size={12} /> : <IconCopy size={12} />}
-            </button>
-          </div>
-        </>
-      )}
       {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   )
