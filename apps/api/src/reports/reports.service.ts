@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common'
 import { randomBytes } from 'node:crypto'
-import { desc, eq } from 'drizzle-orm'
+import { and, desc, eq, inArray, ne } from 'drizzle-orm'
 import { ANALYZER_VERSION, REPORT_GENERATOR_VERSION, SCORING_VERSION } from '../scoring/versions'
 import { RepositoryIngestionData } from '../verification/ingestion/repository-ingestion.types'
 import type { RepositoryAnalysisData } from '../verification/analysis/repository-analysis.types'
@@ -9,6 +9,7 @@ import {
   projectChallenges,
   projectSubmissions,
   projectVerificationReports,
+  repositoryAiReviews,
   repositoryAnalyses,
   repositoryExecutions,
   repositoryIngestions,
@@ -29,6 +30,17 @@ type StoredCategoryScore = {
   citations: string[]
   status: string
   minimumScore: number
+  signals?: Record<string, unknown>
+}
+
+type SkillProgress = {
+  name: string
+  score: number
+  minimumScore: number
+  pointsNeeded: number
+  eligible: boolean
+  awarded: boolean
+  matchedSkillId: string | null
 }
 
 @Injectable()
@@ -150,7 +162,10 @@ export class ReportsService implements OnModuleInit {
     if (submission.userId !== userId) throw new NotFoundException('Report not found')
     const report = await this.getReportBySubmission(submissionId)
     const challenge = await this.getChallenge(submission.challengeId)
-    return this.toSafeReport(report, submission, challenge)
+    return {
+      ...this.toSafeReport(report, submission, challenge),
+      ...await this.buildReportExtras(userId, report, submission, challenge),
+    }
   }
 
   async setVisibility(userId: string, submissionId: string, isPublic: boolean) {
@@ -285,12 +300,90 @@ export class ReportsService implements OnModuleInit {
       .values(matchedSkills.map((skill) => ({
         userId: submission.userId,
         skillId: skill.id,
-        sourceType: 'project' as const,
-      })))
-      .onConflictDoNothing()
+      sourceType: 'project' as const,
+      sourceReportId: report.id,
+    })))
+      .onConflictDoUpdate({
+        target: [userSkills.userId, userSkills.skillId],
+        set: { sourceReportId: report.id },
+      })
       .returning()
 
     return inserted
+  }
+
+  async getSkillsDebug(userId: string) {
+    const [challengeRows, skillRows, awardedRows] = await Promise.all([
+      this.db.db
+        .select({
+          id: projectChallenges.id,
+          title: projectChallenges.title,
+          rubric: projectChallenges.rubric,
+          isActive: projectChallenges.isActive,
+        })
+        .from(projectChallenges)
+        .orderBy(desc(projectChallenges.createdAt)),
+      this.db.db.select().from(skills),
+      this.db.db
+        .select({
+          id: userSkills.id,
+          skillId: userSkills.skillId,
+          skillName: skills.name,
+          skillCategory: skills.category,
+          sourceReportId: userSkills.sourceReportId,
+          awardedAt: userSkills.awardedAt,
+        })
+        .from(userSkills)
+        .innerJoin(skills, eq(userSkills.skillId, skills.id))
+        .where(eq(userSkills.userId, userId))
+        .orderBy(desc(userSkills.awardedAt)),
+    ])
+
+    const skillsByName = new Map(skillRows.map((skill) => [skill.name.toLowerCase(), skill]))
+    return {
+      activeChallenges: challengeRows
+        .filter((challenge) => challenge.isActive)
+        .map((challenge) => {
+          const rubric = challenge.rubric as { categories?: { name: string; floor: number; weight: number }[] }
+          const categories = rubric.categories ?? []
+          return {
+            id: challenge.id,
+            title: challenge.title,
+            slug: challenge.id,
+            status: challenge.isActive ? 'active' : 'inactive',
+            categories: categories.map((category) => {
+              const matchedSkill = skillsByName.get(category.name.toLowerCase()) ?? null
+              return {
+                id: `${challenge.id}:${category.name}`,
+                name: category.name,
+                minimumScore: category.floor,
+                weight: category.weight,
+                matchedSkill: matchedSkill
+                  ? {
+                      id: matchedSkill.id,
+                      name: matchedSkill.name,
+                      category: matchedSkill.category,
+                    }
+                  : null,
+              }
+            }),
+          }
+        }),
+      allSkills: skillRows.map((skill) => ({
+        id: skill.id,
+        name: skill.name,
+        category: skill.category,
+        trackId: skill.trackId,
+      })),
+      awardedSkills: awardedRows.map((row) => ({
+        id: row.id,
+        skillId: row.skillId,
+        name: row.skillName,
+        category: row.skillCategory,
+        sourceReportId: row.sourceReportId,
+        awardedAt: row.awardedAt.toISOString(),
+      })),
+    }
   }
 
   async reEnrichReport(reportId: string) {
@@ -434,6 +527,164 @@ export class ReportsService implements OnModuleInit {
       isPublic: report.isPublic,
       publicToken: report.publicToken,
     }
+  }
+
+  private async buildReportExtras(
+    userId: string,
+    report: typeof projectVerificationReports.$inferSelect,
+    submission: typeof projectSubmissions.$inferSelect,
+    challenge: typeof projectChallenges.$inferSelect,
+  ) {
+    const [skillProgress, aiReview, previousSubmission] = await Promise.all([
+      this.buildSkillProgress(report, challenge),
+      this.getAiReviewForSubmission(submission),
+      this.getPreviousSubmissionDelta(userId, report, submission),
+    ])
+
+    return { skillProgress, aiReview, previousSubmission }
+  }
+
+  private async buildSkillProgress(
+    report: typeof projectVerificationReports.$inferSelect,
+    challenge: typeof projectChallenges.$inferSelect,
+  ): Promise<SkillProgress[]> {
+    const rubric = challenge.rubric as { categories: { name: string; floor: number }[] }
+    const scores = (report.categoryScores ?? {}) as Record<string, StoredCategoryScore>
+    const skillRows = await this.db.db.select().from(skills)
+    const skillsByName = new Map(skillRows.map((skill) => [skill.name.toLowerCase(), skill]))
+
+    return rubric.categories.map((category) => {
+      const score = scores[category.name]?.score ?? 0
+      const minimumScore = scores[category.name]?.minimumScore ?? category.floor
+      const matchedSkill = skillsByName.get(category.name.toLowerCase()) ?? null
+      const eligible = score >= minimumScore
+      return {
+        name: category.name,
+        score,
+        minimumScore,
+        pointsNeeded: Math.max(0, minimumScore - score),
+        eligible,
+        awarded: report.verdict === 'verified' && eligible && matchedSkill !== null,
+        matchedSkillId: matchedSkill?.id ?? null,
+      }
+    })
+  }
+
+  private async getAiReviewForSubmission(submission: typeof projectSubmissions.$inferSelect) {
+    const rows = await this.db.db
+      .select({
+        status: repositoryAiReviews.status,
+        model: repositoryAiReviews.model,
+        promptVersion: repositoryAiReviews.promptVersion,
+        reviewData: repositoryAiReviews.reviewData,
+        inputTokens: repositoryAiReviews.inputTokens,
+        outputTokens: repositoryAiReviews.outputTokens,
+        estimatedCostUsd: repositoryAiReviews.estimatedCostUsd,
+        latencyMs: repositoryAiReviews.latencyMs,
+        errorMessage: repositoryAiReviews.errorMessage,
+        createdAt: repositoryAiReviews.createdAt,
+      })
+      .from(repositoryIngestions)
+      .innerJoin(repositoryAnalyses, eq(repositoryAnalyses.repositoryIngestionId, repositoryIngestions.id))
+      .innerJoin(repositoryAiReviews, eq(repositoryAiReviews.repositoryAnalysisId, repositoryAnalyses.id))
+      .where(and(
+        eq(repositoryIngestions.githubRepoId, submission.githubRepoId),
+        eq(repositoryIngestions.commitSha, submission.commitSha),
+      ))
+      .orderBy(desc(repositoryAiReviews.createdAt))
+      .limit(1)
+
+    const row = rows[0]
+    if (!row) return null
+    return {
+      status: row.status,
+      model: row.model,
+      promptVersion: row.promptVersion,
+      possibleMissedEvidence: ((row.reviewData as { possibleMissedEvidence?: unknown[] })?.possibleMissedEvidence ?? []).slice(0, 10),
+      inputTokens: row.inputTokens,
+      outputTokens: row.outputTokens,
+      estimatedCostUsd: row.estimatedCostUsd,
+      latencyMs: row.latencyMs,
+      errorMessage: row.errorMessage,
+      createdAt: row.createdAt.toISOString(),
+    }
+  }
+
+  private async getPreviousSubmissionDelta(
+    userId: string,
+    report: typeof projectVerificationReports.$inferSelect,
+    submission: typeof projectSubmissions.$inferSelect,
+  ) {
+    const rows = await this.db.db
+      .select({
+        submission: projectSubmissions,
+        report: projectVerificationReports,
+      })
+      .from(projectSubmissions)
+      .innerJoin(projectVerificationReports, eq(projectVerificationReports.submissionId, projectSubmissions.id))
+      .where(and(
+        eq(projectSubmissions.userId, userId),
+        eq(projectSubmissions.challengeId, submission.challengeId),
+        eq(projectSubmissions.githubRepoFullName, submission.githubRepoFullName),
+        ne(projectSubmissions.id, submission.id),
+      ))
+      .orderBy(desc(projectSubmissions.submittedAt))
+      .limit(1)
+
+    const previous = rows[0]
+    if (!previous) return null
+
+    const currentScores = report.categoryScores as Record<string, StoredCategoryScore>
+    const previousScores = previous.report.categoryScores as Record<string, StoredCategoryScore>
+    const categories = Array.from(new Set([...Object.keys(currentScores), ...Object.keys(previousScores)]))
+      .map((category) => ({
+        category,
+        previousScore: previousScores[category]?.score ?? 0,
+        currentScore: currentScores[category]?.score ?? 0,
+        delta: (currentScores[category]?.score ?? 0) - (previousScores[category]?.score ?? 0),
+      }))
+      .filter((item) => item.delta !== 0)
+
+    const changedFiles = await this.getChangedSelectedFiles(previous.submission, submission)
+    return {
+      previousSubmissionId: previous.submission.id,
+      previousCommitSha: previous.submission.commitSha,
+      currentCommitSha: submission.commitSha,
+      previousCompositeScore: previous.report.compositeScore,
+      currentCompositeScore: report.compositeScore,
+      compositeDelta: report.compositeScore - previous.report.compositeScore,
+      categories,
+      changedFiles,
+    }
+  }
+
+  private async getChangedSelectedFiles(
+    previousSubmission: typeof projectSubmissions.$inferSelect,
+    currentSubmission: typeof projectSubmissions.$inferSelect,
+  ) {
+    const ingestions = await this.db.db
+      .select({
+        commitSha: repositoryIngestions.commitSha,
+        ingestedData: repositoryIngestions.ingestedData,
+      })
+      .from(repositoryIngestions)
+      .where(and(
+        eq(repositoryIngestions.githubRepoId, currentSubmission.githubRepoId),
+        inArray(repositoryIngestions.commitSha, [previousSubmission.commitSha, currentSubmission.commitSha]),
+      ))
+
+    const byCommit = new Map(ingestions.map((row) => [row.commitSha, row.ingestedData as RepositoryIngestionData]))
+    const previousFiles = new Map((byCommit.get(previousSubmission.commitSha)?.files ?? []).map((file) => [file.path, file.content ?? '']))
+    const currentFiles = new Map((byCommit.get(currentSubmission.commitSha)?.files ?? []).map((file) => [file.path, file.content ?? '']))
+    const paths = Array.from(new Set([...previousFiles.keys(), ...currentFiles.keys()])).sort()
+
+    return paths
+      .filter((path) => previousFiles.get(path) !== currentFiles.get(path))
+      .slice(0, 20)
+      .map((path) => ({
+        path,
+        status: !previousFiles.has(path) ? 'added' : !currentFiles.has(path) ? 'removed' : 'changed',
+      }))
   }
 
   private toPublicProof(

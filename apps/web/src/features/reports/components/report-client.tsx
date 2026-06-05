@@ -12,6 +12,9 @@ import { VerifiedSkillsSection } from './verified-skills-section'
 import { StrengthsImprovementsSection } from './strengths-improvements-section'
 import { ReportFooter } from './report-footer'
 import { ReportClaritySection } from './report-clarity-section'
+import { AiEvidenceReviewSection } from './ai-evidence-review-section'
+import { SkillProgressSection } from './skill-progress-section'
+import { SubmissionDeltaSection } from './submission-delta-section'
 import {
   REPORT_DISCLAIMER_TEXT,
   REPORT_DISCLAIMER_LINK_LABEL,
@@ -111,6 +114,10 @@ export function ReportClient({
             <VerifiedSkillsSection skills={report.skills} scores={report.scores} />
           </motion.div>
 
+          <motion.div variants={fadeUp} className="mt-10">
+            <SkillProgressSection items={report.skillProgress} />
+          </motion.div>
+
           {executionSlot && (
             <motion.div variants={fadeUp} className="mt-10">
               {executionSlot}
@@ -124,6 +131,14 @@ export function ReportClient({
               derived={report.derivedStrengthsAndImprovements}
               categories={report.scores.map((s) => s.category)}
             />
+          </motion.div>
+
+          <motion.div variants={fadeUp} className="mt-10">
+            <SubmissionDeltaSection delta={report.previousSubmission} />
+          </motion.div>
+
+          <motion.div variants={fadeUp} className="mt-10">
+            <AiEvidenceReviewSection review={report.aiReview} />
           </motion.div>
 
           <ReportClaritySection

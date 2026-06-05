@@ -207,4 +207,47 @@ export const exampleReport: Report = {
   modelVersion: 'deterministic-v2',
   isPublic: true,
   publicToken: 'example-token',
+  skillProgress: [
+    { name: 'API Design', score: 9, minimumScore: 5, pointsNeeded: 0, eligible: true, awarded: true, matchedSkillId: 'example-api' },
+    { name: 'Authentication', score: 8, minimumScore: 5, pointsNeeded: 0, eligible: true, awarded: true, matchedSkillId: 'example-auth' },
+    { name: 'Database Design', score: 8, minimumScore: 5, pointsNeeded: 0, eligible: true, awarded: true, matchedSkillId: 'example-db' },
+    { name: 'Testing', score: 6, minimumScore: 5, pointsNeeded: 0, eligible: true, awarded: true, matchedSkillId: 'example-testing' },
+    { name: 'Documentation', score: 7, minimumScore: 3, pointsNeeded: 0, eligible: true, awarded: true, matchedSkillId: 'example-docs' },
+    { name: 'Deployment', score: 4, minimumScore: 3, pointsNeeded: 0, eligible: true, awarded: true, matchedSkillId: 'example-deploy' },
+  ],
+  aiReview: {
+    status: 'success',
+    model: 'claude-haiku-4-5',
+    promptVersion: 'ai-evidence-review-v1',
+    possibleMissedEvidence: [
+      {
+        category: 'Testing',
+        path: 'tests/integration/orders.spec.ts',
+        reason: 'Possible integration coverage not reflected in deterministic test classification.',
+        confidence: 0.72,
+      },
+    ],
+    inputTokens: 1200,
+    outputTokens: 180,
+    estimatedCostUsd: '0.001680',
+    latencyMs: 1800,
+    errorMessage: null,
+    createdAt: '2026-06-01T00:00:00.000Z',
+  },
+  previousSubmission: {
+    previousSubmissionId: 'example-previous',
+    previousCommitSha: '9a1c3ef',
+    currentCommitSha: '4b7d2a8f',
+    previousCompositeScore: 71,
+    currentCompositeScore: 78,
+    compositeDelta: 7,
+    categories: [
+      { category: 'Testing', previousScore: 4, currentScore: 6, delta: 2 },
+      { category: 'Deployment', previousScore: 2, currentScore: 4, delta: 2 },
+    ],
+    changedFiles: [
+      { path: 'tests/orders.spec.ts', status: 'added' },
+      { path: '.github/workflows/ci.yml', status: 'changed' },
+    ],
+  },
 }

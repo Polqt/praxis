@@ -164,8 +164,6 @@ export class RepositoryExecutionService {
   }
 
   async executeForIngestion(ingestionId: string, githubToken?: string): Promise<ExecutionResult | null> {
-    if (!this.apiKey) return null
-
     // Primary cache: same ingestion
     const existing = await this.db.db
       .select()
@@ -186,6 +184,14 @@ export class RepositoryExecutionService {
 
     const ingestion = ingestionRows[0]
     if (!ingestion) return null
+
+    if (!this.apiKey) {
+      return this.recordExecutionIssue(
+        ingestionId,
+        'disabled',
+        'Sandbox checks were not run because E2B_API_KEY is not configured.',
+      )
+    }
 
     // Cross-ingestion cache: same commitSha + repoFullName from a prior ingestion.
     // This avoids re-running E2B when a user retries a failed submission with the same commit.
@@ -209,16 +215,26 @@ export class RepositoryExecutionService {
 
     if (!plan) {
       this.logger.log(`E2B: no supported runtime detected for ${ingestion.repoFullName}`)
-      return null
+      return this.recordExecutionIssue(
+        ingestionId,
+        'unsupported',
+        'No supported runtime or package manifest was detected, so sandbox checks were not run.',
+      )
     }
 
     try {
       return await this.runInSandbox(ingestionId, ingestion.repoFullName, plan, githubToken)
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
       this.logger.error(`E2B: sandbox execution failed for ${ingestion.repoFullName}`, {
-        error: err instanceof Error ? err.message : String(err),
+        error: message,
       })
-      return null
+      return this.recordExecutionIssue(
+        ingestionId,
+        plan.language,
+        `Sandbox execution failed before checks completed: ${message}`,
+        plan.framework,
+      )
     }
   }
 
@@ -231,7 +247,14 @@ export class RepositoryExecutionService {
     const parts = repoFullName.split('/')
     const owner = (parts[0] ?? '').replace(/[^a-zA-Z0-9._-]/g, '')
     const repo = (parts[1] ?? '').replace(/[^a-zA-Z0-9._-]/g, '')
-    if (!owner || !repo) return null
+    if (!owner || !repo) {
+      return this.recordExecutionIssue(
+        ingestionId,
+        plan.language,
+        'Sandbox checks were not run because the repository name was invalid.',
+        plan.framework,
+      )
+    }
 
     const start = Date.now()
     let sandbox: Sandbox | null = null
@@ -243,7 +266,12 @@ export class RepositoryExecutionService {
       const cloned = await this.cloneRepository(sandbox, owner, repo, githubToken)
       if (!cloned) {
         this.logger.warn(`E2B: clone failed for ${repoFullName} - private/not found`)
-        return null
+        return this.recordExecutionIssue(
+          ingestionId,
+          plan.language,
+          'Sandbox clone failed. The repository may be private, missing, or inaccessible with the current GitHub token.',
+          plan.framework,
+        )
       }
 
       const results: CommandResult[] = []
@@ -333,15 +361,17 @@ print("CLONE_EXIT:" + str(result.returncode))
   ): Promise<CommandResult> {
     const startedAt = Date.now()
     const commandArg = JSON.stringify(planned.command)
+    const cwdArg = JSON.stringify(planned.cwd && planned.cwd !== '.' ? `/repo/${planned.cwd}` : '/repo')
     const timeoutArg = COMMAND_TIMEOUT_S
     const result = await sandbox.runCode(`
 import subprocess, time
 command = ${commandArg}
+cwd = ${cwdArg}
 start = time.time()
 try:
   result = subprocess.run(
     command,
-    shell=True, capture_output=True, text=True, cwd="/repo", timeout=${timeoutArg}
+    shell=True, capture_output=True, text=True, cwd=cwd, timeout=${timeoutArg}
   )
   timed_out = False
   exit_code = result.returncode
@@ -380,5 +410,41 @@ print("STDERR_END")
       stderr: sanitizeLog(stderrMatch?.[1] ?? '', EXECUTION_LOG_CAPS.stderr, secrets),
       timedOut: timedOutMatch?.[1] === 'true',
     }
+  }
+
+  private async recordExecutionIssue(
+    ingestionId: string,
+    language: string,
+    publicSummary: string,
+    framework: string | null = null,
+  ): Promise<ExecutionResult | null> {
+    const result: ExecutionResult = {
+      language,
+      framework,
+      testCommand: 'not run',
+      exitCode: 1,
+      passed: 0,
+      failed: 0,
+      skipped: 0,
+      durationMs: null,
+      stdout: '',
+      stderr: publicSummary,
+      timedOut: false,
+      publicSummary,
+      commandSummary: [],
+      installResult: null,
+      testResult: null,
+      buildResult: null,
+      lintResult: null,
+      typecheckResult: null,
+      doctorResult: null,
+    }
+
+    const inserted = await this.db.db.insert(repositoryExecutions).values({
+      repositoryIngestionId: ingestionId,
+      ...result,
+    }).onConflictDoNothing().returning()
+
+    return inserted[0] ? this.rowToResult(inserted[0]) : result
   }
 }

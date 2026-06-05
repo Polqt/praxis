@@ -14,6 +14,7 @@ export class ProfileReportDto {
 export class VerifiedSkillDto {
   name: string
   awardedAt: string
+  sourceReport: ProfileReportDto | null
 }
 
 export class PublicProfileDto {

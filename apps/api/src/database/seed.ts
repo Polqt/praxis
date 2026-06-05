@@ -10,6 +10,7 @@ const db = drizzle(client)
 
 async function ensureRuntimeSchema() {
   await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "bio" text`)
+  await db.execute(sql`ALTER TABLE "user_skills" ADD COLUMN IF NOT EXISTS "source_report_id" text REFERENCES "project_verification_reports"("id")`)
 
   await db.execute(sql`ALTER TABLE "repository_executions" ADD COLUMN IF NOT EXISTS "framework" text`)
   await db.execute(sql`ALTER TABLE "repository_executions" ADD COLUMN IF NOT EXISTS "command_summary" jsonb NOT NULL DEFAULT '{}'::jsonb`)

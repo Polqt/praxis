@@ -16,6 +16,54 @@ export interface ScoreItem {
   minimumScore?: number
   executionEvidence?: ExecutionEvidence | null
   signals?: Record<string, unknown>
+  confidence?: 'high' | 'medium' | 'low'
+}
+
+export interface SkillProgressItem {
+  name: string
+  score: number
+  minimumScore: number
+  pointsNeeded: number
+  eligible: boolean
+  awarded: boolean
+  matchedSkillId: string | null
+}
+
+export interface AiReview {
+  status: string
+  model: string
+  promptVersion: string
+  possibleMissedEvidence: {
+    category: string
+    path: string
+    reason: string
+    confidence: number
+  }[]
+  inputTokens: number
+  outputTokens: number
+  estimatedCostUsd: string | null
+  latencyMs: number | null
+  errorMessage: string | null
+  createdAt: string
+}
+
+export interface PreviousSubmissionDelta {
+  previousSubmissionId: string
+  previousCommitSha: string
+  currentCommitSha: string
+  previousCompositeScore: number
+  currentCompositeScore: number
+  compositeDelta: number
+  categories: {
+    category: string
+    previousScore: number
+    currentScore: number
+    delta: number
+  }[]
+  changedFiles: {
+    path: string
+    status: 'added' | 'removed' | 'changed'
+  }[]
 }
 
 export interface Report {
@@ -37,4 +85,7 @@ export interface Report {
   modelVersion: string
   isPublic: boolean
   publicToken: string | null
+  skillProgress: SkillProgressItem[]
+  aiReview: AiReview | null
+  previousSubmission: PreviousSubmissionDelta | null
 }

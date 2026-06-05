@@ -4,7 +4,7 @@ import { ReportClient } from '@/features/reports/components/report-client'
 
 export const metadata: Metadata = {
   title: 'Example Verification Report | Praxis',
-  description: 'See what a Praxis verification report looks like — scores, narratives, evidence citations, and actionable feedback across all rubric categories.',
+  description: 'See what a Praxis verification report looks like: scores, narratives, evidence citations, and actionable feedback across all rubric categories.',
 }
 
 export default function ExampleReportPage() {
@@ -12,8 +12,6 @@ export default function ExampleReportPage() {
     <div className="pt-14">
       <ReportClient
         report={exampleReport}
-        backHref="/challenges"
-        backLabel="Back to challenges"
       />
     </div>
   )

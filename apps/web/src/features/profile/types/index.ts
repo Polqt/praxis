@@ -14,6 +14,7 @@ export interface ProfileReport {
 export interface VerifiedSkill {
   name: string
   awardedAt: string
+  sourceReport: ProfileReport | null
 }
 
 export interface PublicProfile {

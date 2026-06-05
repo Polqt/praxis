@@ -266,7 +266,7 @@ export class UsersService {
     if (!user) return null
 
     const earnedSkills = await this.db.db
-      .select({ name: skills.name, awardedAt: userSkills.awardedAt })
+      .select({ name: skills.name, awardedAt: userSkills.awardedAt, sourceReportId: userSkills.sourceReportId })
       .from(userSkills)
       .innerJoin(skills, eq(userSkills.skillId, skills.id))
       .where(eq(userSkills.userId, user.id))
@@ -333,10 +333,52 @@ export class UsersService {
       compositeScore: row.compositeScore ?? null,
     }))
 
+    const sourceReportIds = Array.from(new Set(
+      earnedSkills
+        .map((skill) => skill.sourceReportId)
+        .filter((id): id is string => Boolean(id)),
+    ))
+
+    const sourceReports = sourceReportIds.length === 0 ? [] : await this.db.db
+      .select({
+        id: projectVerificationReports.id,
+        submissionId: projectVerificationReports.submissionId,
+        compositeScore: projectVerificationReports.compositeScore,
+        verdict: projectVerificationReports.verdict,
+        generatedAt: projectVerificationReports.generatedAt,
+        publicToken: projectVerificationReports.publicToken,
+        githubRepoFullName: projectSubmissions.githubRepoFullName,
+        completedAt: projectSubmissions.completedAt,
+        submissionStatus: projectSubmissions.status,
+        challengeTitle: projectChallenges.title,
+        challengeCategory: projectChallenges.projectType,
+      })
+      .from(projectVerificationReports)
+      .innerJoin(projectSubmissions, eq(projectVerificationReports.submissionId, projectSubmissions.id))
+      .innerJoin(projectChallenges, eq(projectChallenges.id, projectSubmissions.challengeId))
+      .where(inArray(projectVerificationReports.id, sourceReportIds))
+
+    const sourceReportById = new Map(sourceReports.map((row) => [row.id, {
+      id: row.id,
+      submissionId: row.submissionId,
+      repositoryName: row.githubRepoFullName,
+      challengeTitle: row.challengeTitle,
+      challengeCategory: row.challengeCategory,
+      verdict: row.verdict,
+      submissionStatus: row.submissionStatus,
+      verifiedAt: (row.completedAt ?? row.generatedAt).toISOString(),
+      publicToken: row.publicToken ?? null,
+      compositeScore: row.compositeScore ?? null,
+    }]))
+
     return {
       username: user.username as string,
       bio: user.bio ?? null,
-      verifiedSkills: earnedSkills.map((s) => ({ name: s.name, awardedAt: s.awardedAt.toISOString() })),
+      verifiedSkills: earnedSkills.map((s) => ({
+        name: s.name,
+        awardedAt: s.awardedAt.toISOString(),
+        sourceReport: s.sourceReportId ? sourceReportById.get(s.sourceReportId) ?? null : null,
+      })),
       reportsCount: verifiedCount,
       verifiedProjectsCount: verifiedCount,
       publishedReportsCount: publishedCount,

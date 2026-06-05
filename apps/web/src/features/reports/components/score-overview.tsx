@@ -9,6 +9,12 @@ import { formatSignalKey } from '@/features/reports/utils/format-signal-key'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import type { ScoreItem } from '@/features/reports/types'
 
+const CONFIDENCE_CLASS: Record<NonNullable<ScoreItem['confidence']>, string> = {
+  high: 'bg-green-100 text-green-700 border-green-200',
+  medium: 'bg-amber-100 text-amber-700 border-amber-200',
+  low: 'bg-muted text-muted-foreground border-border',
+}
+
 function SignalsPanel({ signals }: { signals: Record<string, unknown> }) {
   const entries = Object.entries(signals).filter(([, v]) => typeof v === 'boolean' || typeof v === 'number')
   if (entries.length === 0) return null
@@ -81,6 +87,11 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
                 {item.status && (
                   <span className={`text-[10px] uppercase tracking-widest font-medium px-2 py-0.5 border rounded-sm ${CATEGORY_STATUS_CLASS[item.status]}`}>
                     {item.status}
+                  </span>
+                )}
+                {item.confidence && (
+                  <span className={`text-[10px] uppercase tracking-widest font-medium px-2 py-0.5 border rounded-sm ${CONFIDENCE_CLASS[item.confidence]}`}>
+                    {item.confidence} confidence
                   </span>
                 )}
                 <span className="text-sm font-semibold tabular-nums w-10 text-right shrink-0">

@@ -86,6 +86,7 @@ export const userSkills = pgTable('user_skills', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
   userId: text('user_id').notNull().references(() => users.id),
   skillId: text('skill_id').notNull().references(() => skills.id),
+  sourceReportId: text('source_report_id').references(() => projectVerificationReports.id),
   sourceType: sourceTypeEnum('source_type').notNull(),
   awardedAt: timestamp('awarded_at').defaultNow().notNull(),
 }, (t) => [

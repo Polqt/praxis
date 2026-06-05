@@ -10,10 +10,11 @@ type Props = {
   reports?: ProfileReport[]
 }
 
-function skillSource(skillName: string, reports: ProfileReport[]): string | null {
-  const verified = reports.find((r) => r.submissionStatus === 'verified')
-  if (!verified) return null
-  return `${repoName(verified.repositoryName)} · ${verified.challengeTitle}`
+function skillSource(skill: VerifiedSkill, reports: ProfileReport[]): string | null {
+  const source = skill.sourceReport
+    ?? reports.find((r) => r.submissionStatus === 'verified')
+  if (!source) return null
+  return `${repoName(source.repositoryName)} / ${source.challengeTitle}`
 }
 
 function groupByTrack(skills: VerifiedSkill[]): Map<string, VerifiedSkill[]> {
@@ -48,7 +49,7 @@ export function VerifiedSkillsSection({ skills, reports = [] }: Props) {
               )}
               <div className="flex flex-col gap-3">
                 {trackSkills.map((skill) => {
-                  const source = skillSource(skill.name, reports)
+                  const source = skillSource(skill, reports)
                   return (
                     <div key={skill.name} className="flex items-start justify-between gap-2">
                       <div className="flex items-start gap-2">

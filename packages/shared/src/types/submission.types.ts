@@ -101,4 +101,48 @@ export interface VerificationReport {
   isPublic: boolean
   publicToken: string | null
   viewCount?: number
+  skillProgress?: {
+    name: string
+    score: number
+    minimumScore: number
+    pointsNeeded: number
+    eligible: boolean
+    awarded: boolean
+    matchedSkillId: string | null
+  }[]
+  aiReview?: {
+    status: string
+    model: string
+    promptVersion: string
+    possibleMissedEvidence: {
+      category: string
+      path: string
+      reason: string
+      confidence: number
+    }[]
+    inputTokens: number
+    outputTokens: number
+    estimatedCostUsd: string | null
+    latencyMs: number | null
+    errorMessage: string | null
+    createdAt: string
+  } | null
+  previousSubmission?: {
+    previousSubmissionId: string
+    previousCommitSha: string
+    currentCommitSha: string
+    previousCompositeScore: number
+    currentCompositeScore: number
+    compositeDelta: number
+    categories: {
+      category: string
+      previousScore: number
+      currentScore: number
+      delta: number
+    }[]
+    changedFiles: {
+      path: string
+      status: 'added' | 'removed' | 'changed'
+    }[]
+  } | null
 }

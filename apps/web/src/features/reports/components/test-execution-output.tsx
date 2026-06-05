@@ -12,6 +12,7 @@ interface CommandResult {
   phase: string
   label: string
   exitCode: number
+  durationMs?: number | null
   timedOut: boolean
   stdout?: string
   stderr?: string
@@ -32,9 +33,11 @@ interface ExecutionOutput {
   stderr: string | null
   timedOut: boolean
   installResult?: CommandResult | null
+  testResult?: CommandResult | null
   buildResult?: CommandResult | null
   lintResult?: CommandResult | null
   typecheckResult?: CommandResult | null
+  doctorResult?: CommandResult | null
 }
 
 type Props = {
@@ -59,6 +62,15 @@ function PhaseFailureBanner({ label, result }: { label: string; result: CommandR
 }
 
 export function TestExecutionOutput({ execution }: Props) {
+  const phaseResults = [
+    execution.installResult,
+    execution.testResult,
+    execution.buildResult,
+    execution.lintResult,
+    execution.typecheckResult,
+    execution.doctorResult,
+  ].filter((item): item is CommandResult => Boolean(item))
+
   const hasResults = execution.passed > 0 || execution.failed > 0 || execution.timedOut
   const noTests = !hasResults && !execution.timedOut
   const installFailed = noTests && execution.installResult != null && execution.installResult.exitCode !== 0
@@ -72,6 +84,7 @@ export function TestExecutionOutput({ execution }: Props) {
   const stderrTruncated = (execution.stderr?.length ?? 0) >= STDERR_CAP
   const statusColor = execution.timedOut || execution.exitCode !== 0 ? 'text-destructive' : 'text-green-600'
   const durationLabel = execution.durationMs ? `${(execution.durationMs / 1000).toFixed(1)}s` : null
+  const displayedPhases = phaseResults.length > 0 ? phaseResults : (execution.commandSummary ?? [])
 
   return (
     <div className="rounded-lg border bg-card">
@@ -146,19 +159,30 @@ export function TestExecutionOutput({ execution }: Props) {
                 <p className="text-xs text-muted-foreground">{execution.publicSummary}</p>
               )}
 
-              {execution.commandSummary && execution.commandSummary.length > 0 && (
+              {displayedPhases.length > 0 && (
                 <div className="grid gap-2 sm:grid-cols-2">
-                  {execution.commandSummary.map((item) => (
+                  {displayedPhases.map((item) => {
+                    const logPreview = `${'stderr' in item ? item.stderr ?? '' : ''}\n${'stdout' in item ? item.stdout ?? '' : ''}`.trim()
+                    const duration = 'durationMs' in item && typeof item.durationMs === 'number'
+                      ? `${(item.durationMs / 1000).toFixed(1)}s`
+                      : null
+                    return (
                     <div key={`${item.phase}-${item.label}`} className="rounded-md border bg-muted/30 px-3 py-2">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{item.phase}</span>
                         <span className={item.timedOut || item.exitCode !== 0 ? 'text-[11px] text-destructive' : 'text-[11px] text-green-600'}>
-                          {item.timedOut ? 'Timed out' : `Exit ${item.exitCode}`}
+                          {item.timedOut ? 'Timed out' : item.exitCode === 0 ? 'Passed' : `Exit ${item.exitCode}`}
                         </span>
                       </div>
                       <p className="mt-1 text-xs font-mono break-all">{item.label}</p>
+                      {duration && <p className="mt-1 text-[11px] text-muted-foreground">{duration}</p>}
+                      {logPreview && (
+                        <pre className="mt-2 max-h-20 overflow-y-auto whitespace-pre-wrap break-all rounded bg-background/70 p-2 text-[10px] text-muted-foreground">
+                          {logPreview.slice(0, 400)}{logPreview.length > 400 ? '...' : ''}
+                        </pre>
+                      )}
                     </div>
-                  ))}
+                  )})}
                 </div>
               )}
 

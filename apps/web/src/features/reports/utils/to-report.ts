@@ -1,5 +1,6 @@
 import { deriveStrengths } from './derive-strengths'
 import { deriveImprovements } from './derive-improvements'
+import { deriveConfidence } from './derive-confidence'
 import type { VerificationReport } from '@praxis/shared'
 import type { Report, ReportStatus, ScoreItem, ExecutionEvidence } from '@/features/reports/types'
 
@@ -22,11 +23,10 @@ export function toReport(raw: VerificationReport, overrides?: { isPublic?: boole
       ? { passed: exec.passed, failed: exec.failed, skipped: exec.skipped, language: exec.language }
       : null
 
-    // Strip the execution sub-object from signals before passing to UI — it's shown separately
-    const rawSignals = (data.signals ?? {}) as Record<string, unknown>
-    const { execution: _exec, ...displaySignals } = rawSignals
+    const displaySignals = { ...((data.signals ?? {}) as Record<string, unknown>) }
+    delete displaySignals.execution
 
-    return {
+    const scoreItem: ScoreItem = {
       category,
       score: data.score,
       narrative: data.narrative ?? '',
@@ -36,6 +36,7 @@ export function toReport(raw: VerificationReport, overrides?: { isPublic?: boole
       executionEvidence,
       signals: Object.keys(displaySignals).length > 0 ? displaySignals : undefined,
     }
+    return { ...scoreItem, confidence: deriveConfidence(scoreItem) }
   })
 
   const rawStrengths = raw.strengths ?? []
@@ -43,6 +44,10 @@ export function toReport(raw: VerificationReport, overrides?: { isPublic?: boole
   const strengths = rawStrengths.length > 0 ? rawStrengths : deriveStrengths(scores)
   const improvements = rawImprovements.length > 0 ? rawImprovements : deriveImprovements(scores)
   const allCitedFiles = Array.from(new Set(scores.flatMap((s) => s.citations)))
+  const skillProgress = raw.skillProgress ?? []
+  const skills = skillProgress
+    .filter((item) => item.awarded || item.eligible)
+    .map((item) => item.name)
 
   return {
     id: raw.id,
@@ -54,7 +59,7 @@ export function toReport(raw: VerificationReport, overrides?: { isPublic?: boole
     compositeScore: raw.compositeScore,
     summary: raw.publicSummary ?? '',
     scores,
-    skills: [],
+    skills,
     strengths,
     improvements,
     derivedStrengthsAndImprovements: rawStrengths.length === 0 || rawImprovements.length === 0,
@@ -63,5 +68,8 @@ export function toReport(raw: VerificationReport, overrides?: { isPublic?: boole
     modelVersion: raw.analyzerVersion,
     isPublic: overrides?.isPublic ?? raw.isPublic ?? false,
     publicToken: raw.publicToken,
+    skillProgress,
+    aiReview: raw.aiReview ?? null,
+    previousSubmission: raw.previousSubmission ?? null,
   }
 }

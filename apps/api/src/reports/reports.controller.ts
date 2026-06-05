@@ -16,6 +16,11 @@ export class ReportsController {
     return this.reports.getFeedbackAnalytics()
   }
 
+  @Get('debug/skills')
+  getSkillsDebug(@GetUser() user: User) {
+    return this.reports.getSkillsDebug(user.id)
+  }
+
   @Get('submissions/:submissionId')
   getPrivateReport(@GetUser() user: User, @Param('submissionId') submissionId: string) {
     return this.reports.getPrivateReport(user.id, submissionId)
