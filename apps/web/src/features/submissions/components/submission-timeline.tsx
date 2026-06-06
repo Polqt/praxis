@@ -2,23 +2,22 @@
 
 import { motion } from 'framer-motion'
 import { IconCheck, IconX, IconRefresh } from '@tabler/icons-react'
-import { PIPELINE_STAGES, TERMINAL_STAGE_LABELS, TERMINAL_STATUSES, FAILED_STATUSES } from '../constants'
+import {
+  EXTRA_SUBMISSION_EVENT_LABELS,
+  PIPELINE_STAGES,
+  TERMINAL_STAGE_LABELS,
+  TERMINAL_STATUSES,
+  TIMELINE_FAILED_STATUSES,
+} from '../constants'
 import { formatDate, statusLabel } from '@/lib/praxis-format'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import type { ProjectSubmission, ProjectSubmissionEvent, SubmissionStatus } from '@praxis/shared'
-
-const EXTRA_EVENT_LABELS: Record<string, string> = {
-  submission_cancelled: 'Cancelled',
-  submission_requeued:  'Re-queued',
-  submission_retried:   'Retried',
-}
+import type { SubmissionStepState } from '@/features/submissions/types'
 
 type Props = {
   submission: ProjectSubmission
   events: ProjectSubmissionEvent[]
 }
-
-type StepState = 'completed' | 'active' | 'pending' | 'failed'
 
 function getTimestamp(stageIndex: number, events: ProjectSubmissionEvent[]): string | null {
   const stage = PIPELINE_STAGES[stageIndex]
@@ -26,8 +25,6 @@ function getTimestamp(stageIndex: number, events: ProjectSubmissionEvent[]): str
   if (stage.toStatus === null) return events[0]?.createdAt ?? null
   return events.find((e) => e.toStatus === stage.toStatus)?.createdAt ?? null
 }
-
-const TIMELINE_FAILED_STATUSES = [...FAILED_STATUSES, 'expired'] as const
 
 export function SubmissionTimeline({ submission, events }: Props) {
   const status = submission.status
@@ -41,7 +38,7 @@ export function SubmissionTimeline({ submission, events }: Props) {
     ...(isTerminal ? [{ key: 'terminal', label: terminalLabel, toStatus: status as SubmissionStatus }] : []),
   ]
 
-  function getState(index: number): StepState {
+  function getState(index: number): SubmissionStepState {
     if (index === allStages.length - 1 && isTerminal) {
       return isFailed ? 'failed' : 'completed'
     }
@@ -58,7 +55,9 @@ export function SubmissionTimeline({ submission, events }: Props) {
     return 'pending'
   }
 
-  const extraEvents = events.filter((e) => e.reason && EXTRA_EVENT_LABELS[e.reason])
+  const extraEvents = events.filter(
+    (event) => event.reason && EXTRA_SUBMISSION_EVENT_LABELS[event.reason],
+  )
 
   return (
     <motion.div
@@ -72,7 +71,9 @@ export function SubmissionTimeline({ submission, events }: Props) {
           {extraEvents.map((e) => (
             <motion.div key={e.id} variants={fadeUp} className="flex items-center gap-2.5 text-xs text-muted-foreground">
               <IconRefresh size={13} className="shrink-0" />
-              <span className="font-medium text-foreground">{EXTRA_EVENT_LABELS[e.reason!]}</span>
+              <span className="font-medium text-foreground">
+                {EXTRA_SUBMISSION_EVENT_LABELS[e.reason!]}
+              </span>
               <span suppressHydrationWarning>{formatDate(e.createdAt)}</span>
             </motion.div>
           ))}

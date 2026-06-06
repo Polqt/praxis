@@ -12,6 +12,8 @@ import {
 
 @Injectable()
 export class UsersService {
+  private static readonly USERNAME_CHANGE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000
+
   private static readonly RESERVED_USERNAMES = new Set([
     // Generic reserved words
     'admin', 'administrator', 'api', 'app', 'auth',
@@ -73,10 +75,27 @@ export class UsersService {
     if (UsersService.RESERVED_USERNAMES.has(data.username.toLowerCase())) {
       throw new ConflictException('This username is not available.')
     }
+    const current = await this.getMe(userId)
+    if (current.username === data.username) return current
+
+    if (current.username && current.usernameUpdatedAt) {
+      const nextChangeAt = new Date(
+        current.usernameUpdatedAt.getTime() + UsersService.USERNAME_CHANGE_COOLDOWN_MS,
+      )
+      if (nextChangeAt > new Date()) {
+        throw new ConflictException(
+          `Username can be changed again on ${nextChangeAt.toISOString().slice(0, 10)}.`,
+        )
+      }
+    }
+
     try {
       const updated = await this.db.db
         .update(users)
-        .set({ username: data.username })
+        .set({
+          username: data.username,
+          ...(current.username ? { usernameUpdatedAt: new Date() } : {}),
+        })
         .where(eq(users.id, userId))
         .returning()
 

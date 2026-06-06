@@ -14,30 +14,20 @@ import { GitHubConnectionStatus } from '@/features/github/components/github-conn
 import { createClient } from '@/lib/supabase/client'
 import { useUser, useSetUsername } from '@/features/user/hooks/use-user-context'
 import { useSettingsNav } from '@/features/settings/hooks/use-settings-nav'
+import {
+  PROFILE_URL_COPY_RESET_MS,
+  SETTINGS_NAV_ITEMS,
+  SETTINGS_SECTION_HEADERS,
+  SIGN_OUT_ERROR_MESSAGE,
+} from '@/features/settings/constants'
 import { fadeUp } from '@/lib/animations'
 import type { GitHubAccount } from '@praxis/shared'
+import type { SettingsSection } from '@/features/settings/types'
 
-type Section = 'account' | 'github' | 'danger'
-
-const NAV: { id: Section; label: string; icon: React.ReactNode }[] = [
-  { id: 'account', label: 'Account', icon: <IconUser size={16} /> },
-  { id: 'github', label: 'GitHub', icon: <IconBrandGithub size={16} /> },
-  { id: 'danger', label: 'Danger Zone', icon: <IconAlertTriangle size={16} /> },
-]
-
-const SECTION_HEADER: Record<Section, { title: string; subtitle: string }> = {
-  account: {
-    title: 'Account',
-    subtitle: 'Manage your email address and public username.',
-  },
-  github: {
-    title: 'GitHub verification access',
-    subtitle: 'This connection is used to analyze repositories for project verification — it is separate from your sign-in method.',
-  },
-  danger: {
-    title: 'Danger zone',
-    subtitle: 'Irreversible actions. Proceed carefully.',
-  },
+function SettingsNavIcon({ section }: { section: SettingsSection }) {
+  if (section === 'github') return <IconBrandGithub size={16} />
+  if (section === 'danger') return <IconAlertTriangle size={16} />
+  return <IconUser size={16} />
 }
 
 type Props = {
@@ -60,7 +50,10 @@ export function SettingsClient({ initialGithub }: Props) {
     void navigator.clipboard.writeText(`${window.location.origin}/p/${user.username}`)
     setProfileUrlCopied(true)
     if (copyTimer.current) clearTimeout(copyTimer.current)
-    copyTimer.current = setTimeout(() => setProfileUrlCopied(false), 1500)
+    copyTimer.current = setTimeout(
+      () => setProfileUrlCopied(false),
+      PROFILE_URL_COPY_RESET_MS,
+    )
   }
 
   async function handleSignOut() {
@@ -74,36 +67,36 @@ export function SettingsClient({ initialGithub }: Props) {
       router.push('/sign-in')
       router.refresh()
     } catch {
-      setSignOutError('Sign out failed. Please try again.')
+      setSignOutError(SIGN_OUT_ERROR_MESSAGE)
       setSignOutLoading(false)
     }
   }
 
-  const { title, subtitle } = SECTION_HEADER[activeSection]
+  const { title, subtitle } = SETTINGS_SECTION_HEADERS[activeSection]
 
   return (
     <div className="flex flex-col sm:flex-row h-full">
       <aside className="w-full sm:w-55 shrink-0 border-b sm:border-b-0 sm:border-r border-border flex flex-col pt-4">
         <p className="px-3 mb-2 text-[11px] uppercase tracking-widest text-muted-foreground font-medium">Settings</p>
         <nav className="hidden md:flex flex-col gap-1 px-2">
-          {NAV.map(({ id, label, icon }) => (
+          {SETTINGS_NAV_ITEMS.map(({ id, label }) => (
             <button key={id} type="button" onClick={() => setActiveSection(id)}
               className={['flex items-center gap-2.5 py-2 px-3 text-[14px] rounded-r-md border-l-2 transition-colors text-left w-full',
                 activeSection === id ? 'border-foreground bg-muted text-foreground font-medium' : 'border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground',
               ].join(' ')}>
-              {icon}{label}
+              <SettingsNavIcon section={id} />{label}
             </button>
           ))}
         </nav>
       </aside>
       <div className="flex-1 flex flex-col min-w-0">
         <div className="flex md:hidden sticky top-0 z-10 bg-background border-b border-border">
-          {NAV.map(({ id, label, icon }) => (
+          {SETTINGS_NAV_ITEMS.map(({ id, label }) => (
             <button key={id} type="button" onClick={() => setActiveSection(id)}
               className={['flex items-center gap-1.5 px-4 py-2.5 text-[13px] border-b-2 transition-colors',
                 activeSection === id ? 'border-foreground text-foreground font-medium' : 'border-transparent text-muted-foreground',
               ].join(' ')}>
-              {icon}{label}
+              <SettingsNavIcon section={id} />{label}
             </button>
           ))}
         </div>
@@ -133,6 +126,8 @@ export function SettingsClient({ initialGithub }: Props) {
               </div>
               <UsernameField
                 initialValue={user.username ?? (initialGithub.connected ? initialGithub.githubUsername : '')}
+                hasExistingUsername={Boolean(user.username)}
+                usernameUpdatedAt={user.usernameUpdatedAt}
                 onSaveSuccess={setContextUsername}
               />
               {user.username && (

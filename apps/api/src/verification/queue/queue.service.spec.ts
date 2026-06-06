@@ -10,7 +10,9 @@ const queue = {
   },
 }
 
-void new VerificationQueueService(queue as never).enqueueIngestRepo('sub_123').then(() => {
+void (async () => {
+  const service = new VerificationQueueService(queue as never)
+  await service.enqueueIngestRepo('sub_123')
   assert.equal(VERIFICATION_QUEUE_NAME, 'verification')
   assert.equal(added[0].name, VERIFICATION_JOB_NAMES.ingestRepo)
   assert.deepEqual(added[0].payload, { submissionId: 'sub_123' })
@@ -20,4 +22,12 @@ void new VerificationQueueService(queue as never).enqueueIngestRepo('sub_123').t
     type: 'exponential',
     delay: 10_000,
   })
-})
+
+  await service.enqueueReEnrichReport('report_123')
+  assert.equal(added[1].name, VERIFICATION_JOB_NAMES.reEnrichReport)
+  assert.equal((added[1].options as { attempts: number }).attempts, 5)
+  assert.deepEqual((added[1].options as { backoff: { type: string; delay: number } }).backoff, {
+    type: 'fixed',
+    delay: 30 * 60 * 1000,
+  })
+})()

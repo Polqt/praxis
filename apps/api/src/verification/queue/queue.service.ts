@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common'
 import { Queue } from 'bullmq'
 import {
   DEFAULT_JOB_OPTIONS,
+  RE_ENRICH_JOB_OPTIONS,
   VERIFICATION_JOB_NAMES,
   VERIFICATION_QUEUE,
   VerificationJobName,
@@ -40,7 +41,7 @@ export class VerificationQueueService {
     return this.queue.add(
       VERIFICATION_JOB_NAMES.reEnrichReport,
       { submissionId: '', reportId },
-      { ...DEFAULT_JOB_OPTIONS, jobId: `re-enrich-${reportId}` },
+      { ...RE_ENRICH_JOB_OPTIONS, jobId: `re-enrich-${reportId}` },
     )
   }
 

@@ -8,6 +8,7 @@ interface CategoryScoreEntry {
   citations: string[]
   status: string
   minimumScore: number
+  weight: number
   signals: Record<string, unknown>
 }
 

@@ -6,13 +6,13 @@ import { IconTrophy, IconMedal, IconAward } from '@tabler/icons-react'
 import { fadeUp, staggerContainer } from '@/lib/animations'
 import { useLeaderboard } from '../hooks/use-leaderboard'
 import { useMyRank } from '../hooks/use-my-rank'
+import {
+  LEADERBOARD_MARQUEE_TEXT,
+  LEADERBOARD_PERIOD_LABELS,
+  LEADERBOARD_PERIODS,
+} from '@/features/profile/constants'
+import { formatLeaderboardDate } from '@/features/profile/utils/format-leaderboard-date'
 import type { LeaderboardEntry } from '@/lib/api'
-
-const PERIOD_LABELS: Record<'all' | 'month' | 'week', string> = {
-  all: 'All time',
-  month: 'This month',
-  week: 'This week',
-}
 
 type Props = {
   entries: LeaderboardEntry[]
@@ -56,9 +56,7 @@ function RankIcon({ rank }: { rank: number }) {
 
 function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
   const isTopThree = entry.rank <= 3
-  const lastVerified = entry.lastVerifiedAt
-    ? new Date(entry.lastVerifiedAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
-    : null
+  const lastVerified = formatLeaderboardDate(entry.lastVerifiedAt)
 
   return (
     <motion.div variants={fadeUp}>
@@ -138,7 +136,7 @@ export function LeaderboardClient({ entries: initialEntries }: Props) {
         </div>
       </section>
 
-      <MarqueeBand text="VERIFIED · DETERMINISTIC · PROOF OF WORK · REPOSITORY ANALYSIS · " />
+      <MarqueeBand text={LEADERBOARD_MARQUEE_TEXT} />
 
       <section className="min-h-screen bg-background flex flex-col justify-center border-b border-border py-24">
         <div className="max-w-4xl mx-auto px-6 w-full">
@@ -152,19 +150,19 @@ export function LeaderboardClient({ entries: initialEntries }: Props) {
           </p>
 
           <div className="flex items-center gap-1.5 mb-6">
-            {(['all', 'month', 'week'] as const).map((p) => (
+            {LEADERBOARD_PERIODS.map((selectedPeriod) => (
               <button
-                key={p}
+                key={selectedPeriod}
                 type="button"
-                onClick={() => setPeriod(p)}
+                onClick={() => setPeriod(selectedPeriod)}
                 className={[
                   'text-[11px] font-medium px-3 py-1.5 rounded-sm border transition-colors',
-                  period === p
+                  period === selectedPeriod
                     ? 'bg-foreground text-background border-foreground'
                     : 'border-border text-muted-foreground hover:bg-muted',
                 ].join(' ')}
               >
-                {PERIOD_LABELS[p]}
+                {LEADERBOARD_PERIOD_LABELS[selectedPeriod]}
               </button>
             ))}
             {loading && <span className="text-[11px] text-muted-foreground ml-2">Loading…</span>}

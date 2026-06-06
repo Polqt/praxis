@@ -33,6 +33,7 @@ export function toReport(raw: VerificationReport, overrides?: { isPublic?: boole
       citations: data.citations ?? [],
       status: data.status as ScoreItem['status'],
       minimumScore: data.minimumScore,
+      weight: data.weight,
       executionEvidence,
       signals: Object.keys(displaySignals).length > 0 ? displaySignals : undefined,
     }

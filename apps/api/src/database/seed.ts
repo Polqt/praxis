@@ -10,6 +10,7 @@ const db = drizzle(client)
 
 async function ensureRuntimeSchema() {
   await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "bio" text`)
+  await db.execute(sql`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "username_updated_at" timestamp`)
   await db.execute(sql`ALTER TABLE "user_skills" ADD COLUMN IF NOT EXISTS "source_report_id" text REFERENCES "project_verification_reports"("id")`)
 
   await db.execute(sql`ALTER TABLE "repository_executions" ADD COLUMN IF NOT EXISTS "framework" text`)
@@ -354,6 +355,49 @@ The repository must show semantic HTML, ARIA attribute usage, keyboard navigatio
     await db.update(projectChallenges).set(accessibilityChallenge).where(eq(projectChallenges.id, existingA11y[0].id))
   } else {
     await db.insert(projectChallenges).values([accessibilityChallenge])
+  }
+
+  const dashboardChallenge = {
+    trackId: frontendTrack.id,
+    title: 'Build a React Data Dashboard',
+    description: `## Build a React Data Dashboard
+
+Submit a React or Next.js dashboard that loads and presents data from one or more APIs.
+
+The repository should demonstrate:
+
+- Reusable components for tables, charts, filters, or summary metrics
+- Clear loading, empty, and error states
+- Local or shared state management for filters and user interactions
+- Responsive styling and accessible controls
+- Component or end-to-end tests`,
+    projectType: 'frontend' as const,
+    difficulty: 'intermediate' as const,
+    rubric: {
+      categories: [
+        { name: 'Component Architecture', weight: 25, floor: 5 },
+        { name: 'State Management', weight: 25, floor: 5 },
+        { name: 'Styling', weight: 15, floor: 3 },
+        { name: 'Accessibility', weight: 10, floor: 3 },
+        { name: 'Performance', weight: 10, floor: 2 },
+        { name: 'Frontend Testing', weight: 15, floor: 3 },
+      ],
+    },
+    passingThreshold: 65,
+    version: 1,
+    isActive: true,
+  }
+
+  const existingDashboard = await db
+    .select()
+    .from(projectChallenges)
+    .where(eq(projectChallenges.title, dashboardChallenge.title))
+    .limit(1)
+
+  if (existingDashboard[0]) {
+    await db.update(projectChallenges).set(dashboardChallenge).where(eq(projectChallenges.id, existingDashboard[0].id))
+  } else {
+    await db.insert(projectChallenges).values([dashboardChallenge])
   }
 
   console.log('Seed complete')

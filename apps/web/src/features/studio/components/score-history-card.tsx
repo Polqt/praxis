@@ -2,43 +2,25 @@
 
 import { motion } from 'framer-motion'
 import { fadeUp } from '@/lib/animations'
-
-interface ScorePoint {
-  score: number
-  completedAt: string
-}
-
-interface ScoreHistoryEntry {
-  challengeId: string
-  title: string
-  scores: ScorePoint[]
-}
+import {
+  SCORE_CHART_HEIGHT,
+  SCORE_CHART_WIDTH,
+} from '@/features/studio/constants'
+import { getSparklinePoints } from '@/features/studio/utils/get-sparkline-points'
+import type { ScoreHistoryEntry } from '@/lib/api'
 
 type Props = {
   history: ScoreHistoryEntry[]
 }
 
-const W = 80
-const H = 28
-
 function Sparkline({ scores }: { scores: number[] }) {
   if (scores.length < 2) return null
-  const min = Math.min(...scores)
-  const max = Math.max(...scores)
-  const range = max - min || 1
-
-  const points = scores.map((s, i) => {
-    const x = (i / (scores.length - 1)) * W
-    const y = H - ((s - min) / range) * (H - 4) - 2
-    return `${x},${y}`
-  })
-
   const improved = scores[scores.length - 1] > scores[0]
 
   return (
-    <svg width={W} height={H} className="overflow-visible">
+    <svg width={SCORE_CHART_WIDTH} height={SCORE_CHART_HEIGHT} className="overflow-visible">
       <polyline
-        points={points.join(' ')}
+        points={getSparklinePoints(scores)}
         fill="none"
         stroke={improved ? 'rgb(34,197,94)' : 'rgb(239,68,68)'}
         strokeWidth="1.5"
@@ -50,11 +32,11 @@ function Sparkline({ scores }: { scores: number[] }) {
 }
 
 function BaselineBar({ score }: { score: number }) {
-  const fillWidth = Math.round((score / 100) * W)
+  const fillWidth = Math.round((score / 100) * SCORE_CHART_WIDTH)
   return (
-    <svg width={W} height={H} className="overflow-visible">
-      <rect x={0} y={H - 4} width={W} height={4} rx={2} fill="rgb(229,231,235)" />
-      <rect x={0} y={H - 4} width={fillWidth} height={4} rx={2} fill="rgb(148,163,184)" />
+    <svg width={SCORE_CHART_WIDTH} height={SCORE_CHART_HEIGHT} className="overflow-visible">
+      <rect x={0} y={SCORE_CHART_HEIGHT - 4} width={SCORE_CHART_WIDTH} height={4} rx={2} fill="rgb(229,231,235)" />
+      <rect x={0} y={SCORE_CHART_HEIGHT - 4} width={fillWidth} height={4} rx={2} fill="rgb(148,163,184)" />
     </svg>
   )
 }

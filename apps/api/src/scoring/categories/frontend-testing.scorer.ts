@@ -13,7 +13,15 @@ export class FrontendTestingScorer implements CategoryScorer<FrontendTestingSign
       }
     }
 
-    const base = signals.testFileCount <= 2 ? 3 : signals.testFileCount <= 5 ? 6 : 8
+    const execution = signals.executionResult
+    const totalExecuted = execution
+      ? execution.passed + execution.failed
+      : 0
+    const base = execution && !execution.timedOut && totalExecuted > 0
+      ? execution.failed === 0
+        ? execution.passed >= 10 ? 10 : execution.passed >= 5 ? 9 : 8
+        : Math.round((execution.passed / (execution.passed + execution.failed)) * 8)
+      : signals.testFileCount <= 2 ? 3 : signals.testFileCount <= 5 ? 6 : 8
     let s = base
     if (signals.hasComponentTests) s += 1
     if (signals.hasE2eTests) s += 1
@@ -30,7 +38,20 @@ export class FrontendTestingScorer implements CategoryScorer<FrontendTestingSign
       narrative: parts.join(' '),
       citations: signals.testFilePaths,
       status: score >= 5 ? 'pass' : 'fail',
-      signals: { testFileCount: signals.testFileCount, hasComponentTests: signals.hasComponentTests },
+      signals: {
+        testFileCount: signals.testFileCount,
+        hasComponentTests: signals.hasComponentTests,
+        hasE2eTests: signals.hasE2eTests,
+        hasCoverageConfig: signals.hasCoverageConfig,
+        execution: execution
+          ? {
+              passed: execution.passed,
+              failed: execution.failed,
+              skipped: execution.skipped,
+              language: execution.language,
+            }
+          : null,
+      },
     }
   }
 }

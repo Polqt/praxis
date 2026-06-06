@@ -1,18 +1,20 @@
 'use client'
 
 import { IconCheck, IconX } from '@tabler/icons-react'
-import { PIPELINE_STAGES, PIPELINE_STAGE_DESCRIPTIONS, TERMINAL_STATUSES, FAILED_STATUSES } from '../constants'
+import {
+  FAILED_SUBMISSION_STATUS_SET,
+  PIPELINE_STAGES,
+  PIPELINE_STAGE_DESCRIPTIONS,
+  TERMINAL_STATUSES,
+} from '../constants'
 import type { SubmissionStatus } from '@praxis/shared'
+import type { SubmissionStepState } from '@/features/submissions/types'
 
 type Props = {
   status: SubmissionStatus
 }
 
-type StepState = 'completed' | 'active' | 'pending' | 'failed'
-
-const FAILED_SET = new Set<SubmissionStatus>([...FAILED_STATUSES, 'expired'])
-
-function getStepState(index: number, currentStatusIndex: number, isFailed: boolean, isTerminal: boolean): StepState {
+function getStepState(index: number, currentStatusIndex: number, isFailed: boolean, isTerminal: boolean): SubmissionStepState {
   if (isFailed) {
     if (index < currentStatusIndex) return 'completed'
     if (index === currentStatusIndex) return 'failed'
@@ -26,7 +28,7 @@ function getStepState(index: number, currentStatusIndex: number, isFailed: boole
 
 export function LiveStepIndicator({ status }: Props) {
   const isTerminal = TERMINAL_STATUSES.includes(status)
-  const isFailed = FAILED_SET.has(status)
+  const isFailed = FAILED_SUBMISSION_STATUS_SET.has(status)
   const currentStatusIndex = PIPELINE_STAGES.findIndex((s) => s.toStatus === status)
   const activeStage = PIPELINE_STAGES[currentStatusIndex]
 

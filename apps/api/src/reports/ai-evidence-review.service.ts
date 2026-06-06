@@ -8,7 +8,7 @@ import { repositoryAiReviews, repositoryIngestions } from '../database/schema'
 import type { RepositoryAnalysisData } from '../verification/analysis/repository-analysis.types'
 import type { RepositoryIngestionData } from '../verification/ingestion/repository-ingestion.types'
 
-const PROMPT_VERSION = 'ai-evidence-review-v1'
+const PROMPT_VERSION = 'ai-evidence-review-v2'
 const MAX_FILE_HINTS = 80
 const MAX_CONTENT_CHARS = 600
 
@@ -23,7 +23,7 @@ type ReviewData = {
   possibleMissedEvidence: MissedEvidence[]
 }
 
-const SYSTEM_PROMPT = `You are an AI evidence reviewer for Praxis. Review deterministic repository signals and identify evidence the deterministic analyzer may have missed. Do not score the project. Do not change verdicts. Return only JSON with possibleMissedEvidence. Every item must cite an existing path from the input.`
+const SYSTEM_PROMPT = `You are an AI evidence reviewer for Praxis. Evaluate each rubric category against the repository tree and deterministic signals before selecting possible missed evidence. Do not score the project or change verdicts. Return only JSON with possibleMissedEvidence. Every item must cite an existing path from the input.`
 
 function estimateCostUsd(model: string, inputTokens: number, outputTokens: number): string {
   const lower = model.toLowerCase()
@@ -100,13 +100,17 @@ export class AiEvidenceReviewService {
       const text = message.content[0]?.type === 'text' ? message.content[0].text : '{}'
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) as ReviewData : { possibleMissedEvidence: [] }
+      const validPaths = new Set(input.files.map((file) => file.path))
       const safeReview: ReviewData = {
         possibleMissedEvidence: Array.isArray(parsed.possibleMissedEvidence)
           ? parsed.possibleMissedEvidence.slice(0, 20).filter((item) =>
               typeof item.category === 'string' &&
               typeof item.path === 'string' &&
+              validPaths.has(item.path) &&
               typeof item.reason === 'string' &&
-              typeof item.confidence === 'number',
+              typeof item.confidence === 'number' &&
+              item.confidence >= 0 &&
+              item.confidence <= 1,
             )
           : [],
       }

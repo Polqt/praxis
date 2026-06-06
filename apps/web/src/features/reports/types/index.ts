@@ -1,10 +1,58 @@
 export type ReportStatus = 'verified' | 'insufficient' | 'failed'
+export type SkillTier = 'gold' | 'standard' | 'muted'
+
+export interface ReportShareSummary {
+  verdict: 'verified' | 'insufficient'
+  compositeScore: number
+  challengeTitle: string
+  publicToken: string | null
+  bestCategory?: { name: string; score: number } | null
+}
 
 export interface ExecutionEvidence {
   passed: number
   failed: number
   skipped: number
   language: string
+}
+
+export interface CommandResult {
+  phase: string
+  label: string
+  exitCode: number
+  durationMs?: number | null
+  timedOut: boolean
+  stdout?: string
+  stderr?: string
+}
+
+export interface CommandSummary {
+  phase: string
+  label: string
+  exitCode: number
+  timedOut: boolean
+}
+
+export interface ExecutionOutput {
+  language: string
+  framework?: string | null
+  testCommand: string
+  publicSummary?: string | null
+  commandSummary?: CommandSummary[]
+  exitCode: number
+  passed: number
+  failed: number
+  skipped: number
+  durationMs: number | null
+  stdout: string | null
+  stderr: string | null
+  timedOut: boolean
+  installResult?: CommandResult | null
+  testResult?: CommandResult | null
+  buildResult?: CommandResult | null
+  lintResult?: CommandResult | null
+  typecheckResult?: CommandResult | null
+  doctorResult?: CommandResult | null
 }
 
 export interface ScoreItem {
@@ -14,6 +62,7 @@ export interface ScoreItem {
   citations: string[]
   status?: 'pass' | 'fail' | 'floor'
   minimumScore?: number
+  weight?: number
   executionEvidence?: ExecutionEvidence | null
   signals?: Record<string, unknown>
   confidence?: 'high' | 'medium' | 'low'

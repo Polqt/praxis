@@ -28,3 +28,5 @@ export interface PublicProfile {
   challengesCompleted: number
   latestReports: ProfileReport[]
 }
+
+export type LeaderboardPeriod = 'all' | 'month' | 'week'

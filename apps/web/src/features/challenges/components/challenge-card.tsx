@@ -4,32 +4,27 @@ import Link from 'next/link'
 import { IconCircleCheck } from '@tabler/icons-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { DIFFICULTY_CLASS, DIFFICULTY_LABEL } from '@/features/challenges/constants'
-import { buildAuthRedirect } from '@/shared/utils/build-auth-redirect'
+import {
+  CHALLENGE_STATUS_BADGE,
+  DIFFICULTY_CLASS,
+  DIFFICULTY_LABEL,
+} from '@/features/challenges/constants'
 import { stripMarkdown } from '@/features/challenges/utils'
-import type { Challenge } from '@/features/challenges/types'
-
-type SubmissionStatus = 'verified' | 'in-progress' | 'attempted'
+import type {
+  Challenge,
+  ChallengeSubmissionStatus,
+} from '@/features/challenges/types'
 
 type Props = {
   challenge: Challenge
-  isAuthenticated: boolean
-  submissionStatus?: SubmissionStatus
+  submissionStatus?: ChallengeSubmissionStatus
 }
 
-const STATUS_BADGE: Record<SubmissionStatus, { label: string; className: string }> = {
-  verified: { label: 'Verified', className: 'bg-green-100 text-green-700 border-green-200' },
-  'in-progress': { label: 'In progress', className: 'bg-blue-100 text-blue-700 border-blue-200' },
-  attempted: { label: 'Attempted', className: 'bg-muted text-muted-foreground border-border' },
-}
-
-export function ChallengeCard({ challenge, isAuthenticated, submissionStatus }: Props) {
-  const ctaHref = isAuthenticated
-    ? `/submit?challengeId=${challenge.id}`
-    : buildAuthRedirect(`/submit?challengeId=${challenge.id}`)
-
+export function ChallengeCard({ challenge, submissionStatus }: Props) {
   const isVerified = submissionStatus === 'verified'
-  const statusBadge = submissionStatus ? STATUS_BADGE[submissionStatus] : null
+  const statusBadge = submissionStatus
+    ? CHALLENGE_STATUS_BADGE[submissionStatus]
+    : null
 
   return (
     <div className={`rounded-lg border bg-card ${isVerified ? 'border-green-200' : ''}`}>
@@ -59,8 +54,8 @@ export function ChallengeCard({ challenge, isAuthenticated, submissionStatus }: 
           {DIFFICULTY_LABEL[challenge.difficulty]}
         </span>
         <Button variant={isVerified ? 'ghost' : 'outline'} size="sm" asChild className="shrink-0">
-          <Link href={ctaHref}>
-            {isVerified ? 'Submit again' : isAuthenticated ? 'Submit repository' : 'Start verification'}
+          <Link href={`/submit?challengeId=${challenge.id}`}>
+            {isVerified ? 'Submit again' : 'Submit repository'}
           </Link>
         </Button>
       </div>

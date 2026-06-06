@@ -10,19 +10,18 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { repoName } from '@/lib/praxis-format'
 import { fadeUp, staggerContainer } from '@/lib/animations'
-import { IN_PROGRESS_STATUSES, FAILED_STATUSES } from '@/features/submissions/constants'
+import {
+  IN_PROGRESS_STATUSES,
+  SUBMISSION_FILTERS,
+} from '@/features/submissions/constants'
 import { StatusBadge } from '@/features/submissions/components/status-badge'
 import { FormattedDate } from '@/components/ui/formatted-date'
+import {
+  countSubmissions,
+  filterSubmissions,
+} from '@/features/submissions/utils/filter-submissions'
 import type { ProjectSubmission } from '@praxis/shared'
-
-type FilterTab = 'all' | 'verified' | 'in-progress' | 'failed'
-
-function filterSubmissions(submissions: ProjectSubmission[], tab: FilterTab): ProjectSubmission[] {
-  if (tab === 'verified') return submissions.filter((s) => s.status === 'verified')
-  if (tab === 'in-progress') return submissions.filter((s) => IN_PROGRESS_STATUSES.includes(s.status))
-  if (tab === 'failed') return submissions.filter((s) => FAILED_STATUSES.includes(s.status))
-  return submissions
-}
+import type { SubmissionFilter } from '@/features/submissions/types'
 
 function SubmissionCard({ submission }: { submission: ProjectSubmission }) {
   const isActive = IN_PROGRESS_STATUSES.includes(submission.status)
@@ -56,19 +55,8 @@ function SubmissionCard({ submission }: { submission: ProjectSubmission }) {
   )
 }
 
-const TAB_DEFS: { value: FilterTab; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'verified', label: 'Verified' },
-  { value: 'in-progress', label: 'In Progress' },
-  { value: 'failed', label: 'Failed' },
-]
-
-function tabCount(submissions: ProjectSubmission[], tab: FilterTab): number {
-  return filterSubmissions(submissions, tab).length
-}
-
 export function SubmissionsClient({ submissions }: { submissions: ProjectSubmission[] }) {
-  const [tab, setTab] = useState<FilterTab>('all')
+  const [tab, setTab] = useState<SubmissionFilter>('all')
   const [search, setSearch] = useState('')
 
   const filtered = useMemo(() => {
@@ -100,10 +88,10 @@ export function SubmissionsClient({ submissions }: { submissions: ProjectSubmiss
         />
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as FilterTab)}>
+      <Tabs value={tab} onValueChange={(value) => setTab(value as SubmissionFilter)}>
         <TabsList className="bg-transparent p-0 h-auto gap-0 border-0">
-          {TAB_DEFS.map(({ value, label }) => {
-            const count = tabCount(submissions, value)
+          {SUBMISSION_FILTERS.map(({ value, label }) => {
+            const count = countSubmissions(submissions, value)
             return (
               <TabsTrigger
                 key={value}
@@ -133,10 +121,7 @@ export function SubmissionsClient({ submissions }: { submissions: ProjectSubmiss
           <motion.div variants={fadeUp} className="flex flex-col items-center justify-center py-16 gap-3">
             <IconSend size={20} className="text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              {tab === 'all' ? 'No submissions yet.' :
-               tab === 'verified' ? 'No verified submissions yet.' :
-               tab === 'in-progress' ? 'No submissions in progress.' :
-               'No failed submissions.'}
+              {SUBMISSION_FILTERS.find(({ value }) => value === tab)?.emptyMessage}
             </p>
             {tab === 'all' && (
               <Button variant="ghost" size="sm" asChild>

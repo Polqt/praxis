@@ -3,42 +3,17 @@
 import { useState } from 'react'
 import { IconChevronDown, IconChevronRight, IconTerminal2, IconAlertTriangle } from '@tabler/icons-react'
 import { motion, AnimatePresence } from 'framer-motion'
-
-// Mirrors the caps in repository-execution.service.ts
-const STDOUT_CAP = 5000
-const STDERR_CAP = 2000
-
-interface CommandResult {
-  phase: string
-  label: string
-  exitCode: number
-  durationMs?: number | null
-  timedOut: boolean
-  stdout?: string
-  stderr?: string
-}
-
-interface ExecutionOutput {
-  language: string
-  framework?: string | null
-  testCommand: string
-  publicSummary?: string | null
-  commandSummary?: { phase: string; label: string; exitCode: number; timedOut: boolean }[]
-  exitCode: number
-  passed: number
-  failed: number
-  skipped: number
-  durationMs: number | null
-  stdout: string | null
-  stderr: string | null
-  timedOut: boolean
-  installResult?: CommandResult | null
-  testResult?: CommandResult | null
-  buildResult?: CommandResult | null
-  lintResult?: CommandResult | null
-  typecheckResult?: CommandResult | null
-  doctorResult?: CommandResult | null
-}
+import {
+  EXECUTION_FAILURE_PREVIEW_CAP,
+  EXECUTION_PHASE_PREVIEW_CAP,
+  EXECUTION_STDERR_CAP,
+  EXECUTION_STDOUT_CAP,
+} from '@/features/reports/constants'
+import { deriveExecutionView } from '@/features/reports/utils/derive-execution-view'
+import type {
+  CommandResult,
+  ExecutionOutput,
+} from '@/features/reports/types'
 
 type Props = {
   execution: ExecutionOutput
@@ -54,7 +29,8 @@ function PhaseFailureBanner({ label, result }: { label: string; result: CommandR
       </div>
       {errText && (
         <pre className="text-[11px] font-mono text-amber-900 whitespace-pre-wrap break-all max-h-24 overflow-y-auto mt-1">
-          {errText.slice(0, 500)}{errText.length > 500 ? '…' : ''}
+          {errText.slice(0, EXECUTION_FAILURE_PREVIEW_CAP)}
+          {errText.length > EXECUTION_FAILURE_PREVIEW_CAP ? '...' : ''}
         </pre>
       )}
     </div>
@@ -62,29 +38,21 @@ function PhaseFailureBanner({ label, result }: { label: string; result: CommandR
 }
 
 export function TestExecutionOutput({ execution }: Props) {
-  const phaseResults = [
-    execution.installResult,
-    execution.testResult,
-    execution.buildResult,
-    execution.lintResult,
-    execution.typecheckResult,
-    execution.doctorResult,
-  ].filter((item): item is CommandResult => Boolean(item))
-
-  const hasResults = execution.passed > 0 || execution.failed > 0 || execution.timedOut
-  const noTests = !hasResults && !execution.timedOut
-  const installFailed = noTests && execution.installResult != null && execution.installResult.exitCode !== 0
-  const buildFailed = noTests && !installFailed && execution.buildResult != null && execution.buildResult.exitCode !== 0
+  const {
+    buildFailed,
+    displayedPhases,
+    durationLabel,
+    hasOutput,
+    hasResults,
+    installFailed,
+    noTests,
+    statusClassName,
+    stderr,
+    stderrTruncated,
+    stdout,
+    stdoutTruncated,
+  } = deriveExecutionView(execution)
   const [open, setOpen] = useState(hasResults || installFailed || buildFailed)
-
-  const stdout = execution.stdout?.trim() ?? ''
-  const stderr = execution.stderr?.trim() ?? ''
-  const hasOutput = stdout || stderr
-  const stdoutTruncated = (execution.stdout?.length ?? 0) >= STDOUT_CAP
-  const stderrTruncated = (execution.stderr?.length ?? 0) >= STDERR_CAP
-  const statusColor = execution.timedOut || execution.exitCode !== 0 ? 'text-destructive' : 'text-green-600'
-  const durationLabel = execution.durationMs ? `${(execution.durationMs / 1000).toFixed(1)}s` : null
-  const displayedPhases = phaseResults.length > 0 ? phaseResults : (execution.commandSummary ?? [])
 
   return (
     <div className="rounded-lg border bg-card">
@@ -99,7 +67,7 @@ export function TestExecutionOutput({ execution }: Props) {
           Sandbox execution output
         </span>
         <div className="flex items-center gap-3 shrink-0 text-xs">
-          <span className={statusColor}>
+          <span className={statusClassName}>
             {execution.timedOut ? 'Timed out' : `Exit ${execution.exitCode}`}
           </span>
           <span className="text-muted-foreground">{execution.framework ?? execution.language}</span>
@@ -178,7 +146,8 @@ export function TestExecutionOutput({ execution }: Props) {
                       {duration && <p className="mt-1 text-[11px] text-muted-foreground">{duration}</p>}
                       {logPreview && (
                         <pre className="mt-2 max-h-20 overflow-y-auto whitespace-pre-wrap break-all rounded bg-background/70 p-2 text-[10px] text-muted-foreground">
-                          {logPreview.slice(0, 400)}{logPreview.length > 400 ? '...' : ''}
+                          {logPreview.slice(0, EXECUTION_PHASE_PREVIEW_CAP)}
+                          {logPreview.length > EXECUTION_PHASE_PREVIEW_CAP ? '...' : ''}
                         </pre>
                       )}
                     </div>
@@ -194,7 +163,9 @@ export function TestExecutionOutput({ execution }: Props) {
                         {stdout}
                       </pre>
                       {stdoutTruncated && (
-                        <p className="text-[10px] text-muted-foreground mt-1 italic">… output truncated at 5000 characters</p>
+                        <p className="text-[10px] text-muted-foreground mt-1 italic">
+                          Output truncated at {EXECUTION_STDOUT_CAP} characters
+                        </p>
                       )}
                     </div>
                   )}
@@ -205,7 +176,9 @@ export function TestExecutionOutput({ execution }: Props) {
                         {stderr}
                       </pre>
                       {stderrTruncated && (
-                        <p className="text-[10px] text-muted-foreground mt-1 italic">… output truncated at 2000 characters</p>
+                        <p className="text-[10px] text-muted-foreground mt-1 italic">
+                          Output truncated at {EXECUTION_STDERR_CAP} characters
+                        </p>
                       )}
                     </div>
                   )}

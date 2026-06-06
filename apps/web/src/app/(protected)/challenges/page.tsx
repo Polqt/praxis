@@ -1,6 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
 import { serverApiFetch } from '@/lib/api.server'
-import { ChallengesPublicPage } from '@/features/challenges/components/challenges-public-page'
+import { ChallengesPageClient } from '@/features/challenges/components/challenges-page-client'
 import type { ProjectChallenge, ProjectSubmission } from '@praxis/shared'
 import type { Challenge } from '@/features/challenges/types'
 
@@ -22,15 +21,9 @@ function toChallenge(raw: ProjectChallenge): Challenge {
 }
 
 export default async function ChallengesPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const isAuthenticated = !!user
-
   const [raw, submissions] = await Promise.all([
     serverApiFetch<ProjectChallenge[]>('/challenges').catch(() => [] as ProjectChallenge[]),
-    isAuthenticated
-      ? serverApiFetch<ProjectSubmission[]>('/submissions').catch(() => [] as ProjectSubmission[])
-      : Promise.resolve([] as ProjectSubmission[]),
+    serverApiFetch<ProjectSubmission[]>('/submissions').catch(() => [] as ProjectSubmission[]),
   ])
 
   const challenges = raw.map(toChallenge)
@@ -47,9 +40,8 @@ export default async function ChallengesPage() {
   }
 
   return (
-    <ChallengesPublicPage
+    <ChallengesPageClient
       challenges={challenges}
-      isAuthenticated={isAuthenticated}
       submissionStatusMap={submissionStatusMap}
     />
   )

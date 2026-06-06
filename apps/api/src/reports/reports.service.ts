@@ -20,7 +20,11 @@ import {
 } from '../database/schema'
 import { AuditService } from '../audit/audit.service'
 import { scoreReport } from './report-scoring'
-import { ReportEnrichmentService } from './report-enrichment.service'
+import {
+  FALLBACK_SUMMARY_INSUFFICIENT,
+  FALLBACK_SUMMARY_VERIFIED,
+  ReportEnrichmentService,
+} from './report-enrichment.service'
 import { AiEvidenceReviewService } from './ai-evidence-review.service'
 import { deriveStrengths, deriveImprovements } from '../scoring/derive-report-highlights'
 
@@ -30,6 +34,7 @@ type StoredCategoryScore = {
   citations: string[]
   status: string
   minimumScore: number
+  weight?: number
   signals?: Record<string, unknown>
 }
 
@@ -387,7 +392,9 @@ export class ReportsService implements OnModuleInit {
   }
 
   async reEnrichReport(reportId: string) {
-    if (!this.enrichment.enabled) return
+    if (!this.enrichment.enabled) {
+      throw new Error('AI report enrichment is unavailable')
+    }
 
     const reportRows = await this.db.db
       .select()
@@ -407,12 +414,19 @@ export class ReportsService implements OnModuleInit {
     if (!ingestionRows[0]) return
 
     const enriched = await this.enrichment.enrich({
-      categoryScores: report.categoryScores as Record<string, { score: number; narrative: string; citations: string[]; status: string; minimumScore: number; signals: Record<string, unknown> }>,
+      categoryScores: report.categoryScores as Record<string, { score: number; narrative: string; citations: string[]; status: string; minimumScore: number; weight: number; signals: Record<string, unknown> }>,
       verdict: report.verdict,
       compositeScore: report.compositeScore,
       repositoryName: submission.githubRepoFullName,
       challengeTitle: challenge.title,
     })
+
+    if (
+      enriched.publicSummary === FALLBACK_SUMMARY_VERIFIED
+      || enriched.publicSummary === FALLBACK_SUMMARY_INSUFFICIENT
+    ) {
+      throw new Error('AI report enrichment returned fallback content')
+    }
 
     await this.db.db
       .update(projectVerificationReports)
@@ -503,6 +517,7 @@ export class ReportsService implements OnModuleInit {
     challenge: typeof projectChallenges.$inferSelect,
   ) {
     const scores = (report.categoryScores ?? {}) as Record<string, StoredCategoryScore>
+    const categoryScores = this.withRubricWeights(scores, challenge)
     const strengths = deriveStrengths(scores)
     const improvements = deriveImprovements(scores)
 
@@ -515,7 +530,7 @@ export class ReportsService implements OnModuleInit {
       challengeTitle: challenge.title,
       compositeScore: report.compositeScore,
       verdict: report.verdict,
-      categoryScores: report.categoryScores,
+      categoryScores,
       publicSummary: report.publicSummary,
       strengths,
       improvements,
@@ -544,12 +559,30 @@ export class ReportsService implements OnModuleInit {
     return { skillProgress, aiReview, previousSubmission }
   }
 
+  private withRubricWeights(
+    scores: Record<string, StoredCategoryScore>,
+    challenge: typeof projectChallenges.$inferSelect,
+  ): Record<string, StoredCategoryScore> {
+    const rubric = challenge.rubric as { categories?: { name: string; weight: number }[] }
+    const weights = new Map((rubric.categories ?? []).map((category) => [category.name, category.weight]))
+
+    return Object.fromEntries(
+      Object.entries(scores).map(([name, score]) => [
+        name,
+        { ...score, weight: score.weight ?? weights.get(name) },
+      ]),
+    )
+  }
+
   private async buildSkillProgress(
     report: typeof projectVerificationReports.$inferSelect,
     challenge: typeof projectChallenges.$inferSelect,
   ): Promise<SkillProgress[]> {
     const rubric = challenge.rubric as { categories: { name: string; floor: number }[] }
-    const scores = (report.categoryScores ?? {}) as Record<string, StoredCategoryScore>
+    const scores = this.withRubricWeights(
+      (report.categoryScores ?? {}) as Record<string, StoredCategoryScore>,
+      challenge,
+    )
     const skillRows = await this.db.db.select().from(skills)
     const skillsByName = new Map(skillRows.map((skill) => [skill.name.toLowerCase(), skill]))
 
@@ -693,11 +726,21 @@ export class ReportsService implements OnModuleInit {
     challenge: typeof projectChallenges.$inferSelect,
     executionSummary?: { passed: number; failed: number; skipped: number; language: string; framework: string | null; durationMs: number | null; timedOut: boolean } | null,
   ) {
-    const scores = (report.categoryScores ?? {}) as Record<string, StoredCategoryScore>
+    const scores = this.withRubricWeights(
+      (report.categoryScores ?? {}) as Record<string, StoredCategoryScore>,
+      challenge,
+    )
 
-    const safeScores: Record<string, { score: number; narrative: string; citations: string[]; minimumScore?: number; status?: string }> = {}
+    const safeScores: Record<string, { score: number; narrative: string; citations: string[]; minimumScore?: number; weight?: number; status?: string }> = {}
     for (const [name, v] of Object.entries(scores)) {
-      safeScores[name] = { score: v.score, narrative: v.narrative, citations: v.citations, minimumScore: v.minimumScore, status: v.status }
+      safeScores[name] = {
+        score: v.score,
+        narrative: v.narrative,
+        citations: v.citations,
+        minimumScore: v.minimumScore,
+        weight: v.weight,
+        status: v.status,
+      }
     }
 
     return {

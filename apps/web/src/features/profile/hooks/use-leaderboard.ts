@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { apiClient } from '@/lib/api'
 import type { LeaderboardEntry } from '@/lib/api'
+import type { LeaderboardPeriod } from '@/features/profile/types'
 
 interface UseLeaderboardResult {
   entries: LeaderboardEntry[]
@@ -11,8 +12,14 @@ interface UseLeaderboardResult {
   refresh: () => Promise<void>
 }
 
-export function useLeaderboard(initial: LeaderboardEntry[] = [], initialPeriod: 'all' | 'month' | 'week' = 'all'): UseLeaderboardResult & { period: 'all' | 'month' | 'week'; setPeriod: (p: 'all' | 'month' | 'week') => void } {
-  const [period, setPeriodState] = useState<'all' | 'month' | 'week'>(initialPeriod)
+export function useLeaderboard(
+  initial: LeaderboardEntry[] = [],
+  initialPeriod: LeaderboardPeriod = 'all',
+): UseLeaderboardResult & {
+  period: LeaderboardPeriod
+  setPeriod: (period: LeaderboardPeriod) => void
+} {
+  const [period, setPeriodState] = useState<LeaderboardPeriod>(initialPeriod)
   const needsFetch = initial.length === 0
   const [entries, setEntries] = useState<LeaderboardEntry[]>(initial)
   const [loading, setLoading] = useState(needsFetch)
@@ -21,13 +28,13 @@ export function useLeaderboard(initial: LeaderboardEntry[] = [], initialPeriod: 
   // Cache SSR initial data for the 'all' period — avoids re-fetching when user switches back
   const allTimeCache = useRef<LeaderboardEntry[]>(initial)
 
-  const refresh = useCallback(async (p?: 'all' | 'month' | 'week') => {
+  const refresh = useCallback(async (selectedPeriod?: LeaderboardPeriod) => {
     setLoading(true)
     setError(null)
     try {
-      const data = await apiClient.getLeaderboard(p ?? period)
+      const data = await apiClient.getLeaderboard(selectedPeriod ?? period)
       setEntries(data)
-      if ((p ?? period) === 'all') allTimeCache.current = data
+      if ((selectedPeriod ?? period) === 'all') allTimeCache.current = data
     } catch {
       setError('Failed to load leaderboard.')
     } finally {
@@ -35,13 +42,13 @@ export function useLeaderboard(initial: LeaderboardEntry[] = [], initialPeriod: 
     }
   }, [period])
 
-  const setPeriod = useCallback((p: 'all' | 'month' | 'week') => {
-    setPeriodState(p)
-    if (p === 'all' && allTimeCache.current.length > 0) {
+  const setPeriod = useCallback((selectedPeriod: LeaderboardPeriod) => {
+    setPeriodState(selectedPeriod)
+    if (selectedPeriod === 'all' && allTimeCache.current.length > 0) {
       setEntries(allTimeCache.current)
       return
     }
-    refresh(p)
+    void refresh(selectedPeriod)
   }, [refresh])
 
   useEffect(() => {

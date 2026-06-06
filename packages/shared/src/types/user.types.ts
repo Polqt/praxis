@@ -5,6 +5,7 @@ export interface User {
   supabaseUid: string
   email: string
   username: string | null
+  usernameUpdatedAt?: string | null
   createdAt: string
 }
 

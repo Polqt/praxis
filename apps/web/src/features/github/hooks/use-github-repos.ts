@@ -4,17 +4,14 @@ import { useState, useEffect } from 'react'
 import { apiClient } from '@/lib/api'
 
 export function useGitHubRepos(enabled: boolean) {
-  const [repos, setRepos] = useState<string[]>([])
-  const [loading, setLoading] = useState(false)
+  const [repos, setRepos] = useState<string[] | null>(null)
 
   useEffect(() => {
-    if (!enabled) return
-    setLoading(true)
+    if (!enabled || repos !== null) return
     apiClient.getGitHubRepos()
       .then(setRepos)
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [enabled])
+      .catch(() => setRepos([]))
+  }, [enabled, repos])
 
-  return { repos, loading }
+  return { repos: repos ?? [], loading: enabled && repos === null }
 }

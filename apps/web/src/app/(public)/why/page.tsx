@@ -14,20 +14,6 @@ function SectionLabel({ text }: { text: string }) {
   )
 }
 
-function SectionLabelLight({ text }: { text: string }) {
-  return (
-    <div className="inline-flex items-center gap-2.5 mb-6">
-      <div
-        className="rounded-[1px] shrink-0"
-        style={{ width: '8px', height: '10px', background: 'rgba(255,255,255,0.4)' }}
-      />
-      <span className="text-[13px] uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>
-        {text}
-      </span>
-    </div>
-  )
-}
-
 const MARQUEE_TEXT = 'SAME RESUME · SAME KEYWORDS · SAME RESULT · '
 const MARQUEE_TEXT_2 = 'REAL WORK · REAL EVIDENCE · REAL PROOF · '
 

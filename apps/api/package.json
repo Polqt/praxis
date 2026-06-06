@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "nest start --watch --entryFile apps/api/src/main",
     "build": "nest build",
+    "test": "node scripts/run-specs.cjs",
     "start": "drizzle-kit migrate && node dist/apps/api/src/main",
     "worker": "nest start --entryFile apps/api/src/worker",
     "worker:dev": "nest start --watch --entryFile apps/api/src/worker",

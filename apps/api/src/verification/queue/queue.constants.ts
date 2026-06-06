@@ -32,3 +32,15 @@ export const DEFAULT_JOB_OPTIONS = {
     count: 500,
   },
 }
+
+export const RE_ENRICH_JOB_OPTIONS = {
+  attempts: 5,
+  backoff: {
+    type: 'fixed' as const,
+    delay: 30 * 60 * 1000,
+  },
+  removeOnComplete: true,
+  removeOnFail: {
+    count: 500,
+  },
+}

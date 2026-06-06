@@ -379,7 +379,10 @@ export function extractFrontendPerformanceSignals(data: RepositoryIngestionData)
   }
 }
 
-export function extractFrontendTestingSignals(data: RepositoryIngestionData): FrontendTestingSignals {
+export function extractFrontendTestingSignals(
+  data: RepositoryIngestionData,
+  executionResult: TestExecutionResult | null = null,
+): FrontendTestingSignals {
   const testFiles = byKind(data.files, 'test')
   const allPaths = testFiles.map((f) => f.path)
   const hasComponentTests = testFiles.some((f) => COMPONENT_FILE_PATTERN.test(f.path) || /\.(spec|test)\.(tsx|jsx)$/.test(f.path))
@@ -392,5 +395,6 @@ export function extractFrontendTestingSignals(data: RepositoryIngestionData): Fr
     hasE2eTests,
     hasCoverageConfig,
     testFilePaths: top(allPaths, 5),
+    executionResult,
   }
 }

@@ -2,11 +2,11 @@
 
 import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-
-const BASE_INTERVAL_MS = 3_000
-const MAX_INTERVAL_MS = 60_000
-// Submissions older than this start at a longer polling interval
-const OLD_SUBMISSION_THRESHOLD_MS = 5 * 60 * 1000 // 5 minutes
+import {
+  BASE_POLL_INTERVAL_MS,
+  MAX_POLL_INTERVAL_MS,
+  OLD_SUBMISSION_THRESHOLD_MS,
+} from '@/features/submissions/constants'
 
 type Props = {
   isInProgress: boolean
@@ -15,7 +15,7 @@ type Props = {
 
 export function SubmissionPoller({ isInProgress, submittedAt }: Props) {
   const router = useRouter()
-  const intervalRef = useRef(BASE_INTERVAL_MS)
+  const intervalRef = useRef(BASE_POLL_INTERVAL_MS)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -24,13 +24,16 @@ export function SubmissionPoller({ isInProgress, submittedAt }: Props) {
     // Start at a longer interval for submissions that have been in-progress a while
     const age = submittedAt ? Date.now() - new Date(submittedAt).getTime() : 0
     intervalRef.current = age > OLD_SUBMISSION_THRESHOLD_MS
-      ? Math.min(age / 10, MAX_INTERVAL_MS) // proportional to age, max 60s
-      : BASE_INTERVAL_MS
+      ? Math.min(age / 10, MAX_POLL_INTERVAL_MS)
+      : BASE_POLL_INTERVAL_MS
 
     function scheduleNext() {
       timerRef.current = setTimeout(() => {
         router.refresh()
-        intervalRef.current = Math.min(intervalRef.current * 2, MAX_INTERVAL_MS)
+        intervalRef.current = Math.min(
+          intervalRef.current * 2,
+          MAX_POLL_INTERVAL_MS,
+        )
         scheduleNext()
       }, intervalRef.current)
     }

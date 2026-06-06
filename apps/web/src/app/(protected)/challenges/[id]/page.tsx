@@ -1,13 +1,11 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { serverApiFetch } from '@/lib/api.server'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { buildAuthRedirect } from '@/shared/utils/build-auth-redirect'
 import { IconArrowLeft, IconCircleCheck } from '@tabler/icons-react'
 import { CATEGORY_LABEL } from '@/features/submissions/constants'
-import { stripMarkdown } from '@/features/challenges/utils'
+import { ChallengeDescription } from '@/features/challenges/components/challenge-description'
 import type { ProjectChallenge } from '@praxis/shared'
 
 type Props = {
@@ -16,20 +14,12 @@ type Props = {
 
 export default async function ChallengeDetailPage(props: Props) {
   const { id } = await props.params
-  const supabase = await createClient()
-
-  const [{ data: { user } }, challenge] = await Promise.all([
-    supabase.auth.getUser(),
-    serverApiFetch<ProjectChallenge>(`/challenges/${id}`).catch(() => null),
-  ])
+  const challenge = await serverApiFetch<ProjectChallenge>(`/challenges/${id}`).catch(() => null)
 
   if (!challenge) notFound()
 
   const categoryLabel = CATEGORY_LABEL[challenge.projectType] ?? challenge.projectType
-  const submitHref = user
-    ? `/submit?challengeId=${challenge.id}`
-    : buildAuthRedirect(`/submit?challengeId=${challenge.id}`)
-  const ctaLabel = user ? 'Submit repository' : 'Start verification'
+  const submitHref = `/submit?challengeId=${challenge.id}`
 
   return (
     <div className="max-w-180 mx-auto px-6 py-10">
@@ -50,14 +40,7 @@ export default async function ChallengeDetailPage(props: Props) {
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold">What this challenge verifies</h2>
-        <div className="space-y-2">
-          {stripMarkdown(challenge.description)
-            .split('\n')
-            .filter((p) => p.trim().length > 0)
-            .map((para, i) => (
-              <p key={i} className="text-sm text-muted-foreground leading-relaxed">{para}</p>
-            ))}
-        </div>
+        <ChallengeDescription content={challenge.description} />
       </section>
 
       <section className="mt-8 space-y-3">
@@ -106,7 +89,7 @@ export default async function ChallengeDetailPage(props: Props) {
 
       <div className="mt-10">
         <Button asChild>
-          <Link href={submitHref}>{ctaLabel}</Link>
+          <Link href={submitHref}>Submit repository</Link>
         </Button>
       </div>
     </div>

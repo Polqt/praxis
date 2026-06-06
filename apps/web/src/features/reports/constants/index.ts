@@ -1,6 +1,46 @@
-import type { ReportStatus, Report } from '@/features/reports/types'
+import type {
+  ReportStatus,
+  Report,
+  ScoreItem,
+  SkillTier,
+} from '@/features/reports/types'
 
 export const SECTION_LABEL_CLASS = 'text-xs font-medium uppercase tracking-wider text-muted-foreground'
+export const EXECUTION_STDOUT_CAP = 5000
+export const EXECUTION_STDERR_CAP = 2000
+export const EXECUTION_FAILURE_PREVIEW_CAP = 500
+export const EXECUTION_PHASE_PREVIEW_CAP = 400
+export const SOCIAL_SHARE_BUTTON_CLASS =
+  'inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+
+export const LANGUAGE_LABEL: Record<string, string> = {
+  javascript: 'JavaScript',
+  typescript: 'TypeScript',
+  python: 'Python',
+  go: 'Go',
+  rust: 'Rust',
+}
+
+export const CONFIDENCE_CLASS: Record<
+  NonNullable<ScoreItem['confidence']>,
+  string
+> = {
+  high: 'bg-green-100 text-green-700 border-green-200',
+  medium: 'bg-amber-100 text-amber-700 border-amber-200',
+  low: 'bg-muted text-muted-foreground border-border',
+}
+
+export const SKILL_TIER_CLASS: Record<SkillTier, string> = {
+  gold: 'border-amber-400 bg-amber-50 text-amber-900',
+  standard: 'border-border bg-card text-foreground',
+  muted: 'border-muted bg-muted/40 text-muted-foreground',
+}
+
+export const SKILL_TIER_ICON_CLASS: Record<SkillTier, string> = {
+  gold: 'text-amber-500',
+  standard: 'text-green-500',
+  muted: 'text-muted-foreground',
+}
 
 export const REPORT_DISCLAIMER_TEXT =
   'Praxis uses deterministic repository signals. Reports are evidence-based, not a replacement for human review.'
@@ -116,6 +156,7 @@ export const exampleReport: Report = {
       score: 9,
       status: 'pass',
       minimumScore: 5,
+      weight: 20,
       narrative:
         'Route organization is clean and consistent. Resource naming follows REST conventions throughout. Request validation via class-validator is applied consistently. Configuration is managed via environment variables.',
       citations: [
@@ -129,6 +170,7 @@ export const exampleReport: Report = {
       score: 8,
       status: 'pass',
       minimumScore: 5,
+      weight: 15,
       narrative:
         'Authentication files detected (src/auth/jwt.guard.ts). Auth libraries in use: jsonwebtoken, bcryptjs. Guard or middleware patterns detected for route protection. Token signing and session management code found in source files.',
       citations: [
@@ -142,6 +184,7 @@ export const exampleReport: Report = {
       score: 8,
       status: 'pass',
       minimumScore: 5,
+      weight: 20,
       narrative:
         'ORM detected: typeorm. 4 migration files found (src/migrations/). Schema or entity definitions present. Relational patterns (foreign keys, associations) detected. Seed data files present.',
       citations: [
@@ -155,6 +198,7 @@ export const exampleReport: Report = {
       score: 6,
       status: 'pass',
       minimumScore: 5,
+      weight: 20,
       narrative:
         'Detected 8 test files. No integration or end-to-end test suites were found. Coverage configuration is present.',
       citations: [
@@ -168,6 +212,7 @@ export const exampleReport: Report = {
       score: 7,
       status: 'pass',
       minimumScore: 3,
+      weight: 10,
       narrative:
         'Detected: README, setup instructions, API documentation. Not found: architecture documentation, contribution guidelines.',
       citations: ['README.md', 'docs/openapi.yaml'],
@@ -177,6 +222,7 @@ export const exampleReport: Report = {
       score: 4,
       status: 'floor',
       minimumScore: 3,
+      weight: 15,
       narrative:
         'Detected deployment assets: Dockerfile, CI workflow. Not detected: deployment workflow. Representative files: Dockerfile, .github/workflows/ci.yml.',
       citations: ['Dockerfile', '.github/workflows/ci.yml'],

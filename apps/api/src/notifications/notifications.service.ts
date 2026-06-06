@@ -21,6 +21,16 @@ export interface ReportReadyPayload {
   floorFailures: { category: string; score: number; minimumScore: number }[]
 }
 
+export interface SubmissionFailedPayload {
+  toEmail: string
+  username: string
+  repositoryName: string
+  challengeTitle: string
+  failureStage: string
+  failureReason: string
+  submissionUrl: string
+}
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name)
@@ -132,6 +142,55 @@ export class NotificationsService {
       this.logger.log(`Expiry email sent to ${toEmail} for ${repositoryName}`)
     } catch (err) {
       this.logger.error(`Failed to send expiry email to ${toEmail}`, err instanceof Error ? err.message : String(err))
+    }
+  }
+
+  async sendSubmissionFailed(payload: SubmissionFailedPayload): Promise<void> {
+    if (!this.apiKey) {
+      this.logger.warn('RESEND_API_KEY not set - skipping submission failed email')
+      return
+    }
+
+    const resend = new Resend(this.apiKey)
+    const {
+      toEmail,
+      username,
+      repositoryName,
+      challengeTitle,
+      failureStage,
+      failureReason,
+      submissionUrl,
+    } = payload
+    const subject = `Verification failed for ${repositoryName} | Praxis`
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <body style="margin:0;padding:0;background:#f9fafb;font-family:system-ui,sans-serif;">
+        <div style="max-width:520px;margin:40px auto;background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+          <div style="padding:24px 32px;border-bottom:1px solid #e5e7eb;">
+            <p style="margin:0;font-size:13px;font-weight:700;letter-spacing:0.1em;color:#6b7280;text-transform:uppercase;">Praxis</p>
+          </div>
+          <div style="padding:32px;">
+            <p style="margin:0 0 4px;font-size:13px;color:#6b7280;">Hi @${username},</p>
+            <h1 style="margin:0 0 16px;font-size:20px;color:#111827;">Verification could not complete</h1>
+            <p style="margin:0 0 8px;font-size:14px;color:#374151;"><strong>${repositoryName}</strong> could not complete the <strong>${challengeTitle}</strong> challenge.</p>
+            <p style="margin:0 0 8px;font-size:13px;color:#6b7280;">Stage: ${failureStage}</p>
+            <p style="margin:0 0 24px;font-size:13px;color:#6b7280;">${failureReason}</p>
+            <a href="${submissionUrl}" style="display:inline-block;background:#111827;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-size:14px;font-weight:600;">Review submission</a>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+
+    try {
+      await resend.emails.send({ from: this.fromEmail, to: toEmail, subject, html })
+      this.logger.log(`Submission failed email sent to ${toEmail} for ${repositoryName}`)
+    } catch (err) {
+      this.logger.error(
+        `Failed to send submission failed email to ${toEmail}`,
+        err instanceof Error ? err.message : String(err),
+      )
     }
   }
 }

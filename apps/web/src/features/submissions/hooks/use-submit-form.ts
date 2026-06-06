@@ -4,7 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiClient, ApiError } from '@/lib/api'
 import { parseGitHubUrl, COMMIT_SHA_RE } from '@/features/submissions/utils/github-url'
-import { SUBMIT_ERRORS } from '@/features/submissions/constants/error-messages'
+import {
+  SUBMIT_ERROR_BY_STATUS,
+  SUBMIT_ERRORS,
+} from '@/features/submissions/constants'
 
 export type UseSubmitFormReturn = {
   repoUrl: string
@@ -57,13 +60,11 @@ export function useSubmitForm(
       router.push(`/submissions/${submission.id}`)
     } catch (err) {
       if (err instanceof ApiError) {
-        const API_ERRORS: Partial<Record<number, string>> = {
-          429: SUBMIT_ERRORS.rateLimit,
-          404: SUBMIT_ERRORS.repoNotFound,
-          403: SUBMIT_ERRORS.forbidden,
-          409: SUBMIT_ERRORS.duplicate,
-        }
-        setError(API_ERRORS[err.status] ?? err.message ?? SUBMIT_ERRORS.generic)
+        setError(
+          SUBMIT_ERROR_BY_STATUS[err.status] ??
+            err.message ??
+            SUBMIT_ERRORS.generic,
+        )
       } else {
         setError(SUBMIT_ERRORS.generic)
       }

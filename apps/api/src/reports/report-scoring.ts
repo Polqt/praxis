@@ -62,6 +62,12 @@ function scoreCategoryByName(
 ) {
   const name = categoryName.toLowerCase()
 
+  if (name.includes('frontend testing')) {
+    return frontendTestingScorer.score(extractFrontendTestingSignals(ingestionData, executionResult))
+  }
+  if (name.includes('component architecture') || name.includes('component design')) {
+    return componentArchitectureScorer.score(extractComponentArchitectureSignals(ingestionData))
+  }
   if (name.includes('testing')) {
     return testingScorer.score(extractTestingSignals(ingestionData, executionResult))
   }
@@ -86,9 +92,6 @@ function scoreCategoryByName(
   if (name.includes('architecture')) {
     return architectureScorer.score(extractArchitectureSignals(ingestionData))
   }
-  if (name.includes('component architecture') || name.includes('component design')) {
-    return componentArchitectureScorer.score(extractComponentArchitectureSignals(ingestionData))
-  }
   if (name.includes('state management')) {
     return stateManagementScorer.score(extractStateManagementSignals(ingestionData))
   }
@@ -101,10 +104,6 @@ function scoreCategoryByName(
   if (name.includes('performance')) {
     return frontendPerformanceScorer.score(extractFrontendPerformanceSignals(ingestionData))
   }
-  if (name.includes('frontend testing')) {
-    return frontendTestingScorer.score(extractFrontendTestingSignals(ingestionData))
-  }
-
   return securityScorer.score(extractSecuritySignals(ingestionData))
 }
 
@@ -121,6 +120,7 @@ export function scoreReport(
     citations: string[]
     status: string
     minimumScore: number
+    weight: number
     signals: Record<string, unknown>
   }> = {}
   let weighted = 0
@@ -139,6 +139,7 @@ export function scoreReport(
       citations: result.citations,
       status: result.status,
       minimumScore: category.floor,
+      weight: category.weight,
       signals: result.signals,
     }
   }

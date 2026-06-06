@@ -70,7 +70,7 @@ export function useUsernameField(
       const message =
         e instanceof ApiError && (e.status === 409 || e.status === 422)
           ? e.status === 409
-            ? 'That username is already taken.'
+            ? e.message
             : 'Invalid username format.'
           : 'Something went wrong. Please try again.'
       setStatus({ type: 'error', message })

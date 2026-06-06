@@ -4,16 +4,15 @@ import { motion } from 'framer-motion'
 import { IconAlertTriangle, IconChevronDown, IconChevronRight } from '@tabler/icons-react'
 import { Progress } from '@/components/ui/progress'
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
-import { CATEGORY_STATUS_CLASS, CATEGORY_FIX_INSTRUCTIONS, SECTION_LABEL_CLASS } from '@/features/reports/constants'
+import {
+  CATEGORY_FIX_INSTRUCTIONS,
+  CATEGORY_STATUS_CLASS,
+  CONFIDENCE_CLASS,
+  SECTION_LABEL_CLASS,
+} from '@/features/reports/constants'
 import { formatSignalKey } from '@/features/reports/utils/format-signal-key'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import type { ScoreItem } from '@/features/reports/types'
-
-const CONFIDENCE_CLASS: Record<NonNullable<ScoreItem['confidence']>, string> = {
-  high: 'bg-green-100 text-green-700 border-green-200',
-  medium: 'bg-amber-100 text-amber-700 border-amber-200',
-  low: 'bg-muted text-muted-foreground border-border',
-}
 
 function SignalsPanel({ signals }: { signals: Record<string, unknown> }) {
   const entries = Object.entries(signals).filter(([, v]) => typeof v === 'boolean' || typeof v === 'number')
@@ -83,7 +82,12 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
           return (
             <motion.div key={item.category} id={categoryId} variants={fadeUp} className="p-5">
               <div className="flex items-center gap-3 mb-3">
-                <span className="text-sm font-medium flex-1">{item.category}</span>
+                <span className="text-sm font-medium flex-1">
+                  {item.category}
+                  {item.weight != null && (
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">{item.weight}% weight</span>
+                  )}
+                </span>
                 {item.status && (
                   <span className={`text-[10px] uppercase tracking-widest font-medium px-2 py-0.5 border rounded-sm ${CATEGORY_STATUS_CLASS[item.status]}`}>
                     {item.status}

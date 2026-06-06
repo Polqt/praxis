@@ -1,10 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-
-type Section = 'account' | 'github' | 'danger'
+import type { SettingsSection } from '@/features/settings/types'
 
 export function useSettingsNav() {
-  const [activeSection, setActiveSection] = useState<Section>('account')
+  const [activeSection, setActiveSection] = useState<SettingsSection>('account')
   return { activeSection, setActiveSection }
 }

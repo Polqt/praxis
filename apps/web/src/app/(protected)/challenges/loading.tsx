@@ -1,22 +1,18 @@
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 
-// Mirrors the authenticated ChallengesAppView layout
 export default function ChallengesLoading() {
   return (
     <div className="px-4 py-6 sm:px-6 md:px-10 md:py-10 w-full">
-      {/* Header */}
       <Skeleton className="h-7 w-36 mb-1.5 rounded" />
       <Skeleton className="h-4 w-72 mb-8 rounded" />
 
-      {/* Tab bar */}
       <div className="flex gap-0 mb-0">
         <Skeleton className="h-9 w-28 rounded-none" />
         <Skeleton className="h-9 w-28 rounded-none" />
       </div>
       <Separator />
 
-      {/* Challenge cards */}
       <div className="flex flex-col gap-3 mt-6">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="rounded-lg border bg-card">

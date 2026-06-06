@@ -6,7 +6,6 @@ import { IconArrowLeft, IconCheck, IconInfoCircle } from '@tabler/icons-react'
 import { ReportHero } from './report-hero'
 import { ScoreOverview } from './score-overview'
 import { ScoreErrorBoundary } from './score-error-boundary'
-import { SkillsNearMissSection } from './skills-near-miss-section'
 import { NextBestFixesSection } from './next-best-fixes-section'
 import { VerifiedSkillsSection } from './verified-skills-section'
 import { StrengthsImprovementsSection } from './strengths-improvements-section'
@@ -150,10 +149,7 @@ export function ReportClient({
           />
 
           {report.status === 'insufficient' && (
-            <>
-              <NextBestFixesSection scores={report.scores} />
-              <SkillsNearMissSection scores={report.scores} />
-            </>
+            <NextBestFixesSection scores={report.scores} />
           )}
 
           {twitterSlot && (

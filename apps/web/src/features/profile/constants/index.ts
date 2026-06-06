@@ -35,4 +35,20 @@ export const SKILL_TRACK_MAP: Record<string, string> = {
   'Deployment': 'Backend Engineering',
   'Architecture': 'Backend Engineering',
   'Security': 'Backend Engineering',
+  'Component Architecture': 'Frontend Engineering',
+  'State Management': 'Frontend Engineering',
+  'Accessibility': 'Frontend Engineering',
+  'Styling': 'Frontend Engineering',
+  'Performance': 'Frontend Engineering',
+  'Frontend Testing': 'Frontend Engineering',
 }
+
+export const LEADERBOARD_PERIOD_LABELS = {
+  all: 'All time',
+  month: 'This month',
+  week: 'This week',
+} as const
+
+export const LEADERBOARD_PERIODS = ['all', 'month', 'week'] as const
+export const LEADERBOARD_MARQUEE_TEXT =
+  'VERIFIED · DETERMINISTIC · PROOF OF WORK · REPOSITORY ANALYSIS · '

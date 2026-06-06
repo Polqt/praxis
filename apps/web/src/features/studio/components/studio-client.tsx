@@ -90,7 +90,7 @@ export function StudioClient({
 
       <motion.div variants={fadeUp} className="mt-4 flex items-center gap-4">
         <Progress value={progress} className="h-0.5 flex-1" />
-        <span className="text-xs text-muted-foreground shrink-0">{completed} of {total} standard challenges</span>
+        <span className="text-xs text-muted-foreground shrink-0">{completed} of {total} challenges</span>
       </motion.div>
 
       <motion.div variants={staggerContainer} className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -89,7 +89,7 @@ export interface VerificationReport {
   challengeTitle: string
   compositeScore: number
   verdict: Verdict
-  categoryScores: Record<string, { score: number; narrative: string; citations: string[]; status?: string; minimumScore?: number; signals?: Record<string, unknown> }>
+  categoryScores: Record<string, { score: number; narrative: string; citations: string[]; status?: string; minimumScore?: number; weight?: number; signals?: Record<string, unknown> }>
   publicSummary: string | null
   strengths: string[]
   improvements: string[]

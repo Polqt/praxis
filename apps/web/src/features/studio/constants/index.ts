@@ -10,3 +10,6 @@ export const ONBOARDING_GUIDANCE_GITHUB_DISCONNECTED = {
   heading: 'Connect GitHub to start verifying',
   body: 'Praxis needs read access to your repositories to analyze them. Connect your GitHub account from Settings.',
 }
+
+export const SCORE_CHART_WIDTH = 80
+export const SCORE_CHART_HEIGHT = 28

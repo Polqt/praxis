@@ -1,15 +1,10 @@
 'use client'
 
-import { SECTION_LABEL_CLASS } from '@/features/reports/constants'
+import {
+  LANGUAGE_LABEL,
+  SECTION_LABEL_CLASS,
+} from '@/features/reports/constants'
 import type { ReportStatus } from '@/features/reports/types'
-
-const LANGUAGE_LABEL: Record<string, string> = {
-  javascript: 'JavaScript',
-  typescript: 'TypeScript',
-  python: 'Python',
-  go: 'Go',
-  rust: 'Rust',
-}
 
 type Props = {
   repositoryName: string

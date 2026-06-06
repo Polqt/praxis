@@ -229,7 +229,7 @@ export class VerificationWorker implements OnModuleDestroy {
       .map(([category, v]) => ({ category, score: v.score, minimumScore: v.minimumScore }))
 
     const webBaseUrl = this.config.get<string>('webBaseUrl') ?? 'https://praxisdev.vercel.app'
-    const reportUrl = `${webBaseUrl}/submissions/${submissionId}`
+    const reportUrl = `${webBaseUrl}/reports/${submissionId}`
 
     await this.notifications.sendReportReady({
       toEmail: user.email,
@@ -244,6 +244,16 @@ export class VerificationWorker implements OnModuleDestroy {
   }
 
   private async markFinalFailure(job: Job<VerificationJobPayload>, error: Error) {
+    const isPipelineJob =
+      job.name === VERIFICATION_JOB_NAMES.ingestRepo
+      || job.name === VERIFICATION_JOB_NAMES.executeTests
+      || job.name === VERIFICATION_JOB_NAMES.analyzeProject
+      || job.name === VERIFICATION_JOB_NAMES.generateReport
+
+    if (!job.data.submissionId || !isPipelineJob) {
+      return
+    }
+
     const toStatus = job.name === VERIFICATION_JOB_NAMES.ingestRepo
       ? 'ingestion_failed'
       : job.name === VERIFICATION_JOB_NAMES.analyzeProject
@@ -266,6 +276,50 @@ export class VerificationWorker implements OnModuleDestroy {
         jobName: job.name,
         message: transitionError instanceof Error ? transitionError.message : String(transitionError),
       })
+      return
     }
+
+    try {
+      await this.sendSubmissionFailedEmail(job.data.submissionId, job.name, error.message)
+    } catch (notificationError) {
+      this.logger.error('failed to send final job failure notification', {
+        submissionId: job.data.submissionId,
+        jobName: job.name,
+        message: notificationError instanceof Error ? notificationError.message : String(notificationError),
+      })
+    }
+  }
+
+  private async sendSubmissionFailedEmail(
+    submissionId: string,
+    failureStage: string,
+    failureReason: string,
+  ): Promise<void> {
+    const rows = await this.db.db
+      .select({
+        email: users.email,
+        username: users.username,
+        repositoryName: projectSubmissions.githubRepoFullName,
+        challengeTitle: projectChallenges.title,
+      })
+      .from(projectSubmissions)
+      .innerJoin(users, eq(users.id, projectSubmissions.userId))
+      .innerJoin(projectChallenges, eq(projectChallenges.id, projectSubmissions.challengeId))
+      .where(eq(projectSubmissions.id, submissionId))
+      .limit(1)
+
+    const details = rows[0]
+    if (!details?.email) return
+
+    const webBaseUrl = this.config.get<string>('webBaseUrl') ?? 'https://praxisdev.vercel.app'
+    await this.notifications.sendSubmissionFailed({
+      toEmail: details.email,
+      username: details.username ?? details.email.split('@')[0],
+      repositoryName: details.repositoryName,
+      challengeTitle: details.challengeTitle,
+      failureStage,
+      failureReason: failureReason.slice(0, 500),
+      submissionUrl: `${webBaseUrl}/submissions/${submissionId}`,
+    })
   }
 }
