@@ -9,8 +9,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ChallengeDescription } from '@/features/challenges/components/challenge-description'
 import {
+  CHALLENGE_META_BADGE_CLASS,
   CHALLENGE_STATUS_BADGE,
-  DIFFICULTY_CLASS,
   DIFFICULTY_LABEL,
 } from '@/features/challenges/constants'
 import { CATEGORY_LABEL } from '@/features/submissions/constants'
@@ -38,8 +38,8 @@ export function ChallengeDetail({
 }: Props) {
   const categoryLabel =
     CATEGORY_LABEL[challenge.projectType] ?? challenge.projectType
-  const statusBadge = submissionStatus
-    ? CHALLENGE_STATUS_BADGE[submissionStatus]
+  const statusLabel = submissionStatus
+    ? CHALLENGE_STATUS_BADGE[submissionStatus].label
     : null
   const isVerified = submissionStatus === 'verified'
 
@@ -66,21 +66,20 @@ export function ChallengeDetail({
             evidence-based verification report.
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className="rounded-sm">
+            <Badge variant="outline" className={CHALLENGE_META_BADGE_CLASS}>
               {categoryLabel}
             </Badge>
-            <span
-              className={`inline-flex h-5 items-center border px-2 text-xs font-medium ${DIFFICULTY_CLASS[displayChallenge.difficulty]}`}
-            >
+            <Badge variant="outline" className={CHALLENGE_META_BADGE_CLASS}>
               {DIFFICULTY_LABEL[displayChallenge.difficulty]}
-            </span>
-            {statusBadge ? (
-              <span
-                className={`inline-flex h-5 items-center gap-1 rounded-sm border px-2 text-[10px] font-medium uppercase tracking-widest ${statusBadge.className}`}
+            </Badge>
+            {statusLabel ? (
+              <Badge
+                variant="outline"
+                className={CHALLENGE_META_BADGE_CLASS}
               >
                 {isVerified ? <IconCircleCheck size={10} /> : null}
-                {statusBadge.label}
-              </span>
+                {statusLabel}
+              </Badge>
             ) : null}
           </div>
         </div>

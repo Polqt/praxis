@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { IconChevronDown, IconCheck } from '@tabler/icons-react'
 import { ChallengeCard } from './challenge-card'
 import {
   CHALLENGE_CATEGORIES,
@@ -9,6 +10,12 @@ import {
   DIFFICULTY_LABEL,
 } from '../constants'
 import { CATEGORY_LABEL } from '@/features/submissions/constants'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
 import type {
   Challenge,
   ChallengeCategory,
@@ -79,21 +86,30 @@ export function ChallengesPageClient({ challenges, submissionStatusMap = {} }: P
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-1.5 pb-2">
-            {CHALLENGE_DIFFICULTIES.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => updateFilters(category, item)}
-                className={`rounded-sm border px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                  difficulty === item
-                    ? 'border-foreground bg-foreground text-background'
-                    : 'border-border text-muted-foreground hover:bg-muted'
-                }`}
-              >
-                {item === 'all' ? 'All levels' : DIFFICULTY_LABEL[item]}
-              </button>
-            ))}
+          <div className="pb-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 rounded-sm border border-border px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  {difficulty === 'all' ? 'All levels' : DIFFICULTY_LABEL[difficulty as ChallengeDifficulty]}
+                  <IconChevronDown size={13} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-36">
+                {CHALLENGE_DIFFICULTIES.map((item) => (
+                  <DropdownMenuItem
+                    key={item}
+                    onSelect={() => updateFilters(category, item)}
+                    className="flex items-center justify-between text-sm cursor-pointer"
+                  >
+                    {item === 'all' ? 'All levels' : DIFFICULTY_LABEL[item as ChallengeDifficulty]}
+                    {difficulty === item && <IconCheck size={13} className="text-foreground" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 

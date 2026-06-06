@@ -1,10 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import {
-  IconArrowRight,
-  IconCircleCheck,
-} from '@tabler/icons-react'
+import { IconCircleCheck } from '@tabler/icons-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -32,7 +29,7 @@ export function ChallengeCard({ challenge, submissionStatus }: Props) {
 
   return (
     <article
-      className={`group relative rounded-lg border bg-card transition-colors hover:bg-accent/30 ${
+      className={`group relative cursor-pointer rounded-lg border bg-card transition-all duration-150 hover:border-foreground/30 hover:bg-accent/30 hover:shadow-sm focus-within:border-foreground/30 focus-within:bg-accent/30 focus-within:shadow-sm ${
         isVerified ? 'border-green-200' : ''
       }`}
     >
@@ -43,7 +40,9 @@ export function ChallengeCard({ challenge, submissionStatus }: Props) {
       />
       <div className="pointer-events-none relative px-5 py-4">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-sm font-semibold">{challenge.title}</p>
+          <p className="text-sm font-semibold decoration-border underline-offset-4 group-hover:underline group-focus-within:underline">
+            {challenge.title}
+          </p>
           {statusBadge && (
             <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] uppercase tracking-widest font-medium px-2 py-0.5 border rounded-sm ${statusBadge.className}`}>
               {isVerified && <IconCircleCheck size={10} strokeWidth={2.5} />}
@@ -65,10 +64,6 @@ export function ChallengeCard({ challenge, submissionStatus }: Props) {
           className={`shrink-0 text-[11px] font-medium px-2 py-0.5 border rounded-sm ${DIFFICULTY_CLASS[challenge.difficulty]}`}
         >
           {DIFFICULTY_LABEL[challenge.difficulty]}
-        </span>
-        <span className="hidden items-center gap-1 text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground sm:inline-flex">
-          View details
-          <IconArrowRight size={13} />
         </span>
         <Button
           variant={isVerified ? 'ghost' : 'outline'}

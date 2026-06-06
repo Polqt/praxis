@@ -24,6 +24,8 @@ export const CHALLENGE_DIFFICULTIES: Array<ChallengeDifficulty | 'all'> = [
 ]
 
 export const CHALLENGE_CATEGORIES: ChallengeCategory[] = ['frontend', 'backend']
+export const CHALLENGE_META_BADGE_CLASS =
+  'rounded-sm border-border bg-background px-2 text-xs font-medium text-foreground'
 
 export const CHALLENGE_STATUS_BADGE: Record<
   ChallengeSubmissionStatus,
