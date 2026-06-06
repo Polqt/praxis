@@ -1,24 +1,11 @@
 import { serverApiFetch } from '@/lib/api.server'
 import { ChallengesPageClient } from '@/features/challenges/components/challenges-page-client'
+import {
+  deriveChallengeSubmissionStatus,
+  toChallenge,
+} from '@/features/challenges/utils'
 import type { ProjectChallenge, ProjectSubmission } from '@praxis/shared'
-import type { Challenge } from '@/features/challenges/types'
-
-const DIFFICULTY_MAP: Record<string, Challenge['difficulty']> = {
-  beginner: 'junior',
-  intermediate: 'intermediate',
-  advanced: 'senior',
-}
-
-function toChallenge(raw: ProjectChallenge): Challenge {
-  return {
-    id: raw.id,
-    title: raw.title,
-    description: raw.description,
-    category: raw.projectType === 'frontend' ? 'frontend' : 'backend',
-    difficulty: DIFFICULTY_MAP[raw.difficulty] ?? 'intermediate',
-    skills: raw.rubric.categories.map((c) => c.name),
-  }
-}
+import type { ChallengeSubmissionStatus } from '@/features/challenges/types'
 
 export default async function ChallengesPage() {
   const [raw, submissions] = await Promise.all([
@@ -28,15 +15,18 @@ export default async function ChallengesPage() {
 
   const challenges = raw.map(toChallenge)
 
-  // Build a map of challengeId → best status for the card indicator
-  const submissionStatusMap: Record<string, 'verified' | 'in-progress' | 'attempted'> = {}
-  for (const s of submissions) {
-    if (s.status === 'verified') {
-      submissionStatusMap[s.challengeId] = 'verified'
-    } else if (!submissionStatusMap[s.challengeId]) {
-      const isActive = ['created', 'queued', 'ingesting', 'analyzing', 'generating_report'].includes(s.status)
-      submissionStatusMap[s.challengeId] = isActive ? 'in-progress' : 'attempted'
-    }
+  const submissionsByChallenge = new Map<string, ProjectSubmission[]>()
+  for (const submission of submissions) {
+    const challengeSubmissions =
+      submissionsByChallenge.get(submission.challengeId) ?? []
+    challengeSubmissions.push(submission)
+    submissionsByChallenge.set(submission.challengeId, challengeSubmissions)
+  }
+
+  const submissionStatusMap: Record<string, ChallengeSubmissionStatus> = {}
+  for (const [challengeId, challengeSubmissions] of submissionsByChallenge) {
+    const status = deriveChallengeSubmissionStatus(challengeSubmissions)
+    if (status) submissionStatusMap[challengeId] = status
   }
 
   return (

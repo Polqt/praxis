@@ -6,3 +6,6 @@ export function stripMarkdown(text: string): string {
     .replace(/`[^`]+`/g, (m) => m.slice(1, -1))
     .trim()
 }
+
+export { deriveChallengeSubmissionStatus } from './derive-challenge-status'
+export { toChallenge } from './to-challenge'
