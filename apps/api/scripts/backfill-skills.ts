@@ -2,7 +2,7 @@
  * One-time backfill script: re-awards skills for all verified submissions.
  *
  * Run with:
- *   pnpm --filter @praxis/api ts-node -r dotenv/config src/database/backfill-skills.ts
+ *   pnpm --filter @praxis/api ts-node -r dotenv/config scripts/backfill-skills.ts
  *
  * Safe to run multiple times — onConflictDoNothing prevents duplicates.
  */

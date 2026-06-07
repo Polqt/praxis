@@ -36,7 +36,6 @@ type Props = {
   executionSlot?: React.ReactNode
   feedbackSlot?: React.ReactNode
   twitterSlot?: React.ReactNode
-  viewCount?: number
 }
 
 export function ReportClient({

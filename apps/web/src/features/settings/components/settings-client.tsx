@@ -13,7 +13,6 @@ import { UsernameField } from '@/features/user/components/username-field'
 import { GitHubConnectionStatus } from '@/features/github/components/github-connection-status'
 import { createClient } from '@/lib/supabase/client'
 import { useUser, useSetUsername } from '@/features/user/hooks/use-user-context'
-import { useSettingsNav } from '@/features/settings/hooks/use-settings-nav'
 import {
   PROFILE_URL_COPY_RESET_MS,
   SETTINGS_NAV_ITEMS,
@@ -38,7 +37,7 @@ export function SettingsClient({ initialGithub }: Props) {
   const user = useUser()
   const setContextUsername = useSetUsername()
   const router = useRouter()
-  const { activeSection, setActiveSection } = useSettingsNav()
+  const [activeSection, setActiveSection] = useState<SettingsSection>('account')
   const [github, setGithub] = useState<GitHubAccount>(initialGithub)
   const [signOutLoading, setSignOutLoading] = useState(false)
   const [signOutError, setSignOutError] = useState('')

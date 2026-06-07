@@ -1,6 +1,6 @@
 import type { CategoryScore, CategoryScorer } from '../engine/category-scorer.interface'
 import type { SecuritySignals } from '../signals/security.signals'
-import { buildSecurityNarrative, buildApiDesignNarrative } from '../narratives/narrative-builder'
+import { buildSecurityNarrative } from '../narratives/narrative-builder'
 
 const FLOOR_CONDITION = (s: SecuritySignals) => s.hasSecretDetectionIssues
 
@@ -22,9 +22,7 @@ export class SecurityScorer implements CategoryScorer<SecuritySignals> {
     const finalScore = Math.min(10, Math.max(0, rawScore))
 
     const status = isFloor ? 'floor' : finalScore >= 5 ? 'pass' : 'fail'
-    const narrative = context === 'api-design'
-      ? buildApiDesignNarrative(signals)
-      : buildSecurityNarrative(signals)
+    const narrative = buildSecurityNarrative(signals, context)
 
     return {
       score: finalScore,

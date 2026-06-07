@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common'
 import { randomBytes } from 'node:crypto'
 import { and, desc, eq, inArray, ne } from 'drizzle-orm'
-import { ANALYZER_VERSION, REPORT_GENERATOR_VERSION, SCORING_VERSION } from '../scoring/versions'
+import { SCORING_ANALYZER_VERSION, REPORT_GENERATOR_VERSION, SCORING_VERSION } from '../scoring/versions'
 import { RepositoryIngestionData } from '../verification/ingestion/repository-ingestion.types'
 import type { RepositoryAnalysisData } from '../verification/analysis/repository-analysis.types'
 import { DatabaseService } from '../database/database.service'
@@ -133,7 +133,7 @@ export class ReportsService implements OnModuleInit {
       verdict: scored.verdict,
       categoryScores: enriched.categoryScores,
       publicSummary: enriched.publicSummary,
-      analyzerVersion: ANALYZER_VERSION,
+      analyzerVersion: SCORING_ANALYZER_VERSION,
       scoringVersion: SCORING_VERSION,
       reportGeneratorVersion: REPORT_GENERATOR_VERSION,
       rubricVersion: submission.rubricVersion,
@@ -145,7 +145,7 @@ export class ReportsService implements OnModuleInit {
         verdict: scored.verdict,
         categoryScores: enriched.categoryScores,
         publicSummary: enriched.publicSummary,
-        analyzerVersion: ANALYZER_VERSION,
+        analyzerVersion: SCORING_ANALYZER_VERSION,
         scoringVersion: SCORING_VERSION,
         reportGeneratorVersion: REPORT_GENERATOR_VERSION,
         rubricVersion: submission.rubricVersion,

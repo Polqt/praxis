@@ -90,7 +90,7 @@ export function buildDeploymentNarrative(s: DeploymentSignals): string {
   return `${foundClause}${missingClause}`
 }
 
-export function buildSecurityNarrative(s: SecuritySignals): string {
+export function buildSecurityNarrative(s: SecuritySignals, context: 'security' | 'api-design' = 'security'): string {
   const parts: string[] = []
 
   if (s.hasSecretDetectionIssues) {
@@ -98,55 +98,46 @@ export function buildSecurityNarrative(s: SecuritySignals): string {
     parts.push(`Secret detection issue identified${paths ? ` in ${paths}` : ''}. Exposed credentials or committed secrets prevent verification.`)
   }
 
-  if (s.hasAuthImplementation) {
-    const authPaths = s.authPatternPaths.slice(0, 2).join(', ')
-    parts.push(`Authentication implementation detected${authPaths ? ` (${authPaths})` : ''}.`)
+  if (context === 'api-design') {
+    if (s.hasValidationLibrary && s.validationLibraryName) {
+      parts.push(`Request validation via ${s.validationLibraryName} detected.`)
+    } else {
+      parts.push('No request validation library was detected in package dependencies.')
+    }
+    if (s.hasAuthImplementation) {
+      parts.push('Protected routes with authentication middleware are present.')
+    } else {
+      parts.push('No authentication middleware was detected on routes.')
+    }
+    if (s.usesEnvironmentVariables) {
+      parts.push('Configuration is managed via environment variables.')
+    } else {
+      parts.push('No environment variable configuration was detected.')
+    }
   } else {
-    parts.push('No authentication implementation was detected.')
-  }
-
-  if (s.hasValidationLibrary && s.validationLibraryName) {
-    parts.push(`Input validation library detected: ${s.validationLibraryName}.`)
-  } else {
-    parts.push('No input validation library was detected.')
-  }
-
-  if (s.usesEnvironmentVariables) {
-    parts.push('Environment variable usage detected.')
-  } else {
-    parts.push('No environment variable usage was detected.')
+    if (s.hasAuthImplementation) {
+      const authPaths = s.authPatternPaths.slice(0, 2).join(', ')
+      parts.push(`Authentication implementation detected${authPaths ? ` (${authPaths})` : ''}.`)
+    } else {
+      parts.push('No authentication implementation was detected.')
+    }
+    if (s.hasValidationLibrary && s.validationLibraryName) {
+      parts.push(`Input validation library detected: ${s.validationLibraryName}.`)
+    } else {
+      parts.push('No input validation library was detected.')
+    }
+    if (s.usesEnvironmentVariables) {
+      parts.push('Environment variable usage detected.')
+    } else {
+      parts.push('No environment variable usage was detected.')
+    }
   }
 
   return parts.join(' ')
 }
 
 export function buildApiDesignNarrative(s: SecuritySignals): string {
-  const parts: string[] = []
-
-  if (s.hasSecretDetectionIssues) {
-    const paths = s.suspiciousFilePaths.slice(0, 2).join(', ')
-    parts.push(`Secret detection issue identified${paths ? ` in ${paths}` : ''}. Exposed credentials or committed secrets prevent verification.`)
-  }
-
-  if (s.hasValidationLibrary && s.validationLibraryName) {
-    parts.push(`Request validation via ${s.validationLibraryName} detected.`)
-  } else {
-    parts.push('No request validation library was detected in package dependencies.')
-  }
-
-  if (s.hasAuthImplementation) {
-    parts.push('Protected routes with authentication middleware are present.')
-  } else {
-    parts.push('No authentication middleware was detected on routes.')
-  }
-
-  if (s.usesEnvironmentVariables) {
-    parts.push('Configuration is managed via environment variables.')
-  } else {
-    parts.push('No environment variable configuration was detected.')
-  }
-
-  return parts.join(' ')
+  return buildSecurityNarrative(s, 'api-design')
 }
 
 export function buildAuthenticationNarrative(s: AuthenticationSignals): string {

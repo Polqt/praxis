@@ -1,12 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import { useSyncExternalStore } from 'react'
 import { motion } from 'framer-motion'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { ProofProfileSection } from './proof-profile-section'
-import { GreetingHeading } from './greeting-heading'
 import { ScoreHistoryCard } from './score-history-card'
 import { NextStepCard } from './next-step-card'
 import { StatusBadge } from '@/features/submissions/components/status-badge'
@@ -44,12 +44,21 @@ type Props = {
 }
 
 
+const greetingSubscribe = () => () => {}
+function getGreeting() {
+  const h = new Date().getHours()
+  if (h < 12) return 'morning'
+  if (h < 17) return 'afternoon'
+  return 'evening'
+}
+
 export function StudioClient({
   displayName, githubAccount, activeSubmission, activeChallenge,
   latestTerminalSubmission, latestReport, submissionStats, dashboard,
   username, progress, completed, total, proofReady, scoreHistory,
   challenges, verifiedSubmissions,
 }: Props) {
+  const period = useSyncExternalStore(greetingSubscribe, getGreeting, () => null)
   const verifiedChallengeIds = verifiedSubmissions.map((s) => s.challengeId)
   return (
     <motion.div
@@ -60,7 +69,9 @@ export function StudioClient({
     >
       <motion.section variants={fadeUp} className="flex items-start justify-between gap-6">
         <div>
-          <GreetingHeading name={displayName} />
+          <h1 className="text-3xl font-semibold tracking-tight">
+            {period ? `Good ${period}, ${displayName}.` : `Hello, ${displayName}.`}
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {githubAccount?.connected
               ? 'Your GitHub is connected and ready.'
