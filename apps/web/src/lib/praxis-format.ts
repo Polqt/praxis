@@ -1,5 +1,5 @@
 import { TERMINAL_STATUSES } from '@/features/submissions/constants'
-import type { ProjectSubmission, ProjectSubmissionEvent, SubmissionStatus } from '@praxis/shared'
+import type { ProjectSubmission, SubmissionStatus } from '@praxis/shared'
 
 export function statusLabel(status: SubmissionStatus) {
   return status
@@ -26,10 +26,6 @@ export function formatDate(value: string | Date) {
     hour: 'numeric',
     minute: '2-digit',
   })
-}
-
-export function eventLabel(event: ProjectSubmissionEvent) {
-  return event.reason?.replaceAll('_', ' ') ?? `${event.fromStatus ?? 'created'} to ${event.toStatus}`
 }
 
 export function isTerminalSubmission(submission: ProjectSubmission) {

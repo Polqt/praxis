@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import Anthropic from '@anthropic-ai/sdk'
+import { deriveStrengths, deriveImprovements } from '../scoring/derive-report-highlights'
 
 interface CategoryScoreEntry {
   score: number
@@ -116,7 +117,7 @@ export class ReportEnrichmentService {
     ).join('\n\n---\n\n')
 
     const strengths = categoryEntries.filter(([, v]) => v.score >= 8).map(([n]) => n)
-    const improvements = categoryEntries.filter(([, v]) => v.score <= 5 || v.status === 'floor').map(([n]) => n)
+    const improvements = categoryEntries.filter(([, v]) => v.score <= 6).map(([n]) => n)
 
     const summaryBlock = buildSummaryPrompt(
       input.verdict,
@@ -189,27 +190,11 @@ Respond with a JSON object in exactly this shape (no markdown, no extra text):
   }
 
   private passthrough(input: EnrichmentInput): EnrichmentResult {
-    const strengths = Object.entries(input.categoryScores)
-      .filter(([, v]) => v.score >= 8)
-      .sort(([, a], [, b]) => b.score - a.score)
-      .slice(0, 4)
-      .map(([name]) => `Strong result in ${name}`)
-
-    const improvements = Object.entries(input.categoryScores)
-      .filter(([, v]) => v.score <= 5 || v.status === 'floor')
-      .sort(([, a], [, b]) => a.score - b.score)
-      .slice(0, 4)
-      .map(([name]) => `Improve coverage in ${name}`)
-
-    const publicSummary = input.verdict === 'verified'
-      ? FALLBACK_SUMMARY_VERIFIED
-      : FALLBACK_SUMMARY_INSUFFICIENT
-
     return {
       categoryScores: input.categoryScores,
-      publicSummary,
-      strengths,
-      improvements,
+      publicSummary: input.verdict === 'verified' ? FALLBACK_SUMMARY_VERIFIED : FALLBACK_SUMMARY_INSUFFICIENT,
+      strengths: deriveStrengths(input.categoryScores),
+      improvements: deriveImprovements(input.categoryScores),
     }
   }
 }

@@ -16,7 +16,7 @@ import {
   projectVerificationReports,
   skills,
   userSkills,
-} from './schema'
+} from '../src/database/schema'
 
 const postgres = (postgresModule as any).default ?? postgresModule
 const client = postgres(process.env.DATABASE_DIRECT_URL ?? process.env.DATABASE_URL!)
