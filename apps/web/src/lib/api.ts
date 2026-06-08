@@ -1,11 +1,6 @@
 import { createClient } from '@/lib/supabase/client'
 import type {
-  DashboardStats,
-  GitHubAccount,
-  ProjectChallenge,
   ProjectSubmission,
-  ProjectSubmissionEvent,
-  User,
   VerificationReport,
 } from '@praxis/shared'
 
@@ -59,23 +54,16 @@ export async function apiFetch<T>(
 }
 
 export const apiClient = {
-  getMe: () => apiFetch<User>('/users/me'),
   patchMe: (data: { username: string }) =>
-    apiFetch<User>('/users/me', {
+    apiFetch<{ id: string; username: string }>('/users/me', {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
-  getDashboard: () => apiFetch<DashboardStats>('/users/me/dashboard'),
-  getChallenges: () => apiFetch<ProjectChallenge[]>('/challenges'),
-  getChallenge: (id: string) => apiFetch<ProjectChallenge>(`/challenges/${id}`),
   createSubmission: (data: { challengeId: string; githubRepoFullName: string; commitSha?: string }) =>
     apiFetch<ProjectSubmission>('/submissions', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  getSubmissions: () => apiFetch<ProjectSubmission[]>('/submissions'),
-  getSubmission: (id: string) => apiFetch<ProjectSubmission>(`/submissions/${id}`),
-  getSubmissionEvents: (id: string) => apiFetch<ProjectSubmissionEvent[]>(`/submissions/${id}/events`),
   cancelSubmission: (id: string) => apiFetch<ProjectSubmission>(`/submissions/${id}/cancel`, { method: 'PATCH' }),
   requeueSubmission: (id: string) => apiFetch<ProjectSubmission>(`/submissions/${id}/requeue`, { method: 'PATCH' }),
   retrySubmission: (id: string) => apiFetch<ProjectSubmission>(`/submissions/${id}/retry`, { method: 'PATCH' }),
@@ -84,29 +72,19 @@ export const apiClient = {
       method: 'PATCH',
       body: JSON.stringify({ commitSha }),
     }),
-  markSubmissionViewed: (id: string) => apiFetch<ProjectSubmission>(`/submissions/${id}/viewed`, { method: 'PATCH' }),
-  getReportBySubmissionId: (submissionId: string) => apiFetch<VerificationReport>(`/reports/submissions/${submissionId}`),
   setReportVisibility: (submissionId: string, isPublic: boolean) =>
     apiFetch<VerificationReport>(`/reports/submissions/${submissionId}/visibility`, {
       method: 'PATCH',
       body: JSON.stringify({ isPublic }),
     }),
-  getGitHubAccount: () => apiFetch<GitHubAccount>('/github/account'),
   getGitHubRepos: (): Promise<string[]> => apiFetch<string[]>('/github/repos'),
-  syncGitHub: (accessToken: string) =>
-    apiFetch<void>('/github/sync', {
-      method: 'POST',
-      body: JSON.stringify({ accessToken }),
-    }),
   disconnectGitHub: () => apiFetch<void>('/github/account', { method: 'DELETE' }),
   checkUsernameAvailability: (username: string) =>
     apiFetch<{ available: boolean }>(`/users/check-username?username=${encodeURIComponent(username)}`),
   getLeaderboard: (period: 'all' | 'month' | 'week' = 'all') =>
     apiFetch<LeaderboardEntry[]>(`/users/leaderboard?period=${period}`),
-  getScoreHistory: () => apiFetch<ScoreHistoryEntry[]>('/users/me/score-history'),
   updateBio: (bio: string) => apiFetch<void>('/users/me/bio', { method: 'PATCH', body: JSON.stringify({ bio }) }),
   getMyRank: () => apiFetch<{ rank: number | null; total: number }>('/users/me/rank'),
-  getPublicProofs: () => apiFetch<PublicProofEntry[]>('/proof'),
   submitReportFeedback: (
     submissionId: string,
     data: { accuracyRating: number; missedEvidence?: string; notes?: string; wouldShare?: boolean },

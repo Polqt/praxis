@@ -9,9 +9,9 @@ export function deriveStrengths(scores: Record<string, { score: number }>): stri
     .map(([name]) => `Strong result in ${name}`)
 }
 
-export function deriveImprovements(scores: Record<string, { score: number }>): string[] {
+export function deriveImprovements(scores: Record<string, { score: number; status?: string }>): string[] {
   return Object.entries(scores)
-    .filter(([, v]) => v.score <= IMPROVEMENT_THRESHOLD)
+    .filter(([, v]) => v.score <= IMPROVEMENT_THRESHOLD || v.status === 'floor')
     .sort(([, a], [, b]) => a.score - b.score)
     .slice(0, 4)
     .map(([name]) => `Improve coverage in ${name}`)

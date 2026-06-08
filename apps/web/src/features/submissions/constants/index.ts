@@ -86,14 +86,6 @@ export const FAILED_STATUSES: SubmissionStatus[] = [
   'failed', 'insufficient', 'ingestion_failed', 'analysis_failed', 'report_generation_failed',
 ]
 
-export const STAGE_DESCRIPTION: Partial<Record<SubmissionStatus, string>> = {
-  created:           'Queuing your submission…',
-  queued:            'Waiting in queue…',
-  ingesting:         'Reading your repository files…',
-  analyzing:         'Extracting code signals…',
-  generating_report: 'Scoring and writing your report…',
-}
-
 export const SUBMIT_ERRORS = {
   invalidUrl: 'Enter a valid GitHub URL — e.g. https://github.com/owner/repo',
   invalidSha:
