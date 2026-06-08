@@ -91,6 +91,10 @@ function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
             <p className="text-[15px] font-semibold tabular-nums">{entry.verifiedCount}</p>
             <p className="text-[11px] text-muted-foreground uppercase tracking-widest">verified</p>
           </div>
+          <div className="text-right hidden sm:block">
+            <p className="text-[15px] font-semibold tabular-nums">{entry.totalPoints ?? 0}</p>
+            <p className="text-[11px] text-muted-foreground uppercase tracking-widest">points</p>
+          </div>
           <div className="text-right">
             <p className="text-[15px] font-semibold tabular-nums">{entry.bestScore}<span className="text-xs font-normal text-muted-foreground">/100</span></p>
             <p className="text-[11px] text-muted-foreground uppercase tracking-widest hidden sm:block">best score</p>
@@ -116,8 +120,8 @@ export function LeaderboardClient({ entries: initialEntries }: Props) {
             what they built.
           </h1>
           <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed">
-            Ranked by verified challenges completed. Scores are earned through deterministic
-            repository analysis — not self-reported.
+            Ranked by difficulty-weighted points. Advanced challenges earn more — scores are earned
+            through deterministic repository analysis, not self-reported.
           </p>
           <div className="flex items-center justify-center gap-3">
             <Link

@@ -63,7 +63,7 @@ export function toReport(raw: VerificationReport, overrides?: { isPublic?: boole
     skills,
     strengths,
     improvements,
-    derivedStrengthsAndImprovements: rawStrengths.length === 0 || rawImprovements.length === 0,
+    derivedStrengthsAndImprovements: rawStrengths.length === 0 && rawImprovements.length === 0,
     allCitedFiles,
     generatedAt: raw.generatedAt,
     modelVersion: raw.analyzerVersion,

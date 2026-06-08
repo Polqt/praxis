@@ -11,6 +11,7 @@ import { SubmissionStatusService } from './submission-status.service'
 import { CreateSubmissionDto } from './dto/create-submission.dto'
 import { parseRepoFullName } from './submissions.util'
 import { AuditService } from '../audit/audit.service'
+import type { SubmissionStatus } from '@praxis/shared'
 
 @Injectable()
 export class SubmissionsService {
@@ -26,6 +27,18 @@ export class SubmissionsService {
   ) {}
 
   async create(userId: string, dto: CreateSubmissionDto) {
+    // Prevent multiple concurrent submissions — each one spins up E2B + Claude calls
+    const IN_PROGRESS: SubmissionStatus[] = ['created', 'queued', 'ingesting', 'analyzing', 'generating_report']
+    const activeRows = await this.db.db
+      .select({ value: count() })
+      .from(projectSubmissions)
+      .where(and(eq(projectSubmissions.userId, userId), inArray(projectSubmissions.status, IN_PROGRESS)))
+    if ((activeRows[0]?.value ?? 0) > 0) {
+      throw new ConflictException(
+        'You already have a submission in progress. Wait for it to complete before submitting again.',
+      )
+    }
+
     const rateLimitPerHour = this.config.get<number>('submissions.rateLimitPerHour') ?? 5
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
     const recentCountRows = await this.db.db
@@ -92,8 +105,14 @@ export class SubmissionsService {
       .onConflictDoNothing()
       .returning()
 
-    const submission = inserted[0] ?? await this.findDuplicate(userId, challenge.id, commit.sha)
-    if (!submission) throw new BadRequestException('Unable to create submission')
+    if (!inserted[0]) {
+      // onConflictDoNothing fired — this exact (user, challenge, commit) was already submitted
+      throw new ConflictException(
+        'You have already submitted this exact commit for this challenge. Try a different commit SHA.',
+      )
+    }
+
+    const submission = inserted[0]
 
     if (inserted[0]) {
       this.audit.log(userId, 'submission_created', {
@@ -311,17 +330,4 @@ export class SubmissionsService {
     return rows[0]?.value ?? 0
   }
 
-  private async findDuplicate(userId: string, challengeId: string, commitSha: string) {
-    const rows = await this.db.db
-      .select()
-      .from(projectSubmissions)
-      .where(and(
-        eq(projectSubmissions.userId, userId),
-        eq(projectSubmissions.challengeId, challengeId),
-        eq(projectSubmissions.commitSha, commitSha),
-      ))
-      .limit(1)
-
-    return rows[0]
-  }
 }

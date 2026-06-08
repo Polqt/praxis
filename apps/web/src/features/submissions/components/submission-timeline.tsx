@@ -26,6 +26,15 @@ function getTimestamp(stageIndex: number, events: ProjectSubmissionEvent[]): str
   return events.find((e) => e.toStatus === stage.toStatus)?.createdAt ?? null
 }
 
+function getStageDurationLabel(startTs: string | null, endTs: string | null): string | null {
+  if (!startTs || !endTs) return null
+  const ms = new Date(endTs).getTime() - new Date(startTs).getTime()
+  if (ms < 0) return null
+  const s = Math.round(ms / 1000)
+  if (s < 60) return `${s}s`
+  return `${Math.floor(s / 60)}m ${s % 60}s`
+}
+
 export function SubmissionTimeline({ submission, events }: Props) {
   const status = submission.status
   const isTerminal = TERMINAL_STATUSES.includes(status)
@@ -90,6 +99,10 @@ export function SubmissionTimeline({ submission, events }: Props) {
             : getTimestamp(index, events))
           : null
 
+        // Duration = time from previous completed stage to this one
+        const prevTs = index > 0 ? getTimestamp(index - 1, events) : null
+        const duration = state === 'completed' ? getStageDurationLabel(prevTs, ts) : null
+
         return (
           <motion.div key={stage.key} variants={fadeUp} className="flex gap-4">
             <div className="flex flex-col items-center">
@@ -121,9 +134,14 @@ export function SubmissionTimeline({ submission, events }: Props) {
                 ].join(' ')}>
                   {stage.label}
                 </span>
-                {ts && (
-                  <span className="text-xs text-muted-foreground shrink-0" suppressHydrationWarning>{formatDate(ts)}</span>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {duration && (
+                    <span className="text-[10px] text-muted-foreground tabular-nums">{duration}</span>
+                  )}
+                  {ts && (
+                    <span className="text-xs text-muted-foreground" suppressHydrationWarning>{formatDate(ts)}</span>
+                  )}
+                </div>
               </div>
               {state === 'active' && (
                 <p className="text-xs text-muted-foreground mt-1">In progress...</p>

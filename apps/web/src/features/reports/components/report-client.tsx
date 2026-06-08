@@ -104,6 +104,7 @@ export function ReportClient({
                 scores={report.scores}
                 repositoryName={report.repositoryName}
                 commitSha={report.commitSha}
+                skillProgress={report.skillProgress}
               />
             </ScoreErrorBoundary>
           </motion.div>

@@ -84,7 +84,7 @@ export const apiClient = {
   getLeaderboard: (period: 'all' | 'month' | 'week' = 'all') =>
     apiFetch<LeaderboardEntry[]>(`/users/leaderboard?period=${period}`),
   updateBio: (bio: string) => apiFetch<void>('/users/me/bio', { method: 'PATCH', body: JSON.stringify({ bio }) }),
-  getMyRank: () => apiFetch<{ rank: number | null; total: number }>('/users/me/rank'),
+  getMyRank: () => apiFetch<{ rank: number | null }>('/users/me/rank'),
   submitReportFeedback: (
     submissionId: string,
     data: { accuracyRating: number; missedEvidence?: string; notes?: string; wouldShare?: boolean },
@@ -99,6 +99,7 @@ export interface LeaderboardEntry {
   username: string
   verifiedCount: number
   bestScore: number
+  totalPoints: number
   lastVerifiedAt: string | null
   recentlyActive: boolean
 }
@@ -107,6 +108,14 @@ export interface ScoreHistoryEntry {
   challengeId: string
   title: string
   scores: { score: number; completedAt: string }[]
+}
+
+export interface ChallengeLeaderboardEntry {
+  rank: number
+  username: string
+  compositeScore: number
+  publicToken: string | null
+  verifiedAt: string | null
 }
 
 export interface PublicProofEntry {

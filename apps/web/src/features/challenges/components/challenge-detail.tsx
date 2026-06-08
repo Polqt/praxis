@@ -211,6 +211,12 @@ export function ChallengeDetail({
                 </Link>
               </Button>
             ) : null}
+
+            <Button variant="outline" className="mt-1 w-full" asChild>
+              <Link href={`/challenges/${challenge.id}/leaderboard`}>
+                View leaderboard
+              </Link>
+            </Button>
           </section>
         </aside>
       </div>

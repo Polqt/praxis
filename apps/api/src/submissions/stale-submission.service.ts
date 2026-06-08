@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { and, eq, inArray, lt, notInArray } from 'drizzle-orm'
+import { and, eq, lt, notInArray } from 'drizzle-orm'
 import { DatabaseService } from '../database/database.service'
-import { projectChallenges, projectSubmissionEvents, projectSubmissions, users } from '../database/schema'
+import { projectChallenges, projectSubmissions, users } from '../database/schema'
 import { NotificationsService } from '../notifications/notifications.service'
+import { SubmissionStatusService } from './submission-status.service'
 import type { SubmissionStatus } from '@praxis/shared'
 
 const SKIP_EXPIRY_STATUSES: SubmissionStatus[] = [
@@ -27,6 +28,7 @@ export class StaleSubmissionService {
     private readonly db: DatabaseService,
     private readonly config: ConfigService,
     private readonly notifications: NotificationsService,
+    private readonly statuses: SubmissionStatusService,
   ) {}
 
   async expireStale(): Promise<void> {
@@ -49,18 +51,11 @@ export class StaleSubmissionService {
 
     for (const submission of stale) {
       try {
-        await this.db.db.transaction(async (tx) => {
-          await tx
-            .update(projectSubmissions)
-            .set({ status: 'expired', failureReason: EXPIRY_FAILURE_REASON })
-            .where(inArray(projectSubmissions.id, [submission.id]))
-
-          await tx.insert(projectSubmissionEvents).values({
-            submissionId: submission.id,
-            fromStatus: submission.status as SubmissionStatus,
-            toStatus: 'expired',
-            reason: 'submission_expired',
-          })
+        await this.statuses.transition({
+          submissionId: submission.id,
+          toStatus: 'expired',
+          reason: 'submission_expired',
+          failureReason: EXPIRY_FAILURE_REASON,
         })
         expired++
         // Fire-and-forget: email failure is logged but does not roll back the expiry.

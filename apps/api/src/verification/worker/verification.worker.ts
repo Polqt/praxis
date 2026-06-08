@@ -155,12 +155,13 @@ export class VerificationWorker implements OnModuleDestroy {
       case VERIFICATION_JOB_NAMES.analyzeProject: {
         const analysis = await this.analysis.analyzeSubmission(submissionId)
         await this.statuses.transition({ submissionId, toStatus: 'generating_report', reason: 'analysis_complete' })
-        await this.queue.enqueueGenerateReport(submissionId)
+        await this.queue.enqueueGenerateReport(submissionId, analysis.id)
         return analysis
       }
       case VERIFICATION_JOB_NAMES.generateReport: {
-        const analysis = await this.analysis.analyzeSubmission(submissionId)
-        const report = await this.reports.generateForSubmission(submissionId, analysis.id)
+        // analysisId is passed from the analyzeProject job to avoid re-running analysis
+        const analysisId = job.data.analysisId ?? (await this.analysis.analyzeSubmission(submissionId)).id
+        const report = await this.reports.generateForSubmission(submissionId, analysisId)
         await this.statuses.transition({
           submissionId,
           toStatus: report.verdict === 'verified' ? 'verified' : 'insufficient',

@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common'
 import { randomBytes } from 'node:crypto'
-import { and, desc, eq, inArray, ne } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, ne, sql } from 'drizzle-orm'
 import { SCORING_ANALYZER_VERSION, REPORT_GENERATOR_VERSION, SCORING_VERSION } from '../scoring/versions'
 import { RepositoryIngestionData } from '../verification/ingestion/repository-ingestion.types'
 import type { RepositoryAnalysisData } from '../verification/analysis/repository-analysis.types'
@@ -216,10 +216,11 @@ export class ReportsService implements OnModuleInit {
       .limit(1)
     if (!reports[0] || !reports[0].isPublic) throw new NotFoundException('Proof not found')
 
-    await this.db.db
+    const [updated] = await this.db.db
       .update(projectVerificationReports)
       .set({ viewCount: (reports[0].viewCount ?? 0) + 1 })
       .where(eq(projectVerificationReports.id, reports[0].id))
+      .returning()
 
     const submission = await this.getSubmission(reports[0].submissionId)
     const challenge = await this.getChallenge(submission.challengeId)
@@ -243,7 +244,7 @@ export class ReportsService implements OnModuleInit {
     const executionSummary = execRows[0] ?? null
 
     return this.toPublicProof(
-      { ...reports[0], viewCount: (reports[0].viewCount ?? 0) + 1 },
+      updated ?? reports[0],
       submission,
       challenge,
       executionSummary,
@@ -273,26 +274,77 @@ export class ReportsService implements OnModuleInit {
     return rows
   }
 
+  async getChallengeLeaderboard(challengeId: string, limit = 25) {
+    const rows = await this.db.db
+      .select({
+        userId: users.id,
+        username: users.username,
+        compositeScore: projectVerificationReports.compositeScore,
+        publicToken: projectVerificationReports.publicToken,
+        isPublic: projectVerificationReports.isPublic,
+        verifiedAt: projectSubmissions.completedAt,
+      })
+      .from(projectVerificationReports)
+      .innerJoin(projectSubmissions, eq(projectVerificationReports.submissionId, projectSubmissions.id))
+      .innerJoin(users, eq(users.id, projectSubmissions.userId))
+      .where(and(
+        eq(projectSubmissions.challengeId, challengeId),
+        eq(projectSubmissions.status, 'verified'),
+        isNotNull(users.username),
+      ))
+      .orderBy(desc(projectVerificationReports.compositeScore))
+
+    // Keep only the best submission per user, then apply limit
+    const bestByUser = new Map<string, typeof rows[0]>()
+    for (const r of rows) {
+      const key = r.userId
+      const existing = bestByUser.get(key)
+      if (!existing || (r.compositeScore ?? 0) > (existing.compositeScore ?? 0)) {
+        bestByUser.set(key, r)
+      }
+    }
+
+    return [...bestByUser.values()]
+      .sort((a, b) => (b.compositeScore ?? 0) - (a.compositeScore ?? 0))
+      .slice(0, limit)
+      .map((r, i) => ({
+        rank: i + 1,
+        username: r.username as string,
+        compositeScore: r.compositeScore,
+        publicToken: r.isPublic ? r.publicToken : null,
+        verifiedAt: r.verifiedAt?.toISOString() ?? null,
+      }))
+  }
+
   async awardSkillsForSubmission(submissionId: string) {
     const submission = await this.getSubmission(submissionId)
     const challenge = await this.getChallenge(submission.challengeId)
     const report = await this.getReportBySubmission(submissionId)
-    if (report.verdict !== 'verified') return []
 
+    // Award skills for any category scoring ≥ 7, even on insufficient.
+    // This keeps the skills table populated for beginners who don't yet pass overall.
+    const PARTIAL_AWARD_THRESHOLD = 7
     const rubric = challenge.rubric as { categories: { name: string; floor: number }[] }
     const categoryScores = report.categoryScores as Record<string, { score: number }>
 
-    // Collect category names that passed their floor
     const eligibleNames = rubric.categories
-      .filter((cat) => (categoryScores[cat.name]?.score ?? 0) >= cat.floor)
+      .filter((cat) => {
+        const score = categoryScores[cat.name]?.score ?? 0
+        return report.verdict === 'verified'
+          ? score >= cat.floor
+          : score >= PARTIAL_AWARD_THRESHOLD
+      })
       .map((cat) => cat.name)
 
     if (eligibleNames.length === 0) return []
 
-    // Fetch all skills and match case-insensitively so minor casing differences don't silently break awards
+    // Fetch only skills matching eligible category names (case-insensitive via lower())
     const eligibleLower = new Set(eligibleNames.map((n) => n.toLowerCase()))
-    const allSkills = await this.db.db.select().from(skills)
-    const matchedSkills = allSkills.filter((s) => eligibleLower.has(s.name.toLowerCase()))
+    const candidateSkills = await this.db.db
+      .select()
+      .from(skills)
+      .where(inArray(sql`lower(${skills.name})`, [...eligibleLower]))
+    const matchedSkills = candidateSkills.filter((s) => eligibleLower.has(s.name.toLowerCase()))
 
     if (matchedSkills.length === 0) {
       this.logger.warn(`awardSkillsForSubmission: no skills matched for categories [${eligibleNames.join(', ')}]`)
@@ -583,7 +635,11 @@ export class ReportsService implements OnModuleInit {
       (report.categoryScores ?? {}) as Record<string, StoredCategoryScore>,
       challenge,
     )
-    const skillRows = await this.db.db.select().from(skills)
+    const categoryNames = new Set(rubric.categories.map((c) => c.name.toLowerCase()))
+    const skillRows = await this.db.db
+      .select()
+      .from(skills)
+      .where(inArray(sql`lower(${skills.name})`, [...categoryNames]))
     const skillsByName = new Map(skillRows.map((skill) => [skill.name.toLowerCase(), skill]))
 
     return rubric.categories.map((category) => {

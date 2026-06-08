@@ -211,6 +211,24 @@ export class RepositoryExecutionService {
     }
 
     const ingestionData = ingestion.ingestedData as RepositoryIngestionData
+
+    // Skip E2B for repos too large to execute reliably within sandbox limits.
+    // Threshold: 500 files or 5 MB total — beyond this, timeout rates spike.
+    const MAX_E2B_FILES = 500
+    const MAX_E2B_BYTES = 5 * 1024 * 1024
+    const totalFiles = ingestionData.files.length
+    const totalBytes = ingestionData.files.reduce((sum, f) => sum + (f.size ?? 0), 0)
+    if (totalFiles > MAX_E2B_FILES || totalBytes > MAX_E2B_BYTES) {
+      this.logger.log(
+        `E2B: skipping ${ingestion.repoFullName} — repo too large (${totalFiles} files, ${Math.round(totalBytes / 1024)}KB)`,
+      )
+      return this.recordExecutionIssue(
+        ingestionId,
+        'skipped',
+        `Sandbox checks were skipped because this repository is too large (${totalFiles} files). Scores are based on file detection only.`,
+      )
+    }
+
     const plan = planExecution(ingestionData)
 
     if (!plan) {

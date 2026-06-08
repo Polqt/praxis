@@ -7,6 +7,7 @@ import { GitHubApiService } from './github-api.service'
 import { GitHubTokenService } from './github-token.service'
 import { SyncedGitHubAccount } from './github.types'
 import { AuditService } from '../audit/audit.service'
+import { UsersService } from '../users/users.service'
 
 @Injectable()
 export class GitHubService {
@@ -73,7 +74,8 @@ export class GitHubService {
       .where(eq(users.id, userId))
       .limit(1)
 
-    if (currentUser[0] && currentUser[0].username === null) {
+    const githubLogin = viewer.login.toLowerCase()
+    if (currentUser[0] && currentUser[0].username === null && !UsersService.RESERVED_USERNAMES.has(githubLogin)) {
       await this.db.db
         .update(users)
         .set({ username: viewer.login })

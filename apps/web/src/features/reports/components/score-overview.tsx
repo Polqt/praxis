@@ -43,9 +43,11 @@ type Props = {
   scores: ScoreItem[]
   repositoryName?: string
   commitSha?: string
+  skillProgress?: import('@/features/reports/types').SkillProgressItem[]
 }
 
-export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
+export function ScoreOverview({ scores, repositoryName, commitSha, skillProgress }: Props) {
+  const skillProgressByName = new Map(skillProgress?.map((sp) => [sp.name.toLowerCase(), sp]))
   function citationUrl(filePath: string): string | null {
     if (!repositoryName || !commitSha) return null
     return `https://github.com/${repositoryName}/blob/${commitSha}/${filePath}`
@@ -77,6 +79,7 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
             && item.score < item.minimumScore
           const fixSteps = CATEGORY_FIX_INSTRUCTIONS[item.category] ?? []
           const scorePercent = (item.score / 10) * 100
+          const sp = skillProgressByName.get(item.category.toLowerCase())
 
           const categoryId = item.category.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
           return (
@@ -102,6 +105,18 @@ export function ScoreOverview({ scores, repositoryName, commitSha }: Props) {
                   {item.score}<span className="text-xs font-normal text-muted-foreground">/10</span>
                 </span>
               </div>
+
+              {sp && !sp.awarded && (
+                <p className="text-[11px] text-muted-foreground mb-2">
+                  {sp.eligible
+                    ? <span className="text-amber-600 font-medium">Skill eligible — awarded on a verified result</span>
+                    : <span>+{sp.pointsNeeded} point{sp.pointsNeeded !== 1 ? 's' : ''} to earn the <span className="font-medium">{sp.name}</span> skill</span>
+                  }
+                </p>
+              )}
+              {sp?.awarded && (
+                <p className="text-[11px] text-green-600 font-medium mb-2">Skill awarded</p>
+              )}
 
               <div className="mb-3">
                 <Progress

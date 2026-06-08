@@ -104,7 +104,7 @@ function scoreCategoryByName(
   if (name.includes('performance')) {
     return frontendPerformanceScorer.score(extractFrontendPerformanceSignals(ingestionData))
   }
-  return securityScorer.score(extractSecuritySignals(ingestionData))
+  throw new Error(`Unknown rubric category: "${name}" — add a scorer mapping in scoreCategory()`)
 }
 
 

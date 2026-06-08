@@ -27,13 +27,13 @@ export function SubmissionPoller({ isInProgress, submittedAt }: Props) {
       ? Math.min(age / 10, MAX_POLL_INTERVAL_MS)
       : BASE_POLL_INTERVAL_MS
 
+    let cancelled = false
+
     function scheduleNext() {
       timerRef.current = setTimeout(() => {
+        if (cancelled) return
         router.refresh()
-        intervalRef.current = Math.min(
-          intervalRef.current * 2,
-          MAX_POLL_INTERVAL_MS,
-        )
+        intervalRef.current = Math.min(intervalRef.current * 2, MAX_POLL_INTERVAL_MS)
         scheduleNext()
       }, intervalRef.current)
     }
@@ -41,6 +41,7 @@ export function SubmissionPoller({ isInProgress, submittedAt }: Props) {
     scheduleNext()
 
     return () => {
+      cancelled = true
       if (timerRef.current) clearTimeout(timerRef.current)
     }
   }, [isInProgress, submittedAt, router])

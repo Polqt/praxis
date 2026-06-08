@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
-import { and, count, desc, eq, gte, inArray, max } from 'drizzle-orm'
+import { and, count, desc, eq, gte, inArray, max, sql } from 'drizzle-orm'
 import { DatabaseService } from '../database/database.service'
 import {
   projectChallenges,
@@ -14,7 +14,7 @@ import {
 export class UsersService {
   private static readonly USERNAME_CHANGE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000
 
-  private static readonly RESERVED_USERNAMES = new Set([
+  static readonly RESERVED_USERNAMES = new Set([
     // Generic reserved words
     'admin', 'administrator', 'api', 'app', 'auth',
     'billing', 'blog', 'cdn', 'dashboard', 'dev',
@@ -180,6 +180,8 @@ export class UsersService {
       ? and(eq(projectSubmissions.status, 'verified'), gte(projectSubmissions.completedAt, periodStart))
       : eq(projectSubmissions.status, 'verified')
 
+    // totalPoints = sum of passingThreshold across verified submissions — advanced challenges
+    // (threshold 70) outweigh beginner ones (threshold 50), giving a difficulty-weighted rank.
     const rows = await this.db.db
       .select({
         userId: projectSubmissions.userId,
@@ -187,13 +189,18 @@ export class UsersService {
         verifiedCount: count(projectSubmissions.id),
         bestScore: max(projectVerificationReports.compositeScore),
         lastVerifiedAt: max(projectSubmissions.completedAt),
+        totalPoints: sql<number>`sum(${projectChallenges.passingThreshold})`,
       })
       .from(projectSubmissions)
       .innerJoin(users, eq(projectSubmissions.userId, users.id))
       .innerJoin(projectVerificationReports, eq(projectVerificationReports.submissionId, projectSubmissions.id))
+      .innerJoin(projectChallenges, eq(projectChallenges.id, projectSubmissions.challengeId))
       .where(whereClause)
       .groupBy(projectSubmissions.userId, users.username)
-      .orderBy(desc(count(projectSubmissions.id)), desc(max(projectVerificationReports.compositeScore)))
+      .orderBy(
+        desc(sql`sum(${projectChallenges.passingThreshold})`),
+        desc(max(projectVerificationReports.compositeScore)),
+      )
       .limit(limit)
       .offset(offset)
 
@@ -206,27 +213,44 @@ export class UsersService {
         username: r.username as string,
         verifiedCount: r.verifiedCount,
         bestScore: r.bestScore ?? 0,
+        totalPoints: Number(r.totalPoints ?? 0),
         lastVerifiedAt: r.lastVerifiedAt?.toISOString() ?? null,
         recentlyActive: r.lastVerifiedAt ? r.lastVerifiedAt >= thirtyDaysAgo : false,
       }))
   }
 
   async getMyRank(userId: string) {
-    const rows = await this.db.db
+    // Fetch only the current user's stats (O(1) — no full scan)
+    const myRows = await this.db.db
       .select({
-        userId: projectSubmissions.userId,
         verifiedCount: count(projectSubmissions.id),
         bestScore: max(projectVerificationReports.compositeScore),
       })
       .from(projectSubmissions)
-      .innerJoin(users, eq(projectSubmissions.userId, users.id))
       .innerJoin(projectVerificationReports, eq(projectVerificationReports.submissionId, projectSubmissions.id))
-      .where(eq(projectSubmissions.status, 'verified'))
-      .groupBy(projectSubmissions.userId, users.username)
-      .orderBy(desc(count(projectSubmissions.id)), desc(max(projectVerificationReports.compositeScore)))
+      .where(and(eq(projectSubmissions.status, 'verified'), eq(projectSubmissions.userId, userId)))
 
-    const rank = rows.findIndex((r) => r.userId === userId) + 1
-    return { rank: rank > 0 ? rank : null, total: rows.length }
+    const my = myRows[0]
+    if (!my || my.verifiedCount === 0) return { rank: null }
+
+    const myCount = my.verifiedCount
+    const myBest = my.bestScore ?? 0
+
+    // Count distinct users whose stats beat the current user's: higher verifiedCount,
+    // or same verifiedCount but higher bestScore. +1 gives 1-based rank.
+    const aheadRows = await this.db.db.execute<{ ahead: string }>(
+      sql`SELECT COUNT(*)::text AS ahead FROM (
+            SELECT ps.user_id
+            FROM project_submissions ps
+            INNER JOIN project_verification_reports pvr ON pvr.submission_id = ps.id
+            WHERE ps.status = 'verified'
+            GROUP BY ps.user_id
+            HAVING COUNT(ps.id) > ${myCount}
+               OR (COUNT(ps.id) = ${myCount} AND MAX(pvr.composite_score) > ${myBest})
+          ) ranked`,
+    )
+
+    return { rank: Number(aheadRows[0]?.ahead ?? 0) + 1 }
   }
 
   async updateBio(userId: string, bio: string | undefined) {
@@ -291,25 +315,24 @@ export class UsersService {
       .where(eq(userSkills.userId, user.id))
       .orderBy(desc(userSkills.awardedAt))
 
-    // Count verified submissions separately so it isn't capped by the display limit
-    const verifiedCountRows = await this.db.db
-      .select({ value: count(projectSubmissions.id) })
-      .from(projectSubmissions)
-      .where(and(eq(projectSubmissions.userId, user.id), eq(projectSubmissions.status, 'verified')))
+    // Count submission stats in parallel — no dependency between these queries
+    const [verifiedCountRows, insufficientCountRows, publishedCountRows] = await Promise.all([
+      this.db.db
+        .select({ value: count(projectSubmissions.id) })
+        .from(projectSubmissions)
+        .where(and(eq(projectSubmissions.userId, user.id), eq(projectSubmissions.status, 'verified'))),
+      this.db.db
+        .select({ value: count(projectSubmissions.id) })
+        .from(projectSubmissions)
+        .where(and(eq(projectSubmissions.userId, user.id), eq(projectSubmissions.status, 'insufficient'))),
+      this.db.db
+        .select({ value: count(projectVerificationReports.id) })
+        .from(projectVerificationReports)
+        .innerJoin(projectSubmissions, eq(projectVerificationReports.submissionId, projectSubmissions.id))
+        .where(and(eq(projectSubmissions.userId, user.id), eq(projectVerificationReports.isPublic, true))),
+    ])
 
     const verifiedCount = verifiedCountRows[0]?.value ?? 0
-
-    const insufficientCountRows = await this.db.db
-      .select({ value: count(projectSubmissions.id) })
-      .from(projectSubmissions)
-      .where(and(eq(projectSubmissions.userId, user.id), eq(projectSubmissions.status, 'insufficient')))
-
-    const publishedCountRows = await this.db.db
-      .select({ value: count(projectVerificationReports.id) })
-      .from(projectVerificationReports)
-      .innerJoin(projectSubmissions, eq(projectVerificationReports.submissionId, projectSubmissions.id))
-      .where(and(eq(projectSubmissions.userId, user.id), eq(projectVerificationReports.isPublic, true)))
-
     const insufficientCount = insufficientCountRows[0]?.value ?? 0
     const publishedCount = publishedCountRows[0]?.value ?? 0
 

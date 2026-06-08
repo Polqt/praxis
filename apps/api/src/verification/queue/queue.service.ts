@@ -25,8 +25,12 @@ export class VerificationQueueService {
     return this.enqueue(VERIFICATION_JOB_NAMES.analyzeProject, submissionId)
   }
 
-  enqueueGenerateReport(submissionId: string) {
-    return this.enqueue(VERIFICATION_JOB_NAMES.generateReport, submissionId)
+  enqueueGenerateReport(submissionId: string, analysisId?: string) {
+    return this.queue.add(
+      VERIFICATION_JOB_NAMES.generateReport,
+      { submissionId, analysisId },
+      { ...DEFAULT_JOB_OPTIONS, jobId: `${VERIFICATION_JOB_NAMES.generateReport}-${submissionId}` },
+    )
   }
 
   enqueueAwardSkills(submissionId: string) {

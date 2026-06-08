@@ -17,6 +17,7 @@ export type VerificationJobName = typeof VERIFICATION_JOB_NAMES[keyof typeof VER
 export interface VerificationJobPayload {
   submissionId: string
   reportId?: string
+  analysisId?: string
 }
 
 export const DEFAULT_JOB_OPTIONS = {
