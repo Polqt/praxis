@@ -56,11 +56,9 @@ export function ReportClient({
   const pointsToPass = passingThreshold != null ? Math.max(0, passingThreshold - report.compositeScore) : 0
   const passed = passingThreshold == null || report.compositeScore >= passingThreshold
 
-  const hasActions = submissionActions || proofActions
-
   return (
-    <div className="flex flex-col h-[calc(100vh-(--spacing(16)))] px-6 md:px-10 pt-6 pb-0 w-full">
-      <div className="flex items-center justify-between mb-6 shrink-0">
+    <div className="px-6 md:px-10 pt-6 pb-16 w-full">
+      <div className="flex items-center justify-between mb-6">
         <Link
           href={backHref}
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -69,31 +67,19 @@ export function ReportClient({
           {backLabel}
         </Link>
 
-        {hasActions && (
+        {submissionActions && (
           <div className="flex items-center gap-2">
-            {submissionActions && (
-              <div className="flex items-center gap-2">
-                {submissionActions}
-              </div>
-            )}
-            {submissionActions && proofActions && (
-              <Separator orientation="vertical" className="h-4 mx-1" />
-            )}
-            {proofActions && (
-              <div className="flex items-center gap-2">
-                {proofActions}
-              </div>
-            )}
+            {submissionActions}
           </div>
         )}
       </div>
 
-      <div className="flex gap-8 items-start flex-1 min-h-0">
+      <div className="flex items-start gap-8">
         <motion.div
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
-          className="flex-1 min-w-0 overflow-y-auto h-full pr-2 pb-10"
+          className="flex-1 min-w-0"
         >
           <motion.div variants={fadeUp}>
             <ReportHero
@@ -165,6 +151,15 @@ export function ReportClient({
             <NextBestFixesSection scores={report.scores} />
           )}
 
+          {feedbackSlot && (
+            <motion.div variants={fadeUp} className="mt-10">
+              <div className="rounded-lg border bg-card p-5">
+                <p className={`${SECTION_LABEL_CLASS} mb-3`}>Report feedback</p>
+                {feedbackSlot}
+              </div>
+            </motion.div>
+          )}
+
           {twitterSlot && (
             <motion.div variants={fadeUp} className="mt-6 flex items-center gap-3">
               {twitterSlot}
@@ -191,8 +186,8 @@ export function ReportClient({
           </motion.div>
         </motion.div>
 
-        <div className="w-72 shrink-0 hidden lg:flex lg:flex-col lg:gap-4 sticky top-0 overflow-y-auto max-h-full pb-10">
-          <div className="rounded-lg border bg-card p-5 flex flex-col gap-4 shrink-0">
+        <div className="w-80 shrink-0 hidden lg:block sticky top-6 self-start">
+          <div className="rounded-lg border bg-card p-5 flex flex-col gap-4">
             <div className="flex justify-center">
               <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md border text-sm font-medium ${statusConfig.className}`}>
                 {report.status === 'verified' && <IconCheck size={13} strokeWidth={2.5} />}
@@ -227,14 +222,16 @@ export function ReportClient({
                 </div>
               </div>
             )}
+
+            {proofActions && (
+              <>
+                <Separator />
+                <div className="flex flex-wrap gap-2">
+                  {proofActions}
+                </div>
+              </>
+            )}
           </div>
-\
-          {feedbackSlot && (
-            <div className="rounded-lg border bg-card p-4">
-              <p className={`${SECTION_LABEL_CLASS} mb-3`}>Report feedback</p>
-              {feedbackSlot}
-            </div>
-          )}
         </div>
       </div>
     </div>

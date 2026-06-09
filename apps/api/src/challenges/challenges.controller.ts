@@ -2,6 +2,11 @@ import { Controller, Get, Param, Query } from '@nestjs/common'
 import { ChallengesService } from './challenges.service'
 import { ReportsService } from '../reports/reports.service'
 
+function parseIntParam(value: string | undefined, fallback: number, max: number): number {
+  if (!value) return fallback
+  return Math.min(Math.max(parseInt(value, 10) || fallback, 0), max)
+}
+
 @Controller('challenges')
 export class ChallengesController {
   constructor(
@@ -15,8 +20,8 @@ export class ChallengesController {
     @Query('offset') offset?: string,
   ) {
     return this.challengesService.listActive(
-      limit ? Math.min(parseInt(limit, 10) || 50, 100) : 50,
-      offset ? Math.max(parseInt(offset, 10) || 0, 0) : 0,
+      parseIntParam(limit, 50, 100),
+      parseIntParam(offset, 0, Infinity),
     )
   }
 
@@ -32,7 +37,7 @@ export class ChallengesController {
   ) {
     return this.reportsService.getChallengeLeaderboard(
       id,
-      limit ? Math.min(parseInt(limit, 10) || 25, 100) : 25,
+      parseIntParam(limit, 25, 100),
     )
   }
 }

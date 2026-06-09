@@ -1,18 +1,8 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { createPublicKey, KeyObject } from 'node:crypto'
+import { createPublicKey, KeyObject, type JsonWebKey } from 'node:crypto'
 
-interface JwkKey {
-  kid: string
-  kty: string
-  crv?: string
-  x?: string
-  y?: string
-  n?: string
-  e?: string
-  alg: string
-  use: string
-}
+type JwkKey = JsonWebKey & { kid: string }
 
 const TTL_MS = 60 * 60 * 1000 // 1 hour
 
@@ -66,7 +56,7 @@ export class JwksService implements OnModuleInit {
     const { keys } = await response.json() as { keys: JwkKey[] }
     const map = new Map<string, KeyObject>()
     for (const jwk of keys) {
-      const keyObject = createPublicKey({ key: jwk as unknown as import('node:crypto').JsonWebKey, format: 'jwk' })
+      const keyObject = createPublicKey({ key: jwk, format: 'jwk' })
       map.set(jwk.kid, keyObject)
     }
     this.keys = map

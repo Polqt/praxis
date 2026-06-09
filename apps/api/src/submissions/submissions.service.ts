@@ -13,6 +13,13 @@ import { parseRepoFullName } from './submissions.util'
 import { AuditService } from '../audit/audit.service'
 import type { SubmissionStatus } from '@praxis/shared'
 
+const IN_PROGRESS_STATUSES: SubmissionStatus[] = ['created', 'queued', 'ingesting', 'analyzing', 'generating_report']
+const RETRYABLE_STATUSES: SubmissionStatus[] = ['ingestion_failed', 'analysis_failed', 'report_generation_failed']
+const RESUBMITTABLE_STATUSES: SubmissionStatus[] = [...RETRYABLE_STATUSES, 'failed', 'expired', 'cancelled']
+const TERMINAL_STATUSES: SubmissionStatus[] = ['verified', 'insufficient', 'failed', ...RETRYABLE_STATUSES, 'expired', 'cancelled']
+const UNREAD_STATUSES: SubmissionStatus[] = ['verified', 'insufficient', 'failed', ...RETRYABLE_STATUSES]
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000
+
 @Injectable()
 export class SubmissionsService {
   constructor(
@@ -28,11 +35,10 @@ export class SubmissionsService {
 
   async create(userId: string, dto: CreateSubmissionDto) {
     // Prevent multiple concurrent submissions — each one spins up E2B + Claude calls
-    const IN_PROGRESS: SubmissionStatus[] = ['created', 'queued', 'ingesting', 'analyzing', 'generating_report']
     const activeRows = await this.db.db
       .select({ value: count() })
       .from(projectSubmissions)
-      .where(and(eq(projectSubmissions.userId, userId), inArray(projectSubmissions.status, IN_PROGRESS)))
+      .where(and(eq(projectSubmissions.userId, userId), inArray(projectSubmissions.status, IN_PROGRESS_STATUSES)))
     if ((activeRows[0]?.value ?? 0) > 0) {
       throw new ConflictException(
         'You already have a submission in progress. Wait for it to complete before submitting again.',
@@ -40,7 +46,7 @@ export class SubmissionsService {
     }
 
     const rateLimitPerHour = this.config.get<number>('submissions.rateLimitPerHour') ?? 5
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+    const oneHourAgo = new Date(Date.now() - RATE_LIMIT_WINDOW_MS)
     const recentCountRows = await this.db.db
       .select({ value: count() })
       .from(projectSubmissions)
@@ -61,8 +67,8 @@ export class SubmissionsService {
         ))
       const oldestSubmittedAt = oldestSubmissionRows[0]?.oldestTime
       const retryAfterSeconds = oldestSubmittedAt
-        ? Math.ceil((oldestSubmittedAt.getTime() + 60 * 60 * 1000 - Date.now()) / 1000)
-        : 3600
+        ? Math.ceil((oldestSubmittedAt.getTime() + RATE_LIMIT_WINDOW_MS - Date.now()) / 1000)
+        : RATE_LIMIT_WINDOW_MS / 1000
       const error = new HttpException(
         {
           message: 'You have reached the submission limit. Please wait before submitting again.',
@@ -70,7 +76,8 @@ export class SubmissionsService {
         },
         HttpStatus.TOO_MANY_REQUESTS,
       )
-      ;(error as any).getHeaders = () => ({ 'Retry-After': String(retryAfterSeconds) })
+      // NestJS reads getHeaders() to set response headers — HttpException doesn't declare it, but the filter supports it
+      ;(error as HttpException & { getHeaders(): Record<string, string> }).getHeaders = () => ({ 'Retry-After': String(retryAfterSeconds) })
       throw error
     }
 
@@ -114,26 +121,24 @@ export class SubmissionsService {
 
     const submission = inserted[0]
 
-    if (inserted[0]) {
-      this.audit.log(userId, 'submission_created', {
-        submissionId: submission.id,
-        challengeId: challenge.id,
-        repositoryUrl: `https://github.com/${repository.full_name}`,
-      })
+    this.audit.log(userId, 'submission_created', {
+      submissionId: submission.id,
+      challengeId: challenge.id,
+      repositoryUrl: `https://github.com/${repository.full_name}`,
+    })
 
-      const queued = await this.statusService.transition({
-        submissionId: submission.id,
-        toStatus: 'queued',
-        reason: 'submission_queued',
-        metadata: {
-          githubRepoFullName: repository.full_name,
-          commitSha: commit.sha,
-        },
-      })
-      Object.assign(submission, queued)
+    const queued = await this.statusService.transition({
+      submissionId: submission.id,
+      toStatus: 'queued',
+      reason: 'submission_queued',
+      metadata: {
+        githubRepoFullName: repository.full_name,
+        commitSha: commit.sha,
+      },
+    })
+    Object.assign(submission, queued)
 
-      await this.verificationQueue.enqueueIngestRepo(submission.id)
-    }
+    await this.verificationQueue.enqueueIngestRepo(submission.id)
 
     return submission
   }
@@ -147,14 +152,13 @@ export class SubmissionsService {
   }
 
   async getStats(userId: string) {
-    const IN_PROGRESS = ['created', 'queued', 'ingesting', 'analyzing', 'generating_report'] as const
-    const REPORT_GENERATED = ['verified', 'insufficient', 'failed'] as const
+    const REPORT_GENERATED: SubmissionStatus[] = ['verified', 'insufficient', 'failed']
 
     const [totalRows, verifiedRows, inProgressRows, reportsRows] = await Promise.all([
       this.db.db.select({ value: count() }).from(projectSubmissions).where(eq(projectSubmissions.userId, userId)),
       this.db.db.select({ value: count() }).from(projectSubmissions).where(and(eq(projectSubmissions.userId, userId), eq(projectSubmissions.status, 'verified'))),
-      this.db.db.select({ value: count() }).from(projectSubmissions).where(and(eq(projectSubmissions.userId, userId), inArray(projectSubmissions.status, [...IN_PROGRESS]))),
-      this.db.db.select({ value: count() }).from(projectSubmissions).where(and(eq(projectSubmissions.userId, userId), inArray(projectSubmissions.status, [...REPORT_GENERATED]))),
+      this.db.db.select({ value: count() }).from(projectSubmissions).where(and(eq(projectSubmissions.userId, userId), inArray(projectSubmissions.status, IN_PROGRESS_STATUSES))),
+      this.db.db.select({ value: count() }).from(projectSubmissions).where(and(eq(projectSubmissions.userId, userId), inArray(projectSubmissions.status, REPORT_GENERATED))),
     ])
 
     return {
@@ -228,8 +232,7 @@ export class SubmissionsService {
   async retrySubmission(userId: string, submissionId: string) {
     const submission = await this.getForUser(userId, submissionId)
 
-    const retryableStatuses: string[] = ['ingestion_failed', 'analysis_failed', 'report_generation_failed']
-    if (!retryableStatuses.includes(submission.status)) {
+    if (!RETRYABLE_STATUSES.includes(submission.status as SubmissionStatus)) {
       throw new ConflictException('Only failed submissions can be retried')
     }
 
@@ -255,8 +258,7 @@ export class SubmissionsService {
   async updateCommitAndRetry(userId: string, submissionId: string, commitSha: string) {
     const submission = await this.getForUser(userId, submissionId)
 
-    const retryableStatuses = ['ingestion_failed', 'analysis_failed', 'report_generation_failed', 'failed', 'expired', 'cancelled']
-    if (!retryableStatuses.includes(submission.status)) {
+    if (!RESUBMITTABLE_STATUSES.includes(submission.status as SubmissionStatus)) {
       throw new ConflictException('Can only update the commit on a failed, expired, or cancelled submission')
     }
 
@@ -305,9 +307,7 @@ export class SubmissionsService {
   async markViewed(userId: string, submissionId: string) {
     const submission = await this.getForUser(userId, submissionId)
     // Only mark as viewed if the submission has a terminal result (report ready or failed)
-    const isTerminal = ['verified', 'insufficient', 'failed',
-      'ingestion_failed', 'analysis_failed', 'report_generation_failed', 'expired', 'cancelled'].includes(submission.status)
-    if (!isTerminal || submission.viewedAt) return submission
+    if (!TERMINAL_STATUSES.includes(submission.status as SubmissionStatus) || submission.viewedAt) return submission
 
     const updated = await this.db.db
       .update(projectSubmissions)
@@ -323,8 +323,7 @@ export class SubmissionsService {
       .from(projectSubmissions)
       .where(and(
         eq(projectSubmissions.userId, userId),
-        inArray(projectSubmissions.status, ['verified', 'insufficient', 'failed',
-          'ingestion_failed', 'analysis_failed', 'report_generation_failed']),
+        inArray(projectSubmissions.status, UNREAD_STATUSES),
         isNull(projectSubmissions.viewedAt),
       ))
     return rows[0]?.value ?? 0

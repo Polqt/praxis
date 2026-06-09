@@ -86,7 +86,7 @@ export class VerificationWorker implements OnModuleDestroy {
     }
 
     const { submissionId } = job.data
-    if (!submissionId || !job.data.submissionId) {
+    if (!submissionId) {
       throw new Error('Verification jobs must contain submissionId')
     }
 

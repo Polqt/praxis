@@ -3,6 +3,7 @@ import { serverApiFetch } from '@/lib/api.server'
 import { ApiAccountError } from '@/features/auth/components/api-account-error'
 import { StudioClient } from '@/features/studio/components/studio-client'
 import { isTerminalSubmission } from '@/lib/praxis-format'
+import { filterSubmissions } from '@/features/submissions/utils/filter-submissions'
 import type {
   DashboardStats,
   GitHubAccount,
@@ -59,12 +60,9 @@ export default async function StudioPage() {
     ? await serverApiFetch<VerificationReport>(`/reports/submissions/${latestTerminalSubmission.id}`).catch(() => null)
     : null
 
+  const verifiedSubmissions = filterSubmissions(submissions, 'verified')
   const total = challenges.length
-  const completed = new Set(
-    submissions
-      .filter((submission) => submission.status === 'verified')
-      .map((submission) => submission.challengeId),
-  ).size
+  const completed = new Set(verifiedSubmissions.map((s) => s.challengeId)).size
   const progress = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0
   const proofReady = Boolean(user.username && dashboard.verifiedSkills.length > 0)
 
@@ -85,7 +83,7 @@ export default async function StudioPage() {
       proofReady={proofReady}
       scoreHistory={scoreHistory}
       challenges={challenges}
-      verifiedSubmissions={submissions.filter((s) => s.status === 'verified')}
+      verifiedSubmissions={verifiedSubmissions}
     />
   )
 }

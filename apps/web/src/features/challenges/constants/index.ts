@@ -44,5 +44,3 @@ export const CHALLENGE_STATUS_BADGE: Record<
     className: 'bg-muted text-muted-foreground border-border',
   },
 }
-
-

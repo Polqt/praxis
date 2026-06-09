@@ -154,10 +154,12 @@ export function planExecution(data: RepositoryIngestionData): ExecutionPlan | nu
       workingDirectory,
       commands: [
         { phase: 'install', command: packageManager.install, label: `${packageManager.name} install`, cwd: workingDirectory },
-        ...(packageCommand(pkg, packageManager, 'test', null, workingDirectory) ? [packageCommand(pkg, packageManager, 'test', null, workingDirectory)!] : []),
-        ...(packageCommand(pkg, packageManager, 'build', null, workingDirectory) ? [packageCommand(pkg, packageManager, 'build', null, workingDirectory)!] : []),
-        ...(packageCommand(pkg, packageManager, 'lint', null, workingDirectory) ? [packageCommand(pkg, packageManager, 'lint', null, workingDirectory)!] : []),
-        ...(packageCommand(pkg, packageManager, 'typecheck', null, workingDirectory) ? [packageCommand(pkg, packageManager, 'typecheck', null, workingDirectory)!] : []),
+        ...([
+          packageCommand(pkg, packageManager, 'test', null, workingDirectory),
+          packageCommand(pkg, packageManager, 'build', null, workingDirectory),
+          packageCommand(pkg, packageManager, 'lint', null, workingDirectory),
+          packageCommand(pkg, packageManager, 'typecheck', null, workingDirectory),
+        ].filter((c): c is PlannedCommand => c !== null)),
       ],
     }
   }
@@ -172,12 +174,15 @@ export function planExecution(data: RepositoryIngestionData): ExecutionPlan | nu
           ? packageManager.exec('mocha')
           : null
 
+    const typecheckFallback = isTypeScript ? packageManager.exec('tsc --noEmit') : null
     const commands = [
       { phase: 'install' as const, command: packageManager.install, label: `${packageManager.name} install`, cwd: workingDirectory },
-      ...(packageCommand(pkg, packageManager, 'test', testFallback, workingDirectory) ? [packageCommand(pkg, packageManager, 'test', testFallback, workingDirectory)!] : []),
-      ...(packageCommand(pkg, packageManager, 'build', null, workingDirectory) ? [packageCommand(pkg, packageManager, 'build', null, workingDirectory)!] : []),
-      ...(packageCommand(pkg, packageManager, 'lint', null, workingDirectory) ? [packageCommand(pkg, packageManager, 'lint', null, workingDirectory)!] : []),
-      ...(packageCommand(pkg, packageManager, 'typecheck', isTypeScript ? packageManager.exec('tsc --noEmit') : null, workingDirectory) ? [packageCommand(pkg, packageManager, 'typecheck', isTypeScript ? packageManager.exec('tsc --noEmit') : null, workingDirectory)!] : []),
+      ...([
+        packageCommand(pkg, packageManager, 'test', testFallback, workingDirectory),
+        packageCommand(pkg, packageManager, 'build', null, workingDirectory),
+        packageCommand(pkg, packageManager, 'lint', null, workingDirectory),
+        packageCommand(pkg, packageManager, 'typecheck', typecheckFallback, workingDirectory),
+      ].filter((c): c is PlannedCommand => c !== null)),
     ]
 
     return {

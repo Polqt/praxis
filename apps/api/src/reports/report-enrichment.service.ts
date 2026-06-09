@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import Anthropic from '@anthropic-ai/sdk'
+import { deriveStrengths, deriveImprovements } from '../scoring/derive-report-highlights'
 
 interface CategoryScoreEntry {
   score: number
@@ -159,9 +160,10 @@ Respond with a JSON object in exactly this shape (no markdown, no extra text):
 
     this.logger.log(`AI enrichment complete for ${input.repositoryName} — ${categoryEntries.length} categories (1 call)`)
 
+    const fallbackSummary = input.verdict === 'verified' ? FALLBACK_SUMMARY_VERIFIED : FALLBACK_SUMMARY_INSUFFICIENT
     return {
       categoryScores: enrichedScores,
-      publicSummary: parsed.publicSummary || this.passthrough(input).publicSummary,
+      publicSummary: parsed.publicSummary || fallbackSummary,
       strengths,
       improvements,
     }
@@ -189,22 +191,11 @@ Respond with a JSON object in exactly this shape (no markdown, no extra text):
   }
 
   private passthrough(input: EnrichmentInput): EnrichmentResult {
-    const entries = Object.entries(input.categoryScores)
-    const strengths = entries
-      .filter(([, v]) => v.score >= 8)
-      .sort(([, a], [, b]) => b.score - a.score)
-      .slice(0, 4)
-      .map(([name]) => `Strong result in ${name}`)
-    const improvements = entries
-      .filter(([, v]) => v.score <= 6 || v.status === 'floor')
-      .sort(([, a], [, b]) => a.score - b.score)
-      .slice(0, 4)
-      .map(([name]) => `Improve coverage in ${name}`)
     return {
       categoryScores: input.categoryScores,
       publicSummary: input.verdict === 'verified' ? FALLBACK_SUMMARY_VERIFIED : FALLBACK_SUMMARY_INSUFFICIENT,
-      strengths,
-      improvements,
+      strengths: deriveStrengths(input.categoryScores),
+      improvements: deriveImprovements(input.categoryScores),
     }
   }
 }

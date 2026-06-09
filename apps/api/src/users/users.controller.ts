@@ -28,9 +28,9 @@ export class UsersController {
     @Query('offset') offset?: string,
     @Query('period') period?: string,
   ) {
-    const parsedLimit = Math.min(parseInt(limit ?? '50', 10) || 50, 100)
-    const parsedOffset = parseInt(offset ?? '0', 10) || 0
-    const validPeriod = period === 'month' || period === 'week' ? period : 'all'
+    const parsedLimit = Math.min(Math.max(parseInt(limit ?? '50', 10) || 50, 1), 100)
+    const parsedOffset = Math.max(parseInt(offset ?? '0', 10) || 0, 0)
+    const validPeriod: 'all' | 'month' | 'week' = period === 'month' || period === 'week' ? period : 'all'
     return this.usersService.getLeaderboard(parsedLimit, parsedOffset, validPeriod)
   }
 
