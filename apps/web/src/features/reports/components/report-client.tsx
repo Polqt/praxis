@@ -29,7 +29,8 @@ type Props = {
   report: Report
   backHref?: string
   backLabel?: string
-  actions?: React.ReactNode
+  submissionActions?: React.ReactNode
+  proofActions?: React.ReactNode
   challengeId?: string
   language?: string | null
   passingThreshold?: number | null
@@ -42,7 +43,8 @@ export function ReportClient({
   report,
   backHref = '/submissions',
   backLabel = 'Back to submissions',
-  actions,
+  submissionActions,
+  proofActions,
   challengeId,
   language,
   passingThreshold,
@@ -54,15 +56,11 @@ export function ReportClient({
   const pointsToPass = passingThreshold != null ? Math.max(0, passingThreshold - report.compositeScore) : 0
   const passed = passingThreshold == null || report.compositeScore >= passingThreshold
 
+  const hasActions = submissionActions || proofActions
+
   return (
-    <motion.div
-      variants={staggerContainer}
-      initial="hidden"
-      animate="visible"
-      className="px-6 md:px-10 py-8 w-full"
-    >
-      {/* Top nav row */}
-      <div className="flex items-center justify-between mb-8">
+    <div className="flex flex-col h-[calc(100vh-(--spacing(16)))] px-6 md:px-10 pt-6 pb-0 w-full">
+      <div className="flex items-center justify-between mb-6 shrink-0">
         <Link
           href={backHref}
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -70,18 +68,33 @@ export function ReportClient({
           <IconArrowLeft size={14} />
           {backLabel}
         </Link>
-        {actions && (
+
+        {hasActions && (
           <div className="flex items-center gap-2">
-            {actions}
+            {submissionActions && (
+              <div className="flex items-center gap-2">
+                {submissionActions}
+              </div>
+            )}
+            {submissionActions && proofActions && (
+              <Separator orientation="vertical" className="h-4 mx-1" />
+            )}
+            {proofActions && (
+              <div className="flex items-center gap-2">
+                {proofActions}
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Two-column layout */}
-      <div className="flex gap-8 items-start">
-
-        {/* Left column */}
-        <div className="flex-1 min-w-0">
+      <div className="flex gap-8 items-start flex-1 min-h-0">
+        <motion.div
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+          className="flex-1 min-w-0 overflow-y-auto h-full pr-2 pb-10"
+        >
           <motion.div variants={fadeUp}>
             <ReportHero
               repositoryName={report.repositoryName}
@@ -176,13 +189,10 @@ export function ReportClient({
               modelVersion={report.modelVersion}
             />
           </motion.div>
-        </div>
+        </motion.div>
 
-        {/* Right column — sticky score + feedback */}
-        <div className="w-72 shrink-0 self-start sticky top-20 hidden lg:flex lg:flex-col lg:gap-4">
-
-          {/* Score card */}
-          <div className="rounded-lg border bg-card p-5 flex flex-col gap-4">
+        <div className="w-72 shrink-0 hidden lg:flex lg:flex-col lg:gap-4 sticky top-0 overflow-y-auto max-h-full pb-10">
+          <div className="rounded-lg border bg-card p-5 flex flex-col gap-4 shrink-0">
             <div className="flex justify-center">
               <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md border text-sm font-medium ${statusConfig.className}`}>
                 {report.status === 'verified' && <IconCheck size={13} strokeWidth={2.5} />}
@@ -218,8 +228,7 @@ export function ReportClient({
               </div>
             )}
           </div>
-
-          {/* Feedback card */}
+\
           {feedbackSlot && (
             <div className="rounded-lg border bg-card p-4">
               <p className={`${SECTION_LABEL_CLASS} mb-3`}>Report feedback</p>
@@ -228,6 +237,6 @@ export function ReportClient({
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }

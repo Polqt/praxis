@@ -220,33 +220,34 @@ export class UsersService {
   }
 
   async getMyRank(userId: string) {
-    // Fetch only the current user's stats (O(1) — no full scan)
+    // Fetch the current user's difficulty-weighted points and best score — same sort key as the leaderboard
     const myRows = await this.db.db
       .select({
-        verifiedCount: count(projectSubmissions.id),
+        totalPoints: sql<string>`coalesce(sum(${projectChallenges.passingThreshold}), 0)::text`,
         bestScore: max(projectVerificationReports.compositeScore),
       })
       .from(projectSubmissions)
       .innerJoin(projectVerificationReports, eq(projectVerificationReports.submissionId, projectSubmissions.id))
+      .innerJoin(projectChallenges, eq(projectChallenges.id, projectSubmissions.challengeId))
       .where(and(eq(projectSubmissions.status, 'verified'), eq(projectSubmissions.userId, userId)))
 
     const my = myRows[0]
-    if (!my || my.verifiedCount === 0) return { rank: null }
+    const myPoints = Number(my?.totalPoints ?? 0)
+    if (myPoints === 0) return { rank: null }
 
-    const myCount = my.verifiedCount
-    const myBest = my.bestScore ?? 0
+    const myBest = my?.bestScore ?? 0
 
-    // Count distinct users whose stats beat the current user's: higher verifiedCount,
-    // or same verifiedCount but higher bestScore. +1 gives 1-based rank.
+    // Count users strictly ahead: higher total points, or same points but higher best score.
     const aheadRows = await this.db.db.execute<{ ahead: string }>(
       sql`SELECT COUNT(*)::text AS ahead FROM (
             SELECT ps.user_id
             FROM project_submissions ps
             INNER JOIN project_verification_reports pvr ON pvr.submission_id = ps.id
+            INNER JOIN project_challenges pc ON pc.id = ps.challenge_id
             WHERE ps.status = 'verified'
             GROUP BY ps.user_id
-            HAVING COUNT(ps.id) > ${myCount}
-               OR (COUNT(ps.id) = ${myCount} AND MAX(pvr.composite_score) > ${myBest})
+            HAVING SUM(pc.passing_threshold) > ${myPoints}
+               OR (SUM(pc.passing_threshold) = ${myPoints} AND MAX(pvr.composite_score) > ${myBest})
           ) ranked`,
     )
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { IconCheck, IconShare } from '@tabler/icons-react'
+import { IconCheck, IconCopy, IconShare } from '@tabler/icons-react'
 import { apiClient } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 
@@ -30,7 +30,7 @@ export function ReportVisibilityButton({ submissionId, isPublic, initialPublicTo
       setPublicState(report.isPublic)
       setPublicToken(report.publicToken ?? null)
     } catch {
-      setError('Failed to update visibility. Please try again.')
+      setError('Failed to update visibility.')
     } finally {
       setPending(false)
     }
@@ -45,7 +45,7 @@ export function ReportVisibilityButton({ submissionId, isPublic, initialPublicTo
       setPublicState(report.isPublic)
       setPublicToken(null)
     } catch {
-      setError('Failed to update visibility. Please try again.')
+      setError('Failed to update visibility.')
     } finally {
       setPending(false)
     }
@@ -59,46 +59,41 @@ export function ReportVisibilityButton({ submissionId, isPublic, initialPublicTo
     copyTimer.current = setTimeout(() => setCopied(false), 1500)
   }
 
+  if (error) {
+    return <span className="text-xs text-destructive">{error}</span>
+  }
+
   if (!publicState) {
     return (
-      <div className="flex flex-col gap-2">
-        <Button onClick={publish} disabled={pending} size="sm" className="w-full">
-          {pending ? 'Publishing...' : 'Publish proof'}
-        </Button>
-        {error && <p className="text-xs text-destructive">{error}</p>}
-      </div>
+      <Button onClick={publish} disabled={pending} size="sm" variant="outline">
+        {pending ? 'Publishing…' : <><IconShare size={13} className="mr-1" />Publish proof</>}
+      </Button>
     )
   }
 
   if (confirmingUnpublish) {
     return (
-      <div className="flex flex-col gap-2">
-        <p className="text-xs text-muted-foreground">
-          Making this report private will break any existing shared links.
-        </p>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="flex-1" onClick={() => setConfirmingUnpublish(false)} disabled={pending}>
-            Cancel
-          </Button>
-          <Button variant="destructive" size="sm" className="flex-1" onClick={unpublish} disabled={pending}>
-            {pending ? 'Updating...' : 'Confirm'}
-          </Button>
-        </div>
-        {error && <p className="text-xs text-destructive">{error}</p>}
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground hidden sm:block">Break existing links?</span>
+        <Button variant="outline" size="sm" onClick={() => setConfirmingUnpublish(false)} disabled={pending}>
+          Cancel
+        </Button>
+        <Button variant="destructive" size="sm" onClick={unpublish} disabled={pending}>
+          {pending ? 'Updating…' : 'Confirm'}
+        </Button>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <Button variant="outline" size="sm" className="w-full" onClick={() => setConfirmingUnpublish(true)} disabled={pending}>
-        {pending ? 'Updating...' : 'Unpublish proof'}
-      </Button>
-      <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={handleCopy}>
-        {copied ? <IconCheck size={13} /> : <IconShare size={13} />}
+    <>
+      <Button variant="outline" size="sm" onClick={handleCopy} className="gap-1.5">
+        {copied ? <IconCheck size={13} /> : <IconCopy size={13} />}
         {copied ? 'Copied!' : 'Copy proof link'}
       </Button>
-      {error && <p className="text-xs text-destructive">{error}</p>}
-    </div>
+      <Button variant="ghost" size="sm" onClick={() => setConfirmingUnpublish(true)} disabled={pending}>
+        Unpublish proof
+      </Button>
+    </>
   )
 }

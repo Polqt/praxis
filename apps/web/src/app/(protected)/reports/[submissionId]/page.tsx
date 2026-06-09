@@ -45,7 +45,6 @@ export default async function PrivateReportPage({ params }: Props) {
 
   const showTwitterShare = raw.verdict === 'verified' || raw.verdict === 'insufficient'
 
-  // Find best-scoring category for richer share text
   const categoryEntries = Object.entries(raw.categoryScores ?? {})
   const bestCategory = categoryEntries.length > 0
     ? categoryEntries.reduce<{ name: string; score: number } | null>((best, [name, data]) => {
@@ -60,17 +59,19 @@ export default async function PrivateReportPage({ params }: Props) {
       challengeId={submission?.challengeId}
       language={execution?.language ?? null}
       passingThreshold={challenge?.passingThreshold ?? null}
-      actions={
-        <>
-          <ReportVisibilityButton submissionId={raw.submissionId} isPublic={raw.isPublic} initialPublicToken={raw.publicToken} />
-          {raw.verdict === 'insufficient' && (
-            <ResubmitAfterFixesButton
-              challengeId={submission?.challengeId}
-              repositoryName={raw.repositoryName ?? ''}
-              commitSha={raw.commitSha ?? undefined}
-            />
-          )}
-        </>
+      submissionActions={raw.verdict === 'insufficient' ? (
+        <ResubmitAfterFixesButton
+          challengeId={submission?.challengeId}
+          repositoryName={raw.repositoryName ?? ''}
+          commitSha={raw.commitSha ?? undefined}
+        />
+      ) : undefined}
+      proofActions={
+        <ReportVisibilityButton
+          submissionId={raw.submissionId}
+          isPublic={raw.isPublic}
+          initialPublicToken={raw.publicToken}
+        />
       }
       executionSlot={execution ? <TestExecutionOutput execution={execution} /> : undefined}
       feedbackSlot={

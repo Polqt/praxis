@@ -127,6 +127,15 @@ export interface VerificationReport {
     errorMessage: string | null
     createdAt: string
   } | null
+  executionSummary?: {
+    passed: number
+    failed: number
+    skipped: number
+    language: string
+    framework: string | null
+    durationMs: number | null
+    timedOut: boolean
+  } | null
   previousSubmission?: {
     previousSubmissionId: string
     previousCommitSha: string

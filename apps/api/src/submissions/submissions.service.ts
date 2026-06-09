@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { and, count, desc, eq, gte, inArray, min, ne } from 'drizzle-orm'
+import { and, count, desc, eq, gte, inArray, isNull, min, ne } from 'drizzle-orm'
 import { ChallengesService } from '../challenges/challenges.service'
 import { DatabaseService } from '../database/database.service'
 import { projectSubmissionEvents, projectSubmissions } from '../database/schema'
@@ -325,7 +325,7 @@ export class SubmissionsService {
         eq(projectSubmissions.userId, userId),
         inArray(projectSubmissions.status, ['verified', 'insufficient', 'failed',
           'ingestion_failed', 'analysis_failed', 'report_generation_failed']),
-        eq(projectSubmissions.viewedAt, null as unknown as Date),
+        isNull(projectSubmissions.viewedAt),
       ))
     return rows[0]?.value ?? 0
   }

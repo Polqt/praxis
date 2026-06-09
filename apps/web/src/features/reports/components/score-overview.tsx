@@ -1,9 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { IconAlertTriangle, IconChevronDown, IconChevronRight } from '@tabler/icons-react'
+import { IconAlertTriangle, IconChevronDown, IconChevronRight, IconArrowUp, IconArrowDown } from '@tabler/icons-react'
 import { Progress } from '@/components/ui/progress'
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
+import { Button } from '@/components/ui/button'
 import {
   CATEGORY_FIX_INSTRUCTIONS,
   CATEGORY_STATUS_CLASS,
@@ -39,6 +41,42 @@ function SignalsPanel({ signals }: { signals: Record<string, unknown> }) {
   )
 }
 
+function EvidencePanel({ citations, citationUrl }: { citations: string[]; citationUrl: (f: string) => string | null }) {
+  if (citations.length === 0) return null
+
+  return (
+    <Collapsible className="mt-3">
+      <CollapsibleTrigger className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors group">
+        <IconChevronRight size={11} className="group-data-[state=open]:hidden" />
+        <IconChevronDown size={11} className="hidden group-data-[state=open]:block" />
+        Evidence found ({citations.length})
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="mt-2 rounded-md bg-muted/50 px-3 py-2.5">
+          <div className="flex flex-col gap-1">
+            {citations.map((file) => {
+              const url = citationUrl(file)
+              return url ? (
+                <a
+                  key={file}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] font-mono text-muted-foreground hover:text-foreground hover:underline transition-colors"
+                >
+                  {file}
+                </a>
+              ) : (
+                <span key={file} className="text-[11px] font-mono text-muted-foreground">{file}</span>
+              )
+            })}
+          </div>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  )
+}
+
 type Props = {
   scores: ScoreItem[]
   repositoryName?: string
@@ -47,8 +85,10 @@ type Props = {
 }
 
 export function ScoreOverview({ scores, repositoryName, commitSha, skillProgress }: Props) {
+  const [showLowFirst, setShowLowFirst] = useState(false)
   const skillProgressByName = new Map(skillProgress?.map((sp) => [sp.name.toLowerCase(), sp]))
-  function citationUrl(filePath: string): string | null {
+
+  function getCitationUrl(filePath: string): string | null {
     if (!repositoryName || !commitSha) return null
     return `https://github.com/${repositoryName}/blob/${commitSha}/${filePath}`
   }
@@ -64,27 +104,43 @@ export function ScoreOverview({ scores, repositoryName, commitSha, skillProgress
     )
   }
 
+  const sortedScores = showLowFirst
+    ? [...scores].sort((a, b) => a.score - b.score)
+    : scores
+
   return (
     <div>
-      <p className={`${SECTION_LABEL_CLASS} mb-6`}>Rubric results</p>
+      <div className="flex items-center justify-between mb-4">
+        <p className={SECTION_LABEL_CLASS}>Rubric results</p>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowLowFirst((v) => !v)}
+          className="gap-1.5 text-muted-foreground hover:text-foreground h-7 px-2"
+        >
+          {showLowFirst ? <IconArrowUp size={13} /> : <IconArrowDown size={13} />}
+          {showLowFirst ? 'Default order' : 'Show low scores first'}
+        </Button>
+      </div>
+
       <motion.div
         variants={staggerContainer}
         initial="hidden"
         animate="visible"
         className="rounded-lg border divide-y divide-border"
       >
-        {scores.map((item) => {
+        {sortedScores.map((item) => {
           const floorMissed = (item.status === 'floor' || item.status === 'fail')
             && item.minimumScore !== undefined
             && item.score < item.minimumScore
           const fixSteps = CATEGORY_FIX_INSTRUCTIONS[item.category] ?? []
           const scorePercent = (item.score / 10) * 100
           const sp = skillProgressByName.get(item.category.toLowerCase())
-
           const categoryId = item.category.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+
           return (
             <motion.div key={item.category} id={categoryId} variants={fadeUp} className="p-5">
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-3 mb-2">
                 <span className="text-sm font-medium flex-1">
                   {item.category}
                   {item.weight != null && (
@@ -97,7 +153,7 @@ export function ScoreOverview({ scores, repositoryName, commitSha, skillProgress
                   </span>
                 )}
                 {item.confidence && (
-                  <span className={`text-[10px] uppercase tracking-widest font-medium px-2 py-0.5 border rounded-sm ${CONFIDENCE_CLASS[item.confidence]}`}>
+                  <span className={`text-[10px] uppercase tracking-widest font-medium px-2 py-0.5 rounded-sm bg-muted text-muted-foreground border border-transparent ${CONFIDENCE_CLASS[item.confidence]}`}>
                     {item.confidence} confidence
                   </span>
                 )}
@@ -107,10 +163,10 @@ export function ScoreOverview({ scores, repositoryName, commitSha, skillProgress
               </div>
 
               {sp && !sp.awarded && (
-                <p className="text-[11px] text-muted-foreground mb-2">
+                <p className="text-[11px] mb-2">
                   {sp.eligible
                     ? <span className="text-amber-600 font-medium">Skill eligible — awarded on a verified result</span>
-                    : <span>+{sp.pointsNeeded} point{sp.pointsNeeded !== 1 ? 's' : ''} to earn the <span className="font-medium">{sp.name}</span> skill</span>
+                    : <span className="text-muted-foreground">+{sp.pointsNeeded} point{sp.pointsNeeded !== 1 ? 's' : ''} to earn the <span className="font-medium">{sp.name}</span> skill</span>
                   }
                 </p>
               )}
@@ -169,36 +225,8 @@ export function ScoreOverview({ scores, repositoryName, commitSha, skillProgress
                   )}
                 </div>
               )}
-
               {item.signals && <SignalsPanel signals={item.signals} />}
-
-              {item.citations.length > 0 && (
-                <div className="rounded-md bg-muted/50 px-3 py-2.5">
-                  <p className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground mb-2">
-                    Evidence found
-                  </p>
-                  <div className="flex flex-col gap-1">
-                    {item.citations.map((file) => {
-                      const url = citationUrl(file)
-                      return url ? (
-                        <a
-                          key={file}
-                          href={url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[11px] font-mono text-muted-foreground hover:text-foreground hover:underline transition-colors"
-                        >
-                          {file}
-                        </a>
-                      ) : (
-                        <span key={file} className="text-[11px] font-mono text-muted-foreground">
-                          {file}
-                        </span>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
+              <EvidencePanel citations={item.citations} citationUrl={getCitationUrl} />
             </motion.div>
           )
         })}
