@@ -130,8 +130,8 @@ export default async function PublicProofPage({ params }: Props) {
             </p>
           )}
 
-          {/* Compact test execution summary */}
-          {raw.executionSummary && (() => {
+          {/* Compact test execution summary — only shown when sandbox actually ran */}
+          {raw.executionSummary && (raw.executionSummary.passed > 0 || raw.executionSummary.failed > 0 || raw.executionSummary.timedOut) && (() => {
             const ex = raw.executionSummary
             const lang = ex.framework ?? ex.language
             const duration = ex.durationMs ? `${(ex.durationMs / 1000).toFixed(1)}s` : null
@@ -143,7 +143,6 @@ export default async function PublicProofPage({ params }: Props) {
                   <>
                     {ex.passed > 0 && <span className="text-[11px] px-2.5 py-1 rounded-sm border border-green-200 bg-green-50 text-green-700">{ex.passed} tests passed</span>}
                     {ex.failed > 0 && <span className="text-[11px] px-2.5 py-1 rounded-sm border border-red-200 bg-red-50 text-red-700">{ex.failed} failed</span>}
-                    {ex.passed === 0 && ex.failed === 0 && <span className="text-[11px] px-2.5 py-1 rounded-sm border border-border bg-muted text-muted-foreground">No tests detected</span>}
                   </>
                 )}
                 <span className="text-[11px] px-2.5 py-1 rounded-sm border border-border bg-muted text-muted-foreground uppercase tracking-wider">{lang}</span>
@@ -151,6 +150,19 @@ export default async function PublicProofPage({ params }: Props) {
               </div>
             )
           })()}
+
+          {/* Awarded skills */}
+          {raw.awardedSkills && raw.awardedSkills.length > 0 && (
+            <div className="flex items-center gap-2 mt-5 flex-wrap">
+              <span className="text-[11px] uppercase tracking-widest text-muted-foreground">Skills earned:</span>
+              {raw.awardedSkills.map((skill) => (
+                <span key={skill} className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-sm border border-green-200 bg-green-50 text-green-700">
+                  <IconCheck size={9} strokeWidth={3} />
+                  {skill}
+                </span>
+              ))}
+            </div>
+          )}
 
           <ProofSafetyLabels status={report.status} />
         </div>

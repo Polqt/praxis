@@ -150,20 +150,27 @@ Respond with a JSON object in exactly this shape (no markdown, no extra text):
 
     if (!parsed) return this.passthrough(input)
 
+    // Validate that returned keys actually match known category names (case-insensitive).
+    // Claude sometimes returns slightly different casing or extra keys — only apply matching ones.
+    const knownLower = new Map(categoryEntries.map(([name]) => [name.toLowerCase(), name]))
     const enrichedScores = { ...input.categoryScores }
-    for (const [name] of categoryEntries) {
-      const narrative = parsed.narratives?.[name]
-      if (narrative) {
-        enrichedScores[name] = { ...enrichedScores[name], narrative }
+    for (const [rawKey, narrative] of Object.entries(parsed.narratives ?? {})) {
+      const canonicalName = knownLower.get(rawKey.toLowerCase()) ?? knownLower.get(rawKey)
+      if (canonicalName && narrative) {
+        enrichedScores[canonicalName] = { ...enrichedScores[canonicalName], narrative }
       }
     }
+
+    // Enforce 30-word cap on publicSummary to prevent layout issues
+    const rawSummary = (parsed.publicSummary || '').trim()
+    const cappedSummary = rawSummary ? rawSummary.split(/\s+/).slice(0, 30).join(' ') : ''
 
     this.logger.log(`AI enrichment complete for ${input.repositoryName} — ${categoryEntries.length} categories (1 call)`)
 
     const fallbackSummary = input.verdict === 'verified' ? FALLBACK_SUMMARY_VERIFIED : FALLBACK_SUMMARY_INSUFFICIENT
     return {
       categoryScores: enrichedScores,
-      publicSummary: parsed.publicSummary || fallbackSummary,
+      publicSummary: cappedSummary || fallbackSummary,
       strengths,
       improvements,
     }

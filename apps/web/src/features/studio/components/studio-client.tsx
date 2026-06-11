@@ -84,6 +84,25 @@ export function StudioClient({
         </div>
       </motion.section>
 
+      {submissionStats.inProgressCount > 0 && (
+        <motion.div variants={fadeUp} className="mt-6">
+          <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+            <span className="relative flex size-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-primary" />
+            </span>
+            <p className="text-sm text-foreground">
+              {submissionStats.inProgressCount === 1
+                ? 'Verification in progress — your result will appear shortly.'
+                : `${submissionStats.inProgressCount} verifications in progress — results will appear shortly.`}
+            </p>
+            <Button variant="ghost" size="sm" className="ml-auto shrink-0 h-7 px-2 text-xs" asChild>
+              <Link href="/submissions">View</Link>
+            </Button>
+          </div>
+        </motion.div>
+      )}
+
       <motion.div variants={fadeUp} className="mt-8 grid grid-cols-3 divide-x divide-border rounded-lg border bg-card">
         <div className="p-4">
           <p className="text-xl sm:text-2xl font-semibold tabular-nums">{completed}</p>
@@ -177,9 +196,16 @@ export function StudioClient({
                 ))}
               </div>
             ) : submissionStats.verifiedCount > 0 ? (
-              <p className="text-sm text-muted-foreground mt-2">
-                No skills were awarded yet. This may be a configuration issue — contact support if you believe this is wrong.
-              </p>
+              <div className="mt-2">
+                <p className="text-sm text-muted-foreground">
+                  No skills awarded yet. Skills are earned automatically when your category scores meet the threshold.
+                </p>
+                {latestReport && (
+                  <Button variant="link" size="sm" className="h-auto p-0 mt-1 text-xs" asChild>
+                    <Link href={`/reports/${latestReport.submissionId}`}>Check skill progress in your report →</Link>
+                  </Button>
+                )}
+              </div>
             ) : (
               <p className="text-sm text-muted-foreground mt-2">
                 Skills appear here after your first verified submission.
@@ -197,6 +223,38 @@ export function StudioClient({
           />
         </motion.div>
       </motion.div>
+
+      {latestReport?.skillProgress && latestReport.skillProgress.some((sp) => !sp.awarded) && (
+        <motion.div variants={fadeUp} className="mt-4">
+          <div className="rounded-lg border bg-card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <p className={CARD_LABEL_CLASS}>Skill progress</p>
+              <Button variant="link" size="sm" className="h-auto p-0 text-xs" asChild>
+                <Link href={`/reports/${latestReport.submissionId}`}>View full report →</Link>
+              </Button>
+            </div>
+            <div className="flex flex-col gap-2">
+              {latestReport.skillProgress.filter((sp) => !sp.awarded).map((sp) => (
+                <div key={sp.name} className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium">{sp.name}</span>
+                      <span className="text-xs text-muted-foreground tabular-nums">
+                        {sp.score}/10
+                        {sp.eligible
+                          ? <span className="ml-1.5 text-amber-600 font-medium">eligible</span>
+                          : <span className="ml-1.5">· need +{sp.pointsNeeded}</span>
+                        }
+                      </span>
+                    </div>
+                    <Progress value={(sp.score / 10) * 100} className="h-0.5" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       <motion.div variants={fadeUp} className="mt-4">
         <NextStepCard

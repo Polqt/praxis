@@ -139,27 +139,36 @@ export function ScoreOverview({ scores, repositoryName, commitSha, skillProgress
           const categoryId = item.category.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
 
           return (
-            <motion.div key={item.category} id={categoryId} variants={fadeUp} className="p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <span className="text-sm font-medium flex-1">
-                  {item.category}
-                  {item.weight != null && (
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">{item.weight}% weight</span>
+            <motion.div
+              key={item.category}
+              id={categoryId}
+              variants={fadeUp}
+              className={`p-5 border-l-2 ${floorMissed ? 'border-l-red-400' : item.status === 'fail' ? 'border-l-destructive/40' : 'border-l-transparent'}`}
+            >
+              <div className="mb-2">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="text-sm font-medium">
+                    {item.category}
+                    {item.weight != null && (
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">{item.weight}%</span>
+                    )}
+                  </span>
+                  <span className="text-sm font-semibold tabular-nums shrink-0">
+                    {item.score}<span className="text-xs font-normal text-muted-foreground">/10</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {item.status && (
+                    <span className={`text-[10px] uppercase tracking-widest font-medium px-2 py-0.5 border rounded-sm ${CATEGORY_STATUS_CLASS[item.status]}`}>
+                      {item.status}
+                    </span>
                   )}
-                </span>
-                {item.status && (
-                  <span className={`text-[10px] uppercase tracking-widest font-medium px-2 py-0.5 border rounded-sm ${CATEGORY_STATUS_CLASS[item.status]}`}>
-                    {item.status}
-                  </span>
-                )}
-                {item.confidence && (
-                  <span className={`text-[10px] uppercase tracking-widest font-medium px-2 py-0.5 rounded-sm bg-muted text-muted-foreground border border-transparent ${CONFIDENCE_CLASS[item.confidence]}`}>
-                    {item.confidence} confidence
-                  </span>
-                )}
-                <span className="text-sm font-semibold tabular-nums w-10 text-right shrink-0">
-                  {item.score}<span className="text-xs font-normal text-muted-foreground">/10</span>
-                </span>
+                  {item.confidence && (
+                    <span className={`text-[10px] uppercase tracking-widest font-medium px-2 py-0.5 rounded-sm border ${CONFIDENCE_CLASS[item.confidence]}`}>
+                      {item.confidence} confidence
+                    </span>
+                  )}
+                </div>
               </div>
 
               {sp && !sp.awarded && (

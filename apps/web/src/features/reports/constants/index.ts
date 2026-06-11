@@ -149,6 +149,7 @@ export const exampleReport: Report = {
   compositeScore: 78,
   summary:
     'This repository demonstrates strong API design, authentication, and database patterns. Documentation and deployment evidence are present. Testing coverage is adequate but could be expanded with integration and end-to-end suites.',
+  aiFallback: false,
   scores: [
     {
       category: 'API Design',

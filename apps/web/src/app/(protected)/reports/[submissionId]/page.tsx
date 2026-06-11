@@ -31,10 +31,12 @@ type Props = {
 export default async function PrivateReportPage({ params }: Props) {
   const { submissionId } = await params
 
-  const [raw, submission, execution] = await Promise.all([
+  type FeedbackSummary = { count: number; averageRating: number; highAccuracyCount: number } | null
+  const [raw, submission, execution, feedbackSummary] = await Promise.all([
     serverApiFetch<VerificationReport>(`/reports/submissions/${submissionId}`).catch(() => null),
     serverApiFetch<ProjectSubmission>(`/submissions/${submissionId}`).catch(() => null),
     serverApiFetch<ExecutionOutput | null>(`/reports/submissions/${submissionId}/execution`).catch(() => null),
+    serverApiFetch<FeedbackSummary>(`/reports/submissions/${submissionId}/feedback-summary`).catch(() => null),
   ])
 
   const challenge = submission?.challengeId
@@ -73,10 +75,43 @@ export default async function PrivateReportPage({ params }: Props) {
           initialPublicToken={raw.publicToken}
         />
       }
-      executionSlot={execution ? <TestExecutionOutput execution={execution} /> : undefined}
+      executionSlot={(() => {
+        if (!execution) return (
+          <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-4 py-3">
+            <span className="text-xs text-muted-foreground">Sandbox execution was not performed for this submission. Scores are based on static file analysis only.</span>
+          </div>
+        )
+        const isSkipped = execution.publicSummary?.toLowerCase().includes('skipped') || execution.publicSummary?.toLowerCase().includes('not run')
+        const isCloneFailed = execution.publicSummary?.toLowerCase().includes('clone') || execution.publicSummary?.toLowerCase().includes('private')
+        return (
+          <div className="space-y-2">
+            {isCloneFailed && (
+              <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
+                <span className="text-xs text-amber-700">Could not clone repository — the repo may be private. <a href="/settings" className="underline underline-offset-2">Reconnect GitHub</a> to enable sandbox checks.</span>
+              </div>
+            )}
+            {isSkipped && !isCloneFailed && (
+              <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-4 py-3">
+                <span className="text-xs text-muted-foreground">{execution.publicSummary}</span>
+              </div>
+            )}
+            <TestExecutionOutput execution={execution} />
+          </div>
+        )
+      })()}
       feedbackSlot={
         (raw.verdict === 'insufficient' || raw.compositeScore < 70)
-          ? <ReportFeedbackForm submissionId={submissionId} challengeId={submission?.challengeId} />
+          ? (
+            <>
+              {feedbackSummary && feedbackSummary.count >= 3 && (
+                <p className="text-xs text-muted-foreground mb-3">
+                  <span className="font-medium text-foreground">{feedbackSummary.highAccuracyCount}</span> of{' '}
+                  <span className="font-medium text-foreground">{feedbackSummary.count}</span> reviewers found this report accurate.
+                </p>
+              )}
+              <ReportFeedbackForm submissionId={submissionId} challengeId={submission?.challengeId} />
+            </>
+          )
           : undefined
       }
       twitterSlot={showTwitterShare ? (

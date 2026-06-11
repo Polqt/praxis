@@ -91,6 +91,7 @@ export interface VerificationReport {
   verdict: Verdict
   categoryScores: Record<string, { score: number; narrative: string; citations: string[]; status?: string; minimumScore?: number; weight?: number; signals?: Record<string, unknown> }>
   publicSummary: string | null
+  aiFallback?: boolean
   strengths: string[]
   improvements: string[]
   analyzerVersion: string
@@ -101,6 +102,7 @@ export interface VerificationReport {
   isPublic: boolean
   publicToken: string | null
   viewCount?: number
+  awardedSkills?: string[]
   skillProgress?: {
     name: string
     score: number

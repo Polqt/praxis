@@ -124,6 +124,7 @@ export interface Report {
   status: ReportStatus
   compositeScore: number
   summary: string
+  aiFallback: boolean
   scores: ScoreItem[]
   skills: string[]
   strengths: string[]

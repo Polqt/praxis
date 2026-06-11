@@ -240,20 +240,26 @@ export class RepositoryExecutionService {
       )
     }
 
-    try {
-      return await this.runInSandbox(ingestionId, ingestion.repoFullName, plan, githubToken)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      this.logger.error(`E2B: sandbox execution failed for ${ingestion.repoFullName}`, {
-        error: message,
-      })
-      return this.recordExecutionIssue(
-        ingestionId,
-        plan.language,
-        `Sandbox execution failed before checks completed: ${message}`,
-        plan.framework,
-      )
+    const MAX_ATTEMPTS = 2
+    let lastError: Error | null = null
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        return await this.runInSandbox(ingestionId, ingestion.repoFullName, plan, githubToken)
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err))
+        if (attempt < MAX_ATTEMPTS) {
+          this.logger.warn(`E2B: attempt ${attempt} failed for ${ingestion.repoFullName} — retrying in 3s`, { error: lastError.message })
+          await new Promise((r) => setTimeout(r, 3000))
+        }
+      }
     }
+    this.logger.error(`E2B: all ${MAX_ATTEMPTS} attempts failed for ${ingestion.repoFullName}`, { error: lastError?.message })
+    return this.recordExecutionIssue(
+      ingestionId,
+      plan.language,
+      `Sandbox execution failed after ${MAX_ATTEMPTS} attempts: ${lastError?.message ?? 'unknown error'}`,
+      plan.framework,
+    )
   }
 
   private async runInSandbox(

@@ -146,7 +146,7 @@ export function ReportFeedbackForm({ submissionId, challengeId }: Props) {
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <Button onClick={handleSubmit} disabled={rating === null || submitting} size="sm" className="w-full">
+        <Button onClick={handleSubmit} disabled={rating === null || submitting} size="sm">
           {submitting ? 'Submitting…' : 'Submit feedback'}
         </Button>
       </div>

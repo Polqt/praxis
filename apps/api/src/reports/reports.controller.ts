@@ -38,4 +38,9 @@ export class ReportsController {
   ) {
     return this.reports.submitFeedback(user.id, submissionId, dto)
   }
+
+  @Get('submissions/:submissionId/feedback-summary')
+  getFeedbackSummary(@GetUser() user: User, @Param('submissionId') submissionId: string) {
+    return this.reports.getFeedbackSummary(user.id, submissionId)
+  }
 }

@@ -243,11 +243,22 @@ export class ReportsService implements OnModuleInit {
 
     const executionSummary = execRows[0] ?? null
 
+    // Fetch awarded skill names for this submission's report
+    const reportRow = updated ?? reports[0]
+    const awardedSkillRows = await this.db.db
+      .select({ name: skills.name })
+      .from(userSkills)
+      .innerJoin(skills, eq(skills.id, userSkills.skillId))
+      .where(eq(userSkills.sourceReportId, reportRow.id))
+
+    const awardedSkills = awardedSkillRows.map((r) => r.name)
+
     return this.toPublicProof(
-      updated ?? reports[0],
+      reportRow,
       submission,
       challenge,
       executionSummary,
+      awardedSkills,
     )
   }
 
@@ -510,6 +521,7 @@ export class ReportsService implements OnModuleInit {
       verdict: report.verdict,
       categoryScores,
       publicSummary: report.publicSummary,
+      aiFallback: report.publicSummary === FALLBACK_SUMMARY_VERIFIED || report.publicSummary === FALLBACK_SUMMARY_INSUFFICIENT,
       strengths,
       improvements,
       analyzerVersion: report.analyzerVersion,
@@ -707,6 +719,7 @@ export class ReportsService implements OnModuleInit {
     submission: typeof projectSubmissions.$inferSelect,
     challenge: typeof projectChallenges.$inferSelect,
     executionSummary?: { passed: number; failed: number; skipped: number; language: string; framework: string | null; durationMs: number | null; timedOut: boolean } | null,
+    awardedSkills?: string[],
   ) {
     const scores = this.withRubricWeights(
       (report.categoryScores ?? {}) as Record<string, StoredCategoryScore>,
@@ -741,6 +754,7 @@ export class ReportsService implements OnModuleInit {
       publicToken: report.publicToken,
       viewCount: report.viewCount ?? 0,
       executionSummary: executionSummary ?? null,
+      awardedSkills: awardedSkills ?? [],
     }
   }
 
@@ -776,6 +790,26 @@ export class ReportsService implements OnModuleInit {
 
     this.audit.log(userId, 'report_feedback_submitted', { reportId: report.id, rating: dto.accuracyRating })
     return rows[0]
+  }
+
+  async getFeedbackSummary(userId: string, submissionId: string) {
+    const submission = await this.getSubmission(submissionId)
+    if (submission.userId !== userId) throw new NotFoundException('Report not found')
+    const report = await this.getReportBySubmission(submissionId)
+    const rows = await this.db.db
+      .select({ accuracyRating: reportFeedback.accuracyRating })
+      .from(reportFeedback)
+      .where(eq(reportFeedback.reportId, report.id))
+
+    if (rows.length === 0) return null
+
+    const avg = rows.reduce((sum, r) => sum + r.accuracyRating, 0) / rows.length
+    const highCount = rows.filter((r) => r.accuracyRating >= 4).length
+    return {
+      count: rows.length,
+      averageRating: Math.round(avg * 10) / 10,
+      highAccuracyCount: highCount,
+    }
   }
 
 }

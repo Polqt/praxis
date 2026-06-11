@@ -20,8 +20,10 @@ import {
   REPORT_DISCLAIMER_LINK_HREF,
   SECTION_LABEL_CLASS,
   STATUS_CONFIG,
+  CATEGORY_STATUS_CLASS,
 } from '@/features/reports/constants'
 import { Separator } from '@/components/ui/separator'
+import { Progress } from '@/components/ui/progress'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import type { Report } from '@/features/reports/types'
 
@@ -58,7 +60,7 @@ export function ReportClient({
 
   return (
     <div className="px-6 md:px-10 pt-6 pb-16 w-full">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6">
         <Link
           href={backHref}
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -66,15 +68,10 @@ export function ReportClient({
           <IconArrowLeft size={14} />
           {backLabel}
         </Link>
-
-        {submissionActions && (
-          <div className="flex items-center gap-2">
-            {submissionActions}
-          </div>
-        )}
       </div>
 
       <div className="flex items-start gap-8">
+        {/* ── Main column ── */}
         <motion.div
           variants={staggerContainer}
           initial="hidden"
@@ -93,9 +90,14 @@ export function ReportClient({
 
           <Separator className="my-8" />
 
-          <motion.p variants={fadeUp} className="text-sm text-muted-foreground leading-relaxed">
-            {report.summary}
-          </motion.p>
+          <motion.div variants={fadeUp}>
+            <p className="text-sm text-muted-foreground leading-relaxed">{report.summary}</p>
+            {report.aiFallback && (
+              <p className="mt-2 text-[11px] text-muted-foreground/60 italic">
+                AI-generated narratives are unavailable — report uses automated summaries.
+              </p>
+            )}
+          </motion.div>
 
           <motion.div variants={fadeUp} className="mt-10">
             <ScoreErrorBoundary>
@@ -148,7 +150,20 @@ export function ReportClient({
           />
 
           {report.status === 'insufficient' && (
-            <NextBestFixesSection scores={report.scores} />
+            <>
+              <NextBestFixesSection scores={report.scores} />
+              {submissionActions && (
+                <motion.div variants={fadeUp} className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-5">
+                  <p className="text-sm font-semibold text-amber-800 mb-1">Ready to resubmit?</p>
+                  <p className="text-xs text-amber-700 mb-4">
+                    Fix the floor failures above, push your changes, then resubmit for a fresh evaluation.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {submissionActions}
+                  </div>
+                </motion.div>
+              )}
+            </>
           )}
 
           {feedbackSlot && (
@@ -186,29 +201,27 @@ export function ReportClient({
           </motion.div>
         </motion.div>
 
-        <div className="w-80 shrink-0 hidden lg:block sticky top-6 self-start">
-          <div className="rounded-lg border bg-card p-5 flex flex-col gap-4">
-            <div className="flex justify-center">
-              <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md border text-sm font-medium ${statusConfig.className}`}>
-                {report.status === 'verified' && <IconCheck size={13} strokeWidth={2.5} />}
+        {/* ── Right column ── */}
+        <div className="w-72 shrink-0 hidden lg:flex flex-col gap-4 sticky top-6 self-start">
+
+          {/* Card 1 — Score summary */}
+          <div className="rounded-lg border bg-card p-4">
+            <p className={`${SECTION_LABEL_CLASS} mb-3`}>Score</p>
+            <div className="flex items-end justify-between mb-3">
+              <p className="text-4xl font-semibold tabular-nums leading-none">
+                {report.compositeScore ?? 0}
+                <span className="text-base font-normal text-muted-foreground">/100</span>
+              </p>
+              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md border text-xs font-medium ${statusConfig.className}`}>
+                {report.status === 'verified' && <IconCheck size={11} strokeWidth={2.5} />}
                 {statusConfig.label}
               </span>
             </div>
-
-            <p className="text-5xl font-semibold tabular-nums text-center">
-              {report.compositeScore ?? 0}
-              <span className="text-xl font-normal text-muted-foreground">/100</span>
-            </p>
-
             {passingThreshold != null && (
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 pt-2 border-t border-border">
                 <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground">Threshold</span>
                   <span className="font-medium">{passingThreshold}/100</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Your score</span>
-                  <span className="font-medium">{report.compositeScore}/100</span>
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground">Points to pass</span>
@@ -222,16 +235,77 @@ export function ReportClient({
                 </div>
               </div>
             )}
-
-            {proofActions && (
-              <>
-                <Separator />
-                <div className="flex flex-wrap gap-2">
-                  {proofActions}
-                </div>
-              </>
-            )}
           </div>
+
+          {/* Card 2 — Quick actions */}
+          {(submissionActions || proofActions) && (
+            <div className="rounded-lg border bg-card p-4">
+              <p className={`${SECTION_LABEL_CLASS} mb-3`}>Actions</p>
+              <div className="flex flex-col gap-2">
+                {proofActions}
+                {submissionActions && report.status !== 'insufficient' && submissionActions}
+              </div>
+            </div>
+          )}
+
+          {/* Card 3 — Category summary */}
+          {report.scores.length > 0 && (
+            <div className="rounded-lg border bg-card p-4">
+              <p className={`${SECTION_LABEL_CLASS} mb-3`}>Categories</p>
+              <div className="flex flex-col gap-2">
+                {report.scores.map((s) => {
+                  const scorePercent = (s.score / 10) * 100
+                  return (
+                    <div key={s.category}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-foreground truncate flex-1 mr-2">{s.category}</span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className={`text-[9px] uppercase tracking-widest font-medium px-1.5 py-0.5 border rounded-sm ${s.status ? (CATEGORY_STATUS_CLASS[s.status] ?? 'bg-muted text-muted-foreground border-border') : 'bg-muted text-muted-foreground border-border'}`}>
+                            {s.status}
+                          </span>
+                          <span className="text-xs font-semibold tabular-nums w-8 text-right">{s.score}/10</span>
+                        </div>
+                      </div>
+                      <Progress
+                        value={scorePercent}
+                        className={`h-1 *:data-[slot=progress-indicator]:transition-none ${
+                          s.status === 'pass'
+                            ? '*:data-[slot=progress-indicator]:bg-green-500'
+                            : s.status === 'floor'
+                              ? '*:data-[slot=progress-indicator]:bg-amber-500'
+                              : '*:data-[slot=progress-indicator]:bg-red-500'
+                        }`}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Card 4 — Points breakdown */}
+          {report.scores.length > 0 && (
+            <div className="rounded-lg border bg-card p-4">
+              <p className={`${SECTION_LABEL_CLASS} mb-3`}>Points breakdown</p>
+              <div className="flex flex-col gap-1.5">
+                {report.scores.map((s) => {
+                  const weighted = s.weight != null ? ((s.score / 10) * s.weight).toFixed(1) : null
+                  return (
+                    <div key={s.category} className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground truncate flex-1 mr-2">{s.category}</span>
+                      <span className="font-medium tabular-nums shrink-0">
+                        {weighted != null ? `${weighted} / ${s.weight}` : `${s.score}/10`}
+                      </span>
+                    </div>
+                  )
+                })}
+                <div className="flex items-center justify-between text-xs pt-2 mt-1 border-t border-border font-semibold">
+                  <span>Total</span>
+                  <span>{report.compositeScore}/100</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

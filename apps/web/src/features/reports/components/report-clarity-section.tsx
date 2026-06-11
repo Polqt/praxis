@@ -27,6 +27,19 @@ function Block({ icon, title, children }: { icon: React.ReactNode; title: string
   )
 }
 
+function groupByDirectory(files: string[]): Map<string, string[]> {
+  const groups = new Map<string, string[]>()
+  for (const f of files) {
+    const lastSlash = f.lastIndexOf('/')
+    const dir = lastSlash > -1 ? f.slice(0, lastSlash) : '(root)'
+    const name = lastSlash > -1 ? f.slice(lastSlash + 1) : f
+    const existing = groups.get(dir)
+    if (existing) existing.push(name)
+    else groups.set(dir, [name])
+  }
+  return groups
+}
+
 export function ReportClaritySection({ status, scores, allCitedFiles, challengeId }: Props) {
   if (status === 'verified') return null
 
@@ -42,11 +55,13 @@ export function ReportClaritySection({ status, scores, allCitedFiles, challengeI
     ...lowCategories.slice(0, 2).map((s) => `Improve ${s.category} (currently ${s.score}/10)`),
   ]
 
+  const visibleFiles = allCitedFiles.slice(0, 20)
+  const dirGroups = groupByDirectory(visibleFiles)
+
   return (
     <div className="mt-10 flex flex-col gap-4">
       <p className={SECTION_LABEL_CLASS}>Verification analysis</p>
 
-      {/* Why this did not verify */}
       <Block icon={<IconAlertTriangle size={14} />} title="Why this did not verify">
         {failedCategories.length > 0 ? (
           <ul className="flex flex-col gap-2">
@@ -92,15 +107,24 @@ export function ReportClaritySection({ status, scores, allCitedFiles, challengeI
 
       <Block icon={<IconSearch size={14} />} title="What Praxis found">
         {allCitedFiles.length > 0 ? (
-          <div className="flex flex-col gap-1">
-            <p className="text-xs text-muted-foreground mb-2">{allCitedFiles.length} file{allCitedFiles.length !== 1 ? 's' : ''} used as evidence across all categories:</p>
-            {allCitedFiles.slice(0, 8).map((f) => (
-              <span key={f} className="text-[11px] font-mono text-muted-foreground">{f}</span>
-            ))}
-            {allCitedFiles.length > 8 && (
-              <span className="text-[11px] text-muted-foreground">…and {allCitedFiles.length - 8} more</span>
-            )}
-          </div>
+          <>
+            <p className="text-xs text-muted-foreground mb-3">{allCitedFiles.length} file{allCitedFiles.length !== 1 ? 's' : ''} used as evidence across all categories:</p>
+            <div className="flex flex-col gap-3">
+              {Array.from(dirGroups.entries()).map(([dir, names]) => (
+                <div key={dir}>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70 mb-1">{dir}/</p>
+                  <div className="flex flex-col gap-0.5 pl-3 border-l border-border">
+                    {names.map((name) => (
+                      <span key={name} className="text-[11px] font-mono text-muted-foreground">{name}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {allCitedFiles.length > 20 && (
+                <span className="text-[11px] text-muted-foreground">…and {allCitedFiles.length - 20} more</span>
+              )}
+            </div>
+          </>
         ) : (
           <p className="text-sm text-muted-foreground">No evidence files were cited. The repository may be empty or inaccessible.</p>
         )}

@@ -59,6 +59,7 @@ export function toReport(raw: VerificationReport, overrides?: { isPublic?: boole
     status: toReportStatus(raw.verdict),
     compositeScore: raw.compositeScore,
     summary: raw.publicSummary ?? '',
+    aiFallback: raw.aiFallback ?? false,
     scores,
     skills,
     strengths,
