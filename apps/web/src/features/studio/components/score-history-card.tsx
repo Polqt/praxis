@@ -13,12 +13,20 @@ type Props = {
   history: ScoreHistoryEntry[]
 }
 
-function Sparkline({ scores }: { scores: number[] }) {
+function Sparkline({ scores, title }: { scores: number[]; title: string }) {
   if (scores.length < 2) return null
   const improved = scores[scores.length - 1] > scores[0]
+  const first = scores[0]
+  const last = scores[scores.length - 1]
 
   return (
-    <svg width={SCORE_CHART_WIDTH} height={SCORE_CHART_HEIGHT} className="overflow-visible">
+    <svg
+      width={SCORE_CHART_WIDTH}
+      height={SCORE_CHART_HEIGHT}
+      className="overflow-visible"
+      role="img"
+      aria-label={`Score trend for ${title}: ${first} to ${last}`}
+    >
       <polyline
         points={getSparklinePoints(scores)}
         fill="none"
@@ -31,10 +39,16 @@ function Sparkline({ scores }: { scores: number[] }) {
   )
 }
 
-function BaselineBar({ score }: { score: number }) {
+function BaselineBar({ score, title }: { score: number; title: string }) {
   const fillWidth = Math.round((score / 100) * SCORE_CHART_WIDTH)
   return (
-    <svg width={SCORE_CHART_WIDTH} height={SCORE_CHART_HEIGHT} className="overflow-visible">
+    <svg
+      width={SCORE_CHART_WIDTH}
+      height={SCORE_CHART_HEIGHT}
+      className="overflow-visible"
+      role="img"
+      aria-label={`Score for ${title}: ${score}/100`}
+    >
       <rect x={0} y={SCORE_CHART_HEIGHT - 4} width={SCORE_CHART_WIDTH} height={4} rx={2} fill="rgb(229,231,235)" />
       <rect x={0} y={SCORE_CHART_HEIGHT - 4} width={fillWidth} height={4} rx={2} fill="rgb(148,163,184)" />
     </svg>
@@ -73,8 +87,8 @@ export function ScoreHistoryCard({ history }: Props) {
                 </p>
               </div>
               {isSingle
-                ? <BaselineBar score={first} />
-                : <Sparkline scores={scores.map((s) => s.score)} />
+                ? <BaselineBar score={first} title={title} />
+                : <Sparkline scores={scores.map((s) => s.score)} title={title} />
               }
             </div>
           )

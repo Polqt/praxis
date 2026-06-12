@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useSyncExternalStore } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -58,8 +59,15 @@ export function StudioClient({
   username, progress, completed, total, proofReady, scoreHistory,
   challenges, verifiedSubmissions,
 }: Props) {
+  const router = useRouter()
   const period = useSyncExternalStore(greetingSubscribe, getGreeting, () => null)
-  const verifiedChallengeIds = verifiedSubmissions.map((s) => s.challengeId)
+  const verifiedChallengeIds = useMemo(() => verifiedSubmissions.map((s) => s.challengeId), [verifiedSubmissions])
+
+  useEffect(() => {
+    if (submissionStats.inProgressCount === 0) return
+    const id = setInterval(() => router.refresh(), 10_000)
+    return () => clearInterval(id)
+  }, [submissionStats.inProgressCount, router])
   return (
     <motion.div
       variants={staggerContainer}

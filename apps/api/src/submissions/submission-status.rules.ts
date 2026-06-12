@@ -26,11 +26,12 @@ const allowedTransitions: Record<SubmissionStatus, SubmissionStatus[]> = {
     'expired',
   ],
   report_generation_failed: ['queued', 'failed', 'expired'],
+  // Terminal statuses only allow re-queue for user-initiated retry/resubmit flows
   verified: [],
-  insufficient: [],
-  failed: [],
-  expired: [],
-  cancelled: [],
+  insufficient: ['queued'],
+  failed: ['queued'],
+  expired: ['queued'],
+  cancelled: ['queued'],
 }
 
 export function isTerminalSubmissionStatus(status: SubmissionStatus) {
@@ -39,6 +40,5 @@ export function isTerminalSubmissionStatus(status: SubmissionStatus) {
 
 export function canTransition(from: SubmissionStatus, to: SubmissionStatus) {
   if (from === to) return true
-  if (isTerminalSubmissionStatus(from)) return false
   return allowedTransitions[from]?.includes(to) ?? false
 }

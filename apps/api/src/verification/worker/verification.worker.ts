@@ -129,11 +129,15 @@ export class VerificationWorker implements OnModuleDestroy {
       }
       case VERIFICATION_JOB_NAMES.executeTests: {
         const submissionRows = await this.db.db
-          .select({ commitSha: projectSubmissions.commitSha, userId: projectSubmissions.userId })
+          .select({ commitSha: projectSubmissions.commitSha, userId: projectSubmissions.userId, status: projectSubmissions.status })
           .from(projectSubmissions)
           .where(eq(projectSubmissions.id, submissionId))
           .limit(1)
         const submission = submissionRows[0]
+        if (submission?.status === 'cancelled') {
+          this.logger.log(`Skipping cancelled submission ${submissionId}`)
+          return
+        }
         if (submission) {
           const ingestionRows = await this.db.db
             .select({ id: repositoryIngestions.id })

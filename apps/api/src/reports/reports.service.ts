@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common'
 import { randomBytes } from 'node:crypto'
-import { and, desc, eq, inArray, isNotNull, ne, sql } from 'drizzle-orm'
+import { and, avg, count, desc, eq, gte, inArray, isNotNull, ne, sql } from 'drizzle-orm'
 import { SCORING_ANALYZER_VERSION, REPORT_GENERATOR_VERSION, SCORING_VERSION } from '../scoring/versions'
 import { RepositoryIngestionData } from '../verification/ingestion/repository-ingestion.types'
 import type { RepositoryAnalysisData } from '../verification/analysis/repository-analysis.types'
@@ -87,14 +87,18 @@ export class ReportsService implements OnModuleInit {
 
   async generateForSubmission(submissionId: string, repositoryAnalysisId: string) {
     const submission = await this.getSubmission(submissionId)
-    const challenge = await this.getChallenge(submission.challengeId)
-    const analysis = await this.getAnalysis(repositoryAnalysisId)
-    const ingestion = await this.getIngestion(analysis.repositoryIngestionId)
-    const executionRows = await this.db.db
-      .select()
-      .from(repositoryExecutions)
-      .where(eq(repositoryExecutions.repositoryIngestionId, analysis.repositoryIngestionId))
-      .limit(1)
+    const [challenge, analysis] = await Promise.all([
+      this.getChallenge(submission.challengeId),
+      this.getAnalysis(repositoryAnalysisId),
+    ])
+    const [ingestion, executionRows] = await Promise.all([
+      this.getIngestion(analysis.repositoryIngestionId),
+      this.db.db
+        .select()
+        .from(repositoryExecutions)
+        .where(eq(repositoryExecutions.repositoryIngestionId, analysis.repositoryIngestionId))
+        .limit(1),
+    ])
 
     const executionResult = executionRows[0]
       ? {
@@ -253,12 +257,20 @@ export class ReportsService implements OnModuleInit {
 
     const awardedSkills = awardedSkillRows.map((r) => r.name)
 
+    const userRows = await this.db.db
+      .select({ username: users.username })
+      .from(users)
+      .where(eq(users.id, submission.userId))
+      .limit(1)
+    const submitterUsername = userRows[0]?.username ?? null
+
     return this.toPublicProof(
       reportRow,
       submission,
       challenge,
       executionSummary,
       awardedSkills,
+      submitterUsername,
     )
   }
 
@@ -286,44 +298,42 @@ export class ReportsService implements OnModuleInit {
   }
 
   async getChallengeLeaderboard(challengeId: string, limit = 25) {
-    const rows = await this.db.db
-      .select({
-        userId: users.id,
-        username: users.username,
-        compositeScore: projectVerificationReports.compositeScore,
-        publicToken: projectVerificationReports.publicToken,
-        isPublic: projectVerificationReports.isPublic,
-        verifiedAt: projectSubmissions.completedAt,
-      })
-      .from(projectVerificationReports)
-      .innerJoin(projectSubmissions, eq(projectVerificationReports.submissionId, projectSubmissions.id))
-      .innerJoin(users, eq(users.id, projectSubmissions.userId))
-      .where(and(
-        eq(projectSubmissions.challengeId, challengeId),
-        eq(projectSubmissions.status, 'verified'),
-        isNotNull(users.username),
-      ))
-      .orderBy(desc(projectVerificationReports.compositeScore))
+    // DISTINCT ON deduplicates to the best score per user in SQL, avoiding a full table scan in JS
+    const rows = await this.db.db.execute<{
+      user_id: string
+      username: string
+      composite_score: number | null
+      public_token: string | null
+      is_public: boolean
+      verified_at: string | null
+    }>(sql`
+      SELECT DISTINCT ON (${users.id})
+        ${users.id}         AS user_id,
+        ${users.username}   AS username,
+        ${projectVerificationReports.compositeScore} AS composite_score,
+        ${projectVerificationReports.publicToken}    AS public_token,
+        ${projectVerificationReports.isPublic}       AS is_public,
+        ${projectSubmissions.completedAt}            AS verified_at
+      FROM ${projectVerificationReports}
+      INNER JOIN ${projectSubmissions}
+        ON ${projectVerificationReports.submissionId} = ${projectSubmissions.id}
+      INNER JOIN ${users}
+        ON ${users.id} = ${projectSubmissions.userId}
+      WHERE ${projectSubmissions.challengeId} = ${challengeId}
+        AND ${projectSubmissions.status} = 'verified'
+        AND ${users.username} IS NOT NULL
+      ORDER BY ${users.id}, ${projectVerificationReports.compositeScore} DESC
+    `)
 
-    // Keep only the best submission per user, then apply limit
-    const bestByUser = new Map<string, typeof rows[0]>()
-    for (const r of rows) {
-      const key = r.userId
-      const existing = bestByUser.get(key)
-      if (!existing || (r.compositeScore ?? 0) > (existing.compositeScore ?? 0)) {
-        bestByUser.set(key, r)
-      }
-    }
-
-    return [...bestByUser.values()]
-      .sort((a, b) => (b.compositeScore ?? 0) - (a.compositeScore ?? 0))
+    return rows
+      .sort((a, b) => (b.composite_score ?? 0) - (a.composite_score ?? 0))
       .slice(0, limit)
       .map((r, i) => ({
         rank: i + 1,
         username: r.username as string,
-        compositeScore: r.compositeScore,
-        publicToken: r.isPublic ? r.publicToken : null,
-        verifiedAt: r.verifiedAt?.toISOString() ?? null,
+        compositeScore: r.composite_score,
+        publicToken: r.is_public ? r.public_token : null,
+        verifiedAt: r.verified_at ?? null,
       }))
   }
 
@@ -720,6 +730,7 @@ export class ReportsService implements OnModuleInit {
     challenge: typeof projectChallenges.$inferSelect,
     executionSummary?: { passed: number; failed: number; skipped: number; language: string; framework: string | null; durationMs: number | null; timedOut: boolean } | null,
     awardedSkills?: string[],
+    submitterUsername?: string | null,
   ) {
     const scores = this.withRubricWeights(
       (report.categoryScores ?? {}) as Record<string, StoredCategoryScore>,
@@ -755,6 +766,7 @@ export class ReportsService implements OnModuleInit {
       viewCount: report.viewCount ?? 0,
       executionSummary: executionSummary ?? null,
       awardedSkills: awardedSkills ?? [],
+      submitterUsername: submitterUsername ?? null,
     }
   }
 
@@ -796,19 +808,29 @@ export class ReportsService implements OnModuleInit {
     const submission = await this.getSubmission(submissionId)
     if (submission.userId !== userId) throw new NotFoundException('Report not found')
     const report = await this.getReportBySubmission(submissionId)
-    const rows = await this.db.db
-      .select({ accuracyRating: reportFeedback.accuracyRating })
-      .from(reportFeedback)
-      .where(eq(reportFeedback.reportId, report.id))
 
-    if (rows.length === 0) return null
+    const [summary, highRows] = await Promise.all([
+      this.db.db
+        .select({
+          total: count(),
+          averageRating: avg(reportFeedback.accuracyRating),
+        })
+        .from(reportFeedback)
+        .where(eq(reportFeedback.reportId, report.id)),
+      this.db.db
+        .select({ value: count() })
+        .from(reportFeedback)
+        .where(and(eq(reportFeedback.reportId, report.id), gte(reportFeedback.accuracyRating, 4))),
+    ])
 
-    const avg = rows.reduce((sum, r) => sum + r.accuracyRating, 0) / rows.length
-    const highCount = rows.filter((r) => r.accuracyRating >= 4).length
+    const total = summary[0]?.total ?? 0
+    if (total === 0) return null
+
+    const rawAvg = Number(summary[0]?.averageRating ?? 0)
     return {
-      count: rows.length,
-      averageRating: Math.round(avg * 10) / 10,
-      highAccuracyCount: highCount,
+      count: total,
+      averageRating: Math.round(rawAvg * 10) / 10,
+      highAccuracyCount: highRows[0]?.value ?? 0,
     }
   }
 

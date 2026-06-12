@@ -58,8 +58,8 @@ export function deriveExecutionView(execution: ExecutionOutput): ExecutionView {
     stdout,
     stderr,
     hasOutput: Boolean(stdout || stderr),
-    stdoutTruncated: (execution.stdout?.length ?? 0) >= EXECUTION_STDOUT_CAP,
-    stderrTruncated: (execution.stderr?.length ?? 0) >= EXECUTION_STDERR_CAP,
+    stdoutTruncated: (execution.stdout?.length ?? 0) > EXECUTION_STDOUT_CAP,
+    stderrTruncated: (execution.stderr?.length ?? 0) > EXECUTION_STDERR_CAP,
     statusClassName:
       execution.timedOut || execution.exitCode !== 0
         ? 'text-destructive'

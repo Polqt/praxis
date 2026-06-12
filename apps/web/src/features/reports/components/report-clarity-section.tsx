@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { IconAlertTriangle, IconBulb, IconSearch, IconEyeOff, IconChecklist, IconArrowRight } from '@tabler/icons-react'
 import { CATEGORY_FIX_INSTRUCTIONS, SECTION_LABEL_CLASS } from '@/features/reports/constants'
@@ -11,8 +10,6 @@ type Props = {
   status: ReportStatus
   scores: ScoreItem[]
   allCitedFiles: string[]
-  submissionId: string
-  challengeId?: string
 }
 
 function Block({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
@@ -40,7 +37,7 @@ function groupByDirectory(files: string[]): Map<string, string[]> {
   return groups
 }
 
-export function ReportClaritySection({ status, scores, allCitedFiles, challengeId }: Props) {
+export function ReportClaritySection({ status, scores, allCitedFiles }: Props) {
   if (status === 'verified') return null
 
   const failedCategories = scores.filter(
@@ -167,20 +164,6 @@ export function ReportClaritySection({ status, scores, allCitedFiles, challengeI
         </Block>
       )}
 
-      <motion.div variants={fadeUp} className="rounded-lg border border-dashed bg-card p-5 flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium">Ready to resubmit?</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Fix the issues above, push to your repository, and submit again. Each submission is evaluated independently.
-          </p>
-        </div>
-        <Link
-          href={challengeId ? `/submit?challengeId=${challengeId}` : '/challenges'}
-          className="inline-flex items-center gap-1.5 shrink-0 h-9 px-4 text-xs font-medium border border-border rounded-md hover:bg-muted transition-colors"
-        >
-          Resubmit <IconArrowRight size={13} />
-        </Link>
-      </motion.div>
     </div>
   )
 }

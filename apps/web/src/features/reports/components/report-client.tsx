@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { IconArrowLeft, IconCheck, IconInfoCircle } from '@tabler/icons-react'
+import { categorySlug } from '@/features/reports/utils/category-slug'
 import { ReportHero } from './report-hero'
 import { ScoreOverview } from './score-overview'
 import { ScoreErrorBoundary } from './score-error-boundary'
@@ -57,6 +58,7 @@ export function ReportClient({
   const statusConfig = STATUS_CONFIG[report.status]
   const pointsToPass = passingThreshold != null ? Math.max(0, passingThreshold - report.compositeScore) : 0
   const passed = passingThreshold == null || report.compositeScore >= passingThreshold
+  const isResubmit = report.status === 'insufficient'
 
   return (
     <div className="px-6 md:px-10 pt-6 pb-16 w-full">
@@ -82,8 +84,6 @@ export function ReportClient({
             <ReportHero
               repositoryName={report.repositoryName}
               challengeTitle={report.challengeTitle}
-              status={report.status}
-              compositeScore={report.compositeScore}
               language={language}
             />
           </motion.div>
@@ -145,11 +145,16 @@ export function ReportClient({
             status={report.status}
             scores={report.scores}
             allCitedFiles={report.allCitedFiles}
-            submissionId={report.submissionId}
-            challengeId={challengeId}
           />
 
-          {report.status === 'insufficient' && (
+          {/* Mobile action slot — visible below lg where the sidebar is hidden */}
+          {submissionActions && !isResubmit && (
+            <motion.div variants={fadeUp} className="mt-6 flex flex-wrap gap-2 lg:hidden">
+              {submissionActions}
+            </motion.div>
+          )}
+
+          {isResubmit && (
             <>
               <NextBestFixesSection scores={report.scores} />
               {submissionActions && (
@@ -238,12 +243,12 @@ export function ReportClient({
           </div>
 
           {/* Card 2 — Quick actions */}
-          {(submissionActions || proofActions) && (
+          {(proofActions || (submissionActions && !isResubmit)) && (
             <div className="rounded-lg border bg-card p-4">
               <p className={`${SECTION_LABEL_CLASS} mb-3`}>Actions</p>
               <div className="flex flex-col gap-2">
                 {proofActions}
-                {submissionActions && report.status !== 'insufficient' && submissionActions}
+                {submissionActions && !isResubmit && submissionActions}
               </div>
             </div>
           )}
@@ -258,7 +263,7 @@ export function ReportClient({
                   return (
                     <div key={s.category}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-foreground truncate flex-1 mr-2">{s.category}</span>
+                        <a href={`#${categorySlug(s.category)}`} className="text-xs text-foreground truncate flex-1 mr-2 hover:underline underline-offset-2">{s.category}</a>
                         <div className="flex items-center gap-1.5 shrink-0">
                           <span className={`text-[9px] uppercase tracking-widest font-medium px-1.5 py-0.5 border rounded-sm ${s.status ? (CATEGORY_STATUS_CLASS[s.status] ?? 'bg-muted text-muted-foreground border-border') : 'bg-muted text-muted-foreground border-border'}`}>
                             {s.status}
@@ -289,7 +294,7 @@ export function ReportClient({
               <p className={`${SECTION_LABEL_CLASS} mb-3`}>Points breakdown</p>
               <div className="flex flex-col gap-1.5">
                 {report.scores.map((s) => {
-                  const weighted = s.weight != null ? ((s.score / 10) * s.weight).toFixed(1) : null
+                  const weighted = s.weight ? ((s.score / 10) * s.weight).toFixed(1) : null
                   return (
                     <div key={s.category} className="flex items-center justify-between text-xs">
                       <span className="text-muted-foreground truncate flex-1 mr-2">{s.category}</span>

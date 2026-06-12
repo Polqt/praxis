@@ -9,6 +9,7 @@ type Props = {
 
 export function SkillProgressSection({ items }: Props) {
   if (items.length === 0) return null
+  if (items.every((item) => item.awarded)) return null
 
   return (
     <div>

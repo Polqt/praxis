@@ -25,11 +25,17 @@ export function ReportVisibilityButton({ submissionId, isPublic, initialPublicTo
   async function publish() {
     setPending(true)
     setError(null)
+    // Optimistic: switch to "published" state immediately
+    setPublicState(true)
     try {
       const report = await apiClient.setReportVisibility(submissionId, true)
-      setPublicState(report.isPublic)
-      setPublicToken(report.publicToken ?? null)
+      const token = report.publicToken ?? null
+      setPublicToken(token)
+      if (token) {
+        window.open(`/proof/${token}`, '_blank', 'noopener,noreferrer')
+      }
     } catch {
+      setPublicState(false)
       setError('Failed to update visibility.')
     } finally {
       setPending(false)
@@ -60,7 +66,12 @@ export function ReportVisibilityButton({ submissionId, isPublic, initialPublicTo
   }
 
   if (error) {
-    return <span className="text-xs text-destructive">{error}</span>
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-destructive">{error}</span>
+        <Button variant="outline" size="sm" onClick={() => setError(null)}>Retry</Button>
+      </div>
+    )
   }
 
   if (!publicState) {

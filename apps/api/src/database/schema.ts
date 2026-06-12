@@ -8,6 +8,7 @@ import {
   bigint,
   jsonb,
   uniqueIndex,
+  index,
   uuid,
 } from 'drizzle-orm/pg-core'
 import { createId } from '@paralleldrive/cuid2'
@@ -141,6 +142,9 @@ export const projectSubmissions = pgTable('project_submissions', {
   uniqueIndex('project_submissions_user_challenge_commit_idx').on(
     t.userId, t.challengeId, t.commitSha,
   ),
+  index('project_submissions_user_id_idx').on(t.userId),
+  index('project_submissions_challenge_id_idx').on(t.challengeId),
+  index('project_submissions_status_idx').on(t.status),
 ])
 
 export const projectSubmissionEvents = pgTable('project_submission_events', {
@@ -151,7 +155,9 @@ export const projectSubmissionEvents = pgTable('project_submission_events', {
   reason: text('reason'),
   metadata: jsonb('metadata'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+}, (t) => [
+  index('project_submission_events_submission_id_idx').on(t.submissionId),
+])
 
 export const repositoryIngestions = pgTable('repository_ingestions', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
@@ -247,6 +253,7 @@ export const reportFeedback = pgTable('report_feedback', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (t) => [
   uniqueIndex('report_feedback_report_user_idx').on(t.reportId, t.userId),
+  index('report_feedback_report_id_idx').on(t.reportId),
 ])
 
 export const auditLogs = pgTable('audit_logs', {

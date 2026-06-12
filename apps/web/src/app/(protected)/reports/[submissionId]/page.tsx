@@ -32,11 +32,10 @@ export default async function PrivateReportPage({ params }: Props) {
   const { submissionId } = await params
 
   type FeedbackSummary = { count: number; averageRating: number; highAccuracyCount: number } | null
-  const [raw, submission, execution, feedbackSummary] = await Promise.all([
+  const [raw, submission, execution] = await Promise.all([
     serverApiFetch<VerificationReport>(`/reports/submissions/${submissionId}`).catch(() => null),
     serverApiFetch<ProjectSubmission>(`/submissions/${submissionId}`).catch(() => null),
     serverApiFetch<ExecutionOutput | null>(`/reports/submissions/${submissionId}/execution`).catch(() => null),
-    serverApiFetch<FeedbackSummary>(`/reports/submissions/${submissionId}/feedback-summary`).catch(() => null),
   ])
 
   const challenge = submission?.challengeId
@@ -44,6 +43,11 @@ export default async function PrivateReportPage({ params }: Props) {
     : null
 
   if (!raw) notFound()
+
+  const needsFeedback = raw.verdict === 'insufficient' || raw.compositeScore < 70
+  const feedbackSummary = needsFeedback
+    ? await serverApiFetch<FeedbackSummary>(`/reports/submissions/${submissionId}/feedback-summary`).catch(() => null)
+    : null
 
   const showTwitterShare = raw.verdict === 'verified' || raw.verdict === 'insufficient'
 

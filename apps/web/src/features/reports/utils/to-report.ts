@@ -47,7 +47,7 @@ export function toReport(raw: VerificationReport, overrides?: { isPublic?: boole
   const allCitedFiles = Array.from(new Set(scores.flatMap((s) => s.citations)))
   const skillProgress = raw.skillProgress ?? []
   const skills = skillProgress
-    .filter((item) => item.awarded || item.eligible)
+    .filter((item) => item.awarded)
     .map((item) => item.name)
 
   return {

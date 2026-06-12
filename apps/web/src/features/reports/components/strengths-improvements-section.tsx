@@ -5,10 +5,7 @@ import { motion } from 'framer-motion'
 import { IconArrowUpRight, IconArrowRight } from '@tabler/icons-react'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import { SECTION_LABEL_CLASS } from '@/features/reports/constants'
-
-function categorySlug(text: string): string {
-  return text.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-}
+import { categorySlug } from '@/features/reports/utils/category-slug'
 
 function extractCategory(text: string, categories: string[]): string | null {
   const lower = text.toLowerCase()

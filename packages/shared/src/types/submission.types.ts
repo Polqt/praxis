@@ -156,4 +156,5 @@ export interface VerificationReport {
       status: 'added' | 'removed' | 'changed'
     }[]
   } | null
+  submitterUsername?: string | null
 }

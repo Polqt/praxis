@@ -193,32 +193,11 @@ export class SubmissionsService {
     ))
   }
 
-  async getDashboardStats(userId: string, verifiedSkills: unknown[]) {
-    const submissions = await this.listForUser(userId)
-    return {
-      totalVerified: verifiedSkills.length,
-      totalAttempts: submissions.length,
-      verifiedSkills,
-      recentSubmissions: submissions.slice(0, 5),
-    }
-  }
-
   async requeueSubmission(userId: string, submissionId: string) {
-    const submission = await this.getForUser(userId, submissionId)
+    await this.getForUser(userId, submissionId)
 
-    if (submission.status !== 'cancelled') {
-      throw new ConflictException('Only cancelled submissions can be requeued')
-    }
-
-    const updated = await this.db.db
-      .update(projectSubmissions)
-      .set({ status: 'queued', completedAt: null })
-      .where(eq(projectSubmissions.id, submissionId))
-      .returning()
-
-    await this.db.db.insert(projectSubmissionEvents).values({
+    const updated = await this.statusService.transition({
       submissionId,
-      fromStatus: 'cancelled',
       toStatus: 'queued',
       reason: 'submission_requeued',
     })
@@ -226,7 +205,7 @@ export class SubmissionsService {
     this.audit.log(userId, 'submission_requeued', { submissionId })
     await this.verificationQueue.enqueueIngestRepo(submissionId)
 
-    return updated[0]
+    return updated
   }
 
   async retrySubmission(userId: string, submissionId: string) {
@@ -236,15 +215,8 @@ export class SubmissionsService {
       throw new ConflictException('Only failed submissions can be retried')
     }
 
-    const updated = await this.db.db
-      .update(projectSubmissions)
-      .set({ status: 'queued', failureReason: null, completedAt: null })
-      .where(eq(projectSubmissions.id, submissionId))
-      .returning()
-
-    await this.db.db.insert(projectSubmissionEvents).values({
+    const updated = await this.statusService.transition({
       submissionId,
-      fromStatus: submission.status,
       toStatus: 'queued',
       reason: 'submission_retried',
     })
@@ -252,7 +224,7 @@ export class SubmissionsService {
     this.audit.log(userId, 'submission_retried', { submissionId, fromStatus: submission.status })
     await this.verificationQueue.enqueueIngestRepo(submissionId)
 
-    return updated[0]
+    return updated
   }
 
   async updateCommitAndRetry(userId: string, submissionId: string, commitSha: string) {
@@ -267,23 +239,17 @@ export class SubmissionsService {
     const commit = await this.githubApi.getCommit(accessToken, owner, repo, commitSha)
     if (!commit) throw new BadRequestException('Commit SHA not found in repository')
 
-    const updated = await this.db.db
-      .update(projectSubmissions)
-      .set({ commitSha, status: 'queued', failureReason: null, completedAt: null })
-      .where(eq(projectSubmissions.id, submissionId))
-      .returning()
-
-    await this.db.db.insert(projectSubmissionEvents).values({
+    const updated = await this.statusService.transition({
       submissionId,
-      fromStatus: submission.status,
       toStatus: 'queued',
       reason: 'submission_retried',
+      commitSha,
     })
 
     this.audit.log(userId, 'submission_commit_updated', { submissionId, commitSha })
     await this.verificationQueue.enqueueIngestRepo(submissionId)
 
-    return updated[0]
+    return updated
   }
 
   async cancelSubmission(userId: string, submissionId: string) {

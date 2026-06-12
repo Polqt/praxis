@@ -10,7 +10,6 @@ const REQUIRED_ENV_VARS = [
   'GITHUB_TOKEN_ENCRYPTION_KEY',
   'REDIS_URL',
   'CORS_ORIGIN',
-  'ANTHROPIC_API_KEY',
 ] as const
 
 function validateEnv(env: Record<string, unknown>) {

@@ -8,6 +8,7 @@ import { ScoreOverview } from '@/features/reports/components/score-overview'
 import { ScoreErrorBoundary } from '@/features/reports/components/score-error-boundary'
 import { StrengthsImprovementsSection } from '@/features/reports/components/strengths-improvements-section'
 import { ProofSafetyLabels } from '@/features/reports/components/proof-safety-labels'
+import { ProofCtaSection } from '@/features/reports/components/proof-cta-section'
 import { toReport } from '@/features/reports/utils/to-report'
 import { STATUS_CONFIG } from '@/features/reports/constants'
 import { formatDate } from '@/lib/praxis-format'
@@ -55,10 +56,7 @@ function SectionLabel({ text }: { text: string }) {
 export default async function PublicProofPage({ params }: Props) {
   const { publicToken } = await params
 
-  const [raw, viewingUser] = await Promise.all([
-    serverApiFetch<VerificationReport>(`/proof/${publicToken}`).catch(() => null),
-    serverApiFetch<{ id: string; username?: string }>('/users/me').catch(() => null),
-  ])
+  const raw = await serverApiFetch<VerificationReport>(`/proof/${publicToken}`).catch(() => null)
 
   if (!raw) notFound()
 
@@ -70,8 +68,6 @@ export default async function PublicProofPage({ params }: Props) {
     ? `https://github.com/${report.repositoryName}/commit/${report.commitSha}`
     : null
 
-  const backHref = viewingUser ? '/proof' : '/proof'
-
   return (
     <div className="bg-background">
 
@@ -79,7 +75,7 @@ export default async function PublicProofPage({ params }: Props) {
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
         <div className="max-w-7xl mx-auto px-6 md:px-10 h-14 flex items-center justify-between gap-4">
           <Link
-            href={backHref}
+            href="/proof"
             className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             <IconArrowLeft size={14} />
@@ -109,6 +105,14 @@ export default async function PublicProofPage({ params }: Props) {
               <p className="text-base text-muted-foreground mt-2 font-mono">{report.repositoryName}</p>
               {report.challengeTitle && (
                 <p className="text-sm text-muted-foreground mt-1">{report.challengeTitle}</p>
+              )}
+              {raw.submitterUsername && (
+                <Link
+                  href={`/u/${raw.submitterUsername}`}
+                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mt-1"
+                >
+                  by @{raw.submitterUsername}
+                </Link>
               )}
             </div>
 
@@ -243,49 +247,7 @@ export default async function PublicProofPage({ params }: Props) {
       </section>
 
       {/* ── CTA for visitors ── */}
-      {!viewingUser && (
-        <section className="min-h-screen flex flex-col justify-center px-6 py-24 border-t border-border bg-foreground">
-          <div className="max-w-4xl mx-auto w-full">
-            <div className="inline-flex items-center gap-2.5 mb-6">
-              <div className="w-2 h-2.5 rounded-[1px] shrink-0 bg-white/40" />
-              <span className="text-[13px] uppercase tracking-widest text-white/40">Your turn</span>
-            </div>
-            {raw?.challengeTitle ? (
-              <>
-                <h2 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight mb-4 max-w-3xl text-background">
-                  Think you can score higher?
-                </h2>
-                <p className="text-lg text-white/60 mb-10 max-w-xl">
-                  Submit your own repo to <span className="text-white/90 font-medium">{raw.challengeTitle}</span> and let the system decide.
-                </p>
-              </>
-            ) : (
-              <h2 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight mb-10 max-w-3xl text-background">
-                Verify your own project.
-                <br />
-                Earn your place.
-              </h2>
-            )}
-            <div className="flex items-center gap-3 mb-6">
-              <Link
-                href="/sign-in"
-                className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none bg-background text-foreground hover:opacity-90 transition-opacity"
-              >
-                {raw?.challengeTitle ? 'Submit your repo' : 'Get started'}
-              </Link>
-              <Link
-                href="/challenges"
-                className="inline-flex items-center justify-center h-11 px-8 text-[11px] font-medium uppercase tracking-widest rounded-none border border-white/30 text-background hover:bg-white/10 transition-colors"
-              >
-                Browse challenges
-              </Link>
-            </div>
-            <p className="text-sm text-white/50">
-              Free to start. No credit card required.
-            </p>
-          </div>
-        </section>
-      )}
+      <ProofCtaSection challengeTitle={raw.challengeTitle} />
 
       {/* ── Attribution ── */}
       <div className="py-8 border-t border-border">

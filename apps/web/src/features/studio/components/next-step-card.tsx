@@ -21,10 +21,9 @@ export function NextStepCard({ verifiedSkills, challenges, verifiedChallengeIds 
   const uncompletedChallenges = challenges.filter((c) => !completedIds.has(c.id))
   if (uncompletedChallenges.length === 0) return null
 
+  const beginnerChallenges = uncompletedChallenges.filter((c) => c.difficulty === 'beginner')
   const candidateChallenges = verifiedSkills.length === 0
-    ? (uncompletedChallenges.filter((c) => c.difficulty === 'beginner').length > 0
-        ? uncompletedChallenges.filter((c) => c.difficulty === 'beginner')
-        : uncompletedChallenges)
+    ? (beginnerChallenges.length > 0 ? beginnerChallenges : uncompletedChallenges)
     : uncompletedChallenges
 
   const scored = candidateChallenges.map((c) => {

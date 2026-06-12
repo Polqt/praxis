@@ -4,13 +4,10 @@ import {
   LANGUAGE_LABEL,
   SECTION_LABEL_CLASS,
 } from '@/features/reports/constants'
-import type { ReportStatus } from '@/features/reports/types'
 
 type Props = {
   repositoryName: string
   challengeTitle: string
-  status: ReportStatus
-  compositeScore: number
   language?: string | null
 }
 

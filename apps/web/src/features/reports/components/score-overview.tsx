@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { IconAlertTriangle, IconChevronDown, IconChevronRight, IconArrowUp, IconArrowDown } from '@tabler/icons-react'
 import { Progress } from '@/components/ui/progress'
@@ -13,11 +13,12 @@ import {
   SECTION_LABEL_CLASS,
 } from '@/features/reports/constants'
 import { formatSignalKey } from '@/features/reports/utils/format-signal-key'
+import { categorySlug } from '@/features/reports/utils/category-slug'
 import { staggerContainer, fadeUp } from '@/lib/animations'
 import type { ScoreItem } from '@/features/reports/types'
 
 function SignalsPanel({ signals }: { signals: Record<string, unknown> }) {
-  const entries = Object.entries(signals).filter(([, v]) => typeof v === 'boolean' || typeof v === 'number')
+  const entries = Object.entries(signals).filter(([, v]) => typeof v === 'boolean' || typeof v === 'number' || typeof v === 'string')
   if (entries.length === 0) return null
 
   return (
@@ -32,7 +33,11 @@ function SignalsPanel({ signals }: { signals: Record<string, unknown> }) {
           {entries.map(([key, val]) => (
             <div key={key} className="flex items-center gap-2">
               <span className={`size-1.5 rounded-full shrink-0 ${val ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
-              <span className="text-[11px] text-muted-foreground">{formatSignalKey(key)}</span>
+              <span className="text-[11px] text-muted-foreground">
+                {formatSignalKey(key)}
+                {typeof val === 'string' && <span className="ml-1 text-foreground/70">{val}</span>}
+                {typeof val === 'number' && <span className="ml-1 text-foreground/70">{val}</span>}
+              </span>
             </div>
           ))}
         </div>
@@ -86,7 +91,10 @@ type Props = {
 
 export function ScoreOverview({ scores, repositoryName, commitSha, skillProgress }: Props) {
   const [showLowFirst, setShowLowFirst] = useState(false)
-  const skillProgressByName = new Map(skillProgress?.map((sp) => [sp.name.toLowerCase(), sp]))
+  const skillProgressByName = useMemo(
+    () => new Map(skillProgress?.map((sp) => [sp.name.toLowerCase(), sp])),
+    [skillProgress],
+  )
 
   function getCitationUrl(filePath: string): string | null {
     if (!repositoryName || !commitSha) return null
@@ -136,7 +144,7 @@ export function ScoreOverview({ scores, repositoryName, commitSha, skillProgress
           const fixSteps = CATEGORY_FIX_INSTRUCTIONS[item.category] ?? []
           const scorePercent = (item.score / 10) * 100
           const sp = skillProgressByName.get(item.category.toLowerCase())
-          const categoryId = item.category.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+          const categoryId = categorySlug(item.category)
 
           return (
             <motion.div

@@ -10,8 +10,6 @@ export const EXECUTION_STDOUT_CAP = 5000
 export const EXECUTION_STDERR_CAP = 2000
 export const EXECUTION_FAILURE_PREVIEW_CAP = 500
 export const EXECUTION_PHASE_PREVIEW_CAP = 400
-export const SOCIAL_SHARE_BUTTON_CLASS =
-  'inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
 
 export const LANGUAGE_LABEL: Record<string, string> = {
   javascript: 'JavaScript',

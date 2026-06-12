@@ -14,6 +14,7 @@ interface TransitionInput {
   reason: string
   metadata?: Record<string, unknown>
   failureReason?: string | null
+  commitSha?: string
 }
 
 @Injectable()
@@ -43,9 +44,14 @@ export class SubmissionStatusService {
     const now = new Date()
     const updates: Partial<typeof projectSubmissions.$inferInsert> = {
       status: input.toStatus,
-      failureReason: input.failureReason ?? submission.failureReason,
+      failureReason: input.failureReason !== undefined ? input.failureReason : submission.failureReason,
     }
 
+    if (input.toStatus === 'queued') {
+      updates.completedAt = null
+      updates.failureReason = null
+    }
+    if (input.commitSha) updates.commitSha = input.commitSha
     if (input.toStatus === 'analyzing') updates.ingestedAt = now
     if (input.toStatus === 'generating_report') updates.analyzedAt = now
     if (COMPLETION_STATUSES.includes(input.toStatus)) updates.completedAt = now
