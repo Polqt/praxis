@@ -39,3 +39,7 @@ export function canTransition(from: SubmissionStatus, to: SubmissionStatus) {
   if (from === to) return true
   return allowedTransitions[from]?.includes(to) ?? false
 }
+
+export function isTerminalSubmissionStatus(status: SubmissionStatus): boolean {
+  return terminalStatuses.has(status)
+}

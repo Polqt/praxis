@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiClient, ApiError } from '@/lib/api'
 import { validateUsername } from '@/features/user/utils/validate-username'
@@ -30,6 +30,15 @@ export function useUsernameOnboarding(): UseUsernameOnboardingReturn {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
+  const checkAvailability = useCallback(async (username: string) => {
+    try {
+      const result: UsernameCheckResult = await apiClient.checkUsernameAvailability(username)
+      setCheckState(result.available ? { type: 'available' } : { type: 'taken' })
+    } catch {
+      setCheckState({ type: 'idle' })
+    }
+  }, [])
+
   const scheduleCheck = useDebounceCallback((next) => void checkAvailability(next), 500)
 
   function handleChange(raw: string) {
@@ -44,15 +53,6 @@ export function useUsernameOnboarding(): UseUsernameOnboardingReturn {
 
     setCheckState({ type: 'checking' })
     scheduleCheck(next)
-  }
-
-  async function checkAvailability(username: string) {
-    try {
-      const result: UsernameCheckResult = await apiClient.checkUsernameAvailability(username)
-      setCheckState(result.available ? { type: 'available' } : { type: 'taken' })
-    } catch {
-      setCheckState({ type: 'idle' })
-    }
   }
 
   async function handleSubmit() {

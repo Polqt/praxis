@@ -47,7 +47,6 @@ export function ReportClient({
   backLabel = 'Back to submissions',
   submissionActions,
   proofActions,
-  challengeId,
   language,
   passingThreshold,
   executionSlot,
@@ -241,7 +240,6 @@ export function ReportClient({
               <p className={`${SECTION_LABEL_CLASS} mb-3`}>Categories</p>
               <div className="flex flex-col gap-2">
                 {report.scores.map((s) => {
-                  const scorePercent = (s.score / 10) * 100
                   const dotClass = s.status === 'pass'
                     ? 'bg-green-500'
                     : s.status === 'floor'

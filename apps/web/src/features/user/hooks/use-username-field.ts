@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { apiClient, ApiError } from '@/lib/api'
 import { validateUsername, USERNAME_RE } from '@/features/user/utils/validate-username'
 import { useDebounceCallback } from '@/hooks/use-debounce-callback'
@@ -30,22 +30,8 @@ export function useUsernameField(
 
   const savedUsername = useRef(initialValue)
   const savedClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const scheduleSave = useDebounceCallback((next) => save(next), 600)
 
-  function handleChange(raw: string) {
-    const next = raw.toLowerCase()
-    setValue(next)
-    if (savedClearTimer.current) clearTimeout(savedClearTimer.current)
-    if (next === savedUsername.current) {
-      setStatus({ type: 'idle' })
-      return
-    }
-    setStatus({ type: 'unsaved' })
-    if (!USERNAME_RE.test(next)) return
-    scheduleSave(next)
-  }
-
-  async function save(username: string) {
+  const save = useCallback(async (username: string) => {
     if (username === savedUsername.current) return
     setStatus({ type: 'saving' })
     try {
@@ -66,6 +52,21 @@ export function useUsernameField(
           : 'Something went wrong. Please try again.'
       setStatus({ type: 'error', message })
     }
+  }, [onSaveSuccess])
+
+  const scheduleSave = useDebounceCallback((next) => save(next), 600)
+
+  function handleChange(raw: string) {
+    const next = raw.toLowerCase()
+    setValue(next)
+    if (savedClearTimer.current) clearTimeout(savedClearTimer.current)
+    if (next === savedUsername.current) {
+      setStatus({ type: 'idle' })
+      return
+    }
+    setStatus({ type: 'unsaved' })
+    if (!USERNAME_RE.test(next)) return
+    scheduleSave(next)
   }
 
   const validationError = validateUsername(value)
