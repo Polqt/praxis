@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { apiClient, ApiError } from '@/lib/api'
 import { validateUsername, USERNAME_RE } from '@/features/user/utils/validate-username'
+import { useDebounceCallback } from '@/hooks/use-debounce-callback'
 
 type SaveStatus =
   | { type: 'idle' }
@@ -28,20 +29,12 @@ export function useUsernameField(
   const [status, setStatus] = useState<SaveStatus>({ type: 'idle' })
 
   const savedUsername = useRef(initialValue)
-  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const savedClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (debounceTimer.current) clearTimeout(debounceTimer.current)
-      if (savedClearTimer.current) clearTimeout(savedClearTimer.current)
-    }
-  }, [])
+  const scheduleSave = useDebounceCallback((next) => save(next), 600)
 
   function handleChange(raw: string) {
     const next = raw.toLowerCase()
     setValue(next)
-    if (debounceTimer.current) clearTimeout(debounceTimer.current)
     if (savedClearTimer.current) clearTimeout(savedClearTimer.current)
     if (next === savedUsername.current) {
       setStatus({ type: 'idle' })
@@ -49,9 +42,7 @@ export function useUsernameField(
     }
     setStatus({ type: 'unsaved' })
     if (!USERNAME_RE.test(next)) return
-    debounceTimer.current = setTimeout(() => {
-      save(next)
-    }, 600)
+    scheduleSave(next)
   }
 
   async function save(username: string) {

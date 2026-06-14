@@ -35,19 +35,28 @@ export interface SubmissionFailedPayload {
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name)
   private readonly fromEmail: string
-  private readonly apiKey: string
+  private readonly resend: Resend | null
 
   constructor(private readonly config: ConfigService) {
-    this.apiKey = config.get<string>('notifications.resendApiKey') ?? ''
+    const apiKey = config.get<string>('notifications.resendApiKey') ?? ''
     this.fromEmail = config.get<string>('notifications.fromEmail') ?? 'onboarding@resend.dev'
+    this.resend = apiKey ? new Resend(apiKey) : null
+
+    if (!this.resend) {
+      this.logger.warn('RESEND_API_KEY not set — email notifications disabled')
+    }
+  }
+
+  private async send(to: string, subject: string, html: string): Promise<void> {
+    if (!this.resend) return
+    try {
+      await this.resend.emails.send({ from: this.fromEmail, to, subject, html })
+    } catch (err) {
+      this.logger.error(`Failed to send email to ${to}: ${subject}`, err instanceof Error ? err.message : String(err))
+    }
   }
 
   async sendReportReady(payload: ReportReadyPayload): Promise<void> {
-    if (!this.apiKey) {
-      this.logger.warn('RESEND_API_KEY not set — skipping report ready email')
-      return
-    }
-    const resend = new Resend(this.apiKey)
     const { toEmail, username, repositoryName, challengeTitle, compositeScore, verdict, reportUrl, floorFailures } = payload
 
     const verdictLabel = verdict === 'verified' ? 'Verified ✓' : verdict === 'insufficient' ? 'Insufficient' : 'Failed'
@@ -99,18 +108,11 @@ export class NotificationsService {
       </html>
     `
 
-    try {
-      await resend.emails.send({ from: this.fromEmail, to: toEmail, subject, html })
-      this.logger.log(`Report ready email sent to ${toEmail} for ${repositoryName}`)
-    } catch (err) {
-      this.logger.error(`Failed to send report ready email to ${toEmail}`, err instanceof Error ? err.message : String(err))
-    }
+    await this.send(toEmail, subject, html)
+    this.logger.log(`Report ready email sent to ${toEmail} for ${repositoryName}`)
   }
 
   async sendSubmissionExpired(payload: SubmissionExpiredPayload): Promise<void> {
-    if (!this.apiKey) return
-
-    const resend = new Resend(this.apiKey)
     const { toEmail, username, repositoryName, challengeTitle, resubmitUrl } = payload
     const subject = `Your submission for ${repositoryName} expired | Praxis`
 
@@ -137,21 +139,11 @@ export class NotificationsService {
       </html>
     `
 
-    try {
-      await resend.emails.send({ from: this.fromEmail, to: toEmail, subject, html })
-      this.logger.log(`Expiry email sent to ${toEmail} for ${repositoryName}`)
-    } catch (err) {
-      this.logger.error(`Failed to send expiry email to ${toEmail}`, err instanceof Error ? err.message : String(err))
-    }
+    await this.send(toEmail, subject, html)
+    this.logger.log(`Expiry email sent to ${toEmail} for ${repositoryName}`)
   }
 
   async sendSubmissionFailed(payload: SubmissionFailedPayload): Promise<void> {
-    if (!this.apiKey) {
-      this.logger.warn('RESEND_API_KEY not set - skipping submission failed email')
-      return
-    }
-
-    const resend = new Resend(this.apiKey)
     const {
       toEmail,
       username,
@@ -183,14 +175,7 @@ export class NotificationsService {
       </html>
     `
 
-    try {
-      await resend.emails.send({ from: this.fromEmail, to: toEmail, subject, html })
-      this.logger.log(`Submission failed email sent to ${toEmail} for ${repositoryName}`)
-    } catch (err) {
-      this.logger.error(
-        `Failed to send submission failed email to ${toEmail}`,
-        err instanceof Error ? err.message : String(err),
-      )
-    }
+    await this.send(toEmail, subject, html)
+    this.logger.log(`Submission failed email sent to ${toEmail} for ${repositoryName}`)
   }
 }

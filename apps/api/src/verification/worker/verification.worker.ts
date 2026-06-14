@@ -197,53 +197,41 @@ export class VerificationWorker implements OnModuleDestroy {
   }
 
   private async sendReportEmail(submissionId: string): Promise<void> {
-    const submissionRows = await this.db.db
-      .select()
+    const rows = await this.db.db
+      .select({
+        email: users.email,
+        username: users.username,
+        repositoryName: projectSubmissions.githubRepoFullName,
+        challengeTitle: projectChallenges.title,
+        compositeScore: projectVerificationReports.compositeScore,
+        verdict: projectVerificationReports.verdict,
+        categoryScores: projectVerificationReports.categoryScores,
+      })
       .from(projectSubmissions)
+      .innerJoin(users, eq(users.id, projectSubmissions.userId))
+      .innerJoin(projectChallenges, eq(projectChallenges.id, projectSubmissions.challengeId))
+      .innerJoin(projectVerificationReports, eq(projectVerificationReports.submissionId, projectSubmissions.id))
       .where(eq(projectSubmissions.id, submissionId))
       .limit(1)
-    const submission = submissionRows[0]
-    if (!submission) return
 
-    const userRows = await this.db.db
-      .select({ email: users.email, username: users.username })
-      .from(users)
-      .where(eq(users.id, submission.userId))
-      .limit(1)
-    const user = userRows[0]
-    if (!user?.email) return
+    const details = rows[0]
+    if (!details?.email) return
 
-    const reportRows = await this.db.db
-      .select()
-      .from(projectVerificationReports)
-      .where(eq(projectVerificationReports.submissionId, submissionId))
-      .limit(1)
-    const report = reportRows[0]
-    if (!report) return
-
-    const challengeRows = await this.db.db
-      .select({ title: projectChallenges.title })
-      .from(projectChallenges)
-      .where(eq(projectChallenges.id, submission.challengeId))
-      .limit(1)
-    const challengeTitle = challengeRows[0]?.title ?? 'Verification Challenge'
-
-    const categoryScores = report.categoryScores as Record<string, { score: number; minimumScore: number }>
+    const categoryScores = details.categoryScores as Record<string, { score: number; minimumScore: number }>
     const floorFailures = Object.entries(categoryScores)
       .filter(([, v]) => v.score < v.minimumScore)
       .map(([category, v]) => ({ category, score: v.score, minimumScore: v.minimumScore }))
 
     const webBaseUrl = this.config.get<string>('webBaseUrl') ?? 'https://praxisdev.vercel.app'
-    const reportUrl = `${webBaseUrl}/reports/${submissionId}`
 
     await this.notifications.sendReportReady({
-      toEmail: user.email,
-      username: user.username ?? user.email.split('@')[0],
-      repositoryName: submission.githubRepoFullName,
-      challengeTitle,
-      compositeScore: report.compositeScore,
-      verdict: report.verdict as 'verified' | 'insufficient' | 'failed',
-      reportUrl,
+      toEmail: details.email,
+      username: details.username ?? details.email.split('@')[0],
+      repositoryName: details.repositoryName,
+      challengeTitle: details.challengeTitle,
+      compositeScore: details.compositeScore,
+      verdict: details.verdict as 'verified' | 'insufficient' | 'failed',
+      reportUrl: `${webBaseUrl}/reports/${submissionId}`,
       floorFailures,
     })
   }

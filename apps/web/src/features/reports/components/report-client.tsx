@@ -21,7 +21,6 @@ import {
   REPORT_DISCLAIMER_LINK_HREF,
   SECTION_LABEL_CLASS,
   STATUS_CONFIG,
-  CATEGORY_STATUS_CLASS,
 } from '@/features/reports/constants'
 import { Separator } from '@/components/ui/separator'
 import { Progress } from '@/components/ui/progress'
@@ -147,12 +146,14 @@ export function ReportClient({
             allCitedFiles={report.allCitedFiles}
           />
 
-          {/* Mobile action slot — visible below lg where the sidebar is hidden */}
-          {submissionActions && !isResubmit && (
+          {/* Mobile slots — visible below lg where the sidebar is hidden */}
+          {(submissionActions && !isResubmit) || proofActions || twitterSlot ? (
             <motion.div variants={fadeUp} className="mt-6 flex flex-wrap gap-2 lg:hidden">
-              {submissionActions}
+              {proofActions}
+              {submissionActions && !isResubmit && submissionActions}
+              {twitterSlot}
             </motion.div>
-          )}
+          ) : null}
 
           {isResubmit && (
             <>
@@ -177,12 +178,6 @@ export function ReportClient({
                 <p className={`${SECTION_LABEL_CLASS} mb-3`}>Report feedback</p>
                 {feedbackSlot}
               </div>
-            </motion.div>
-          )}
-
-          {twitterSlot && (
-            <motion.div variants={fadeUp} className="mt-6 flex items-center gap-3">
-              {twitterSlot}
             </motion.div>
           )}
 
@@ -222,65 +217,48 @@ export function ReportClient({
                 {statusConfig.label}
               </span>
             </div>
-            {passingThreshold != null && (
-              <div className="space-y-1.5 pt-2 border-t border-border">
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Threshold</span>
-                  <span className="font-medium">{passingThreshold}/100</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Points to pass</span>
-                  {passed ? (
-                    <span className="text-green-600 font-medium flex items-center gap-1">
-                      <IconCheck size={11} strokeWidth={2.5} /> Passed
-                    </span>
-                  ) : (
-                    <span className="font-medium text-amber-600">{pointsToPass}</span>
-                  )}
-                </div>
+            {(proofActions || twitterSlot) && (
+              <div className="flex flex-col gap-2 pt-3 border-t border-border">
+                {proofActions}
+                {twitterSlot}
               </div>
             )}
           </div>
 
           {/* Card 2 — Quick actions */}
-          {(proofActions || (submissionActions && !isResubmit)) && (
+          {(submissionActions && !isResubmit) && (
             <div className="rounded-lg border bg-card p-4">
               <p className={`${SECTION_LABEL_CLASS} mb-3`}>Actions</p>
               <div className="flex flex-col gap-2">
-                {proofActions}
-                {submissionActions && !isResubmit && submissionActions}
+                {submissionActions}
               </div>
             </div>
           )}
 
-          {/* Card 3 — Category summary */}
+          {/* Card 3 — Categories */}
           {report.scores.length > 0 && (
             <div className="rounded-lg border bg-card p-4">
               <p className={`${SECTION_LABEL_CLASS} mb-3`}>Categories</p>
               <div className="flex flex-col gap-2">
                 {report.scores.map((s) => {
                   const scorePercent = (s.score / 10) * 100
+                  const dotClass = s.status === 'pass'
+                    ? 'bg-green-500'
+                    : s.status === 'floor'
+                      ? 'bg-amber-500'
+                      : 'bg-red-500'
                   return (
-                    <div key={s.category}>
-                      <div className="flex items-center justify-between mb-1">
-                        <a href={`#${categorySlug(s.category)}`} className="text-xs text-foreground truncate flex-1 mr-2 hover:underline underline-offset-2">{s.category}</a>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <span className={`text-[9px] uppercase tracking-widest font-medium px-1.5 py-0.5 border rounded-sm ${s.status ? (CATEGORY_STATUS_CLASS[s.status] ?? 'bg-muted text-muted-foreground border-border') : 'bg-muted text-muted-foreground border-border'}`}>
-                            {s.status}
-                          </span>
-                          <span className="text-xs font-semibold tabular-nums w-8 text-right">{s.score}/10</span>
-                        </div>
-                      </div>
-                      <Progress
-                        value={scorePercent}
-                        className={`h-1 *:data-[slot=progress-indicator]:transition-none ${
-                          s.status === 'pass'
-                            ? '*:data-[slot=progress-indicator]:bg-green-500'
-                            : s.status === 'floor'
-                              ? '*:data-[slot=progress-indicator]:bg-amber-500'
-                              : '*:data-[slot=progress-indicator]:bg-red-500'
-                        }`}
-                      />
+                    <div key={s.category} className="flex items-center gap-2">
+                      <span className={`size-1.5 rounded-full shrink-0 ${dotClass}`} />
+                      <a
+                        href={`#${categorySlug(s.category)}`}
+                        className="text-xs text-foreground flex-1 truncate hover:underline underline-offset-2"
+                      >
+                        {s.category}
+                      </a>
+                      <span className="text-xs tabular-nums text-muted-foreground shrink-0">
+                        {s.score}/10
+                      </span>
                     </div>
                   )
                 })}
@@ -289,25 +267,30 @@ export function ReportClient({
           )}
 
           {/* Card 4 — Points breakdown */}
-          {report.scores.length > 0 && (
+          {passingThreshold != null && (
             <div className="rounded-lg border bg-card p-4">
-              <p className={`${SECTION_LABEL_CLASS} mb-3`}>Points breakdown</p>
-              <div className="flex flex-col gap-1.5">
-                {report.scores.map((s) => {
-                  const weighted = s.weight ? ((s.score / 10) * s.weight).toFixed(1) : null
-                  return (
-                    <div key={s.category} className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground truncate flex-1 mr-2">{s.category}</span>
-                      <span className="font-medium tabular-nums shrink-0">
-                        {weighted != null ? `${weighted} / ${s.weight}` : `${s.score}/10`}
-                      </span>
-                    </div>
-                  )
-                })}
-                <div className="flex items-center justify-between text-xs pt-2 mt-1 border-t border-border font-semibold">
-                  <span>Total</span>
-                  <span>{report.compositeScore}/100</span>
-                </div>
+              <p className={`${SECTION_LABEL_CLASS} mb-3`}>Points</p>
+              <div className="flex justify-between text-xs mb-1.5">
+                <span className="text-muted-foreground">Score vs threshold</span>
+                {passed ? (
+                  <span className="text-green-600 font-medium flex items-center gap-1">
+                    <IconCheck size={11} strokeWidth={2.5} /> Passed
+                  </span>
+                ) : (
+                  <span className="font-medium text-amber-600">{pointsToPass} to pass</span>
+                )}
+              </div>
+              <Progress
+                value={(report.compositeScore / passingThreshold) * 100}
+                className={`h-1.5 *:data-[slot=progress-indicator]:transition-none ${
+                  passed
+                    ? '*:data-[slot=progress-indicator]:bg-green-500'
+                    : '*:data-[slot=progress-indicator]:bg-amber-500'
+                }`}
+              />
+              <div className="flex justify-between text-[10px] text-muted-foreground mt-1.5">
+                <span>{report.compositeScore}/100</span>
+                <span>threshold {passingThreshold}</span>
               </div>
             </div>
           )}

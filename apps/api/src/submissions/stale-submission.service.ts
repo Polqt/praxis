@@ -75,37 +75,30 @@ export class StaleSubmissionService {
 
   private async sendExpiryEmail(submissionId: string): Promise<void> {
     try {
-      const submissionRows = await this.db.db
-        .select()
+      const rows = await this.db.db
+        .select({
+          email: users.email,
+          username: users.username,
+          repositoryName: projectSubmissions.githubRepoFullName,
+          challengeId: projectSubmissions.challengeId,
+          challengeTitle: projectChallenges.title,
+        })
         .from(projectSubmissions)
+        .innerJoin(users, eq(users.id, projectSubmissions.userId))
+        .innerJoin(projectChallenges, eq(projectChallenges.id, projectSubmissions.challengeId))
         .where(eq(projectSubmissions.id, submissionId))
         .limit(1)
-      const submission = submissionRows[0]
-      if (!submission) return
 
-      const userRows = await this.db.db
-        .select({ email: users.email, username: users.username })
-        .from(users)
-        .where(eq(users.id, submission.userId))
-        .limit(1)
-      const user = userRows[0]
-      if (!user?.email) return
-
-      const challengeRows = await this.db.db
-        .select({ title: projectChallenges.title })
-        .from(projectChallenges)
-        .where(eq(projectChallenges.id, submission.challengeId))
-        .limit(1)
-      const challengeTitle = challengeRows[0]?.title ?? 'Verification Challenge'
+      const details = rows[0]
+      if (!details?.email) return
 
       const webBaseUrl = this.config.get<string>('webBaseUrl') ?? 'https://praxisdev.vercel.app'
-
       await this.notifications.sendSubmissionExpired({
-        toEmail: user.email,
-        username: user.username ?? user.email.split('@')[0],
-        repositoryName: submission.githubRepoFullName,
-        challengeTitle,
-        resubmitUrl: `${webBaseUrl}/submit?challengeId=${submission.challengeId}`,
+        toEmail: details.email,
+        username: details.username ?? details.email.split('@')[0],
+        repositoryName: details.repositoryName,
+        challengeTitle: details.challengeTitle,
+        resubmitUrl: `${webBaseUrl}/submit?challengeId=${details.challengeId}`,
       })
     } catch (err) {
       this.logger.error('stale-expiry: failed to send expiry email', {

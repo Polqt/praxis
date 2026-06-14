@@ -153,34 +153,44 @@ export function ScoreOverview({ scores, repositoryName, commitSha, skillProgress
               variants={fadeUp}
               className={`p-5 border-l-2 ${floorMissed ? 'border-l-red-400' : item.status === 'fail' ? 'border-l-destructive/40' : 'border-l-transparent'}`}
             >
-              <div className="mb-2">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="text-sm font-medium">
-                    {item.category}
-                    {item.weight != null && (
-                      <span className="ml-2 text-xs font-normal text-muted-foreground">{item.weight}%</span>
-                    )}
-                  </span>
-                  <span className="text-sm font-semibold tabular-nums shrink-0">
-                    {item.score}<span className="text-xs font-normal text-muted-foreground">/10</span>
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-sm font-medium flex-1 min-w-0">
+                  {item.category}
+                  {item.weight != null && (
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">{item.weight}%</span>
+                  )}
+                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {item.confidence && (
+                    <span className={`text-[10px] uppercase tracking-widest font-medium px-2 py-0.5 rounded-sm border ${CONFIDENCE_CLASS[item.confidence]}`}>
+                      {item.confidence}
+                    </span>
+                  )}
                   {item.status && (
                     <span className={`text-[10px] uppercase tracking-widest font-medium px-2 py-0.5 border rounded-sm ${CATEGORY_STATUS_CLASS[item.status]}`}>
                       {item.status}
                     </span>
                   )}
-                  {item.confidence && (
-                    <span className={`text-[10px] uppercase tracking-widest font-medium px-2 py-0.5 rounded-sm border ${CONFIDENCE_CLASS[item.confidence]}`}>
-                      {item.confidence} confidence
-                    </span>
-                  )}
+                  <span className="text-sm font-semibold tabular-nums">
+                    {item.score}<span className="text-xs font-normal text-muted-foreground">/10</span>
+                  </span>
                 </div>
               </div>
 
+              <Progress
+                value={scorePercent}
+                className={`h-1 mb-2 *:data-[slot=progress-indicator]:transition-none ${
+                  item.status === 'pass'
+                    ? '*:data-[slot=progress-indicator]:bg-green-500'
+                    : item.status === 'floor'
+                      ? '*:data-[slot=progress-indicator]:bg-amber-500'
+                      : '*:data-[slot=progress-indicator]:bg-red-500'
+                }`}
+              />
+
               {sp && !sp.awarded && (
-                <p className="text-[11px] mb-2">
+                <p className="text-[11px] mb-2 flex items-center gap-1.5">
+                  <span className={`size-1.5 rounded-full shrink-0 ${sp.eligible ? 'bg-amber-500' : 'bg-muted-foreground/40'}`} />
                   {sp.eligible
                     ? <span className="text-amber-600 font-medium">Skill eligible — awarded on a verified result</span>
                     : <span className="text-muted-foreground">+{sp.pointsNeeded} point{sp.pointsNeeded !== 1 ? 's' : ''} to earn the <span className="font-medium">{sp.name}</span> skill</span>
@@ -188,21 +198,11 @@ export function ScoreOverview({ scores, repositoryName, commitSha, skillProgress
                 </p>
               )}
               {sp?.awarded && (
-                <p className="text-[11px] text-green-600 font-medium mb-2">Skill awarded</p>
+                <p className="text-[11px] mb-2 flex items-center gap-1.5">
+                  <span className="size-1.5 rounded-full shrink-0 bg-green-500" />
+                  <span className="text-green-600 font-medium">Skill awarded</span>
+                </p>
               )}
-
-              <div className="mb-3">
-                <Progress
-                  value={scorePercent}
-                  className={`h-1 *:data-[slot=progress-indicator]:transition-none ${
-                    item.status === 'pass'
-                      ? '*:data-[slot=progress-indicator]:bg-green-500'
-                      : item.status === 'floor'
-                        ? '*:data-[slot=progress-indicator]:bg-amber-500'
-                        : '*:data-[slot=progress-indicator]:bg-red-500'
-                  }`}
-                />
-              </div>
 
               {item.executionEvidence && (
                 <div className="inline-flex items-center gap-1.5 mb-3 px-2 py-1 rounded-md bg-muted/60 border border-border text-[11px] font-medium">

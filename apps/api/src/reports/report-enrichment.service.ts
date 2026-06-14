@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import Anthropic from '@anthropic-ai/sdk'
-import { deriveStrengths, deriveImprovements } from '../scoring/derive-report-highlights'
+import { deriveStrengths, deriveImprovements, STRENGTH_THRESHOLD, IMPROVEMENT_THRESHOLD } from '../scoring/derive-report-highlights'
 
 interface CategoryScoreEntry {
   score: number
@@ -116,8 +116,8 @@ export class ReportEnrichmentService {
       buildCategoryPrompt(name, entry.score, entry.minimumScore, entry.status, entry.citations, entry.signals)
     ).join('\n\n---\n\n')
 
-    const strengths = categoryEntries.filter(([, v]) => v.score >= 8).map(([n]) => n)
-    const improvements = categoryEntries.filter(([, v]) => v.score <= 6 || v.status === 'floor').map(([n]) => n)
+    const strengths = categoryEntries.filter(([, v]) => v.score >= STRENGTH_THRESHOLD).map(([n]) => n)
+    const improvements = categoryEntries.filter(([, v]) => v.score <= IMPROVEMENT_THRESHOLD || v.status === 'floor').map(([n]) => n)
 
     const summaryBlock = buildSummaryPrompt(
       input.verdict,
@@ -155,7 +155,7 @@ Respond with a JSON object in exactly this shape (no markdown, no extra text):
     const knownLower = new Map(categoryEntries.map(([name]) => [name.toLowerCase(), name]))
     const enrichedScores = { ...input.categoryScores }
     for (const [rawKey, narrative] of Object.entries(parsed.narratives ?? {})) {
-      const canonicalName = knownLower.get(rawKey.toLowerCase()) ?? knownLower.get(rawKey)
+      const canonicalName = knownLower.get(rawKey.toLowerCase())
       if (canonicalName && narrative) {
         enrichedScores[canonicalName] = { ...enrichedScores[canonicalName], narrative }
       }

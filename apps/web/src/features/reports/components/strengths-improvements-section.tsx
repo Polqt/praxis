@@ -64,9 +64,8 @@ export function StrengthsImprovementsSection({ strengths, improvements, derived,
     >
       {hasStrengths && (
         <motion.div variants={fadeUp}>
-          <p className={`${SECTION_LABEL_CLASS} mb-1`}>Strengths</p>
+          <p className={`${SECTION_LABEL_CLASS} mb-3`}>Strengths</p>
           {derived && <p className="text-xs text-muted-foreground mb-3">Derived from rubric results</p>}
-          {!derived && <div className="mb-3" />}
           <ItemList
             items={strengths}
             icon={<IconArrowUpRight size={14} className="text-green-500 shrink-0 mt-0.5" strokeWidth={2} />}
@@ -76,9 +75,8 @@ export function StrengthsImprovementsSection({ strengths, improvements, derived,
       )}
       {hasImprovements && (
         <motion.div variants={fadeUp}>
-          <p className={`${SECTION_LABEL_CLASS} mb-1`}>{hasStrengths ? 'Improvements' : 'Areas to improve'}</p>
+          <p className={`${SECTION_LABEL_CLASS} mb-3`}>{hasStrengths ? 'Improvements' : 'Areas to improve'}</p>
           {derived && <p className="text-xs text-muted-foreground mb-3">Derived from rubric results</p>}
-          {!derived && <div className="mb-3" />}
           <ItemList
             items={improvements}
             icon={<IconArrowRight size={14} className="text-amber-500 shrink-0 mt-0.5" strokeWidth={2} />}

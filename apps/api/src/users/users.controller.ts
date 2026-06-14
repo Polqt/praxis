@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   Body,
-  ConflictException,
   Controller,
   Get,
   NotFoundException,
@@ -38,6 +37,7 @@ export class UsersController {
   async checkUsername(@Query('username') username: string) {
     if (!username) throw new BadRequestException('username query param is required')
     const normalized = username.trim().toLowerCase()
+    if (UsersService.RESERVED_USERNAMES.has(normalized)) return { available: false }
     const existing = await this.usersService.findByUsername(normalized)
     return { available: !existing }
   }
@@ -57,19 +57,9 @@ export class UsersController {
 
   @UseGuards(SupabaseGuard)
   @Patch('me')
-  async updateMe(@GetUser() user: User, @Body() dto: UpdateUserDto) {
+  updateMe(@GetUser() user: User, @Body() dto: UpdateUserDto) {
     const normalized = dto.username.trim().toLowerCase()
-    const existing = await this.usersService.findByUsername(normalized)
-    if (existing && existing.id !== user.id) {
-      throw new ConflictException('This username is already taken.')
-    }
     return this.usersService.updateUser(user.id, { username: normalized })
-  }
-
-  @UseGuards(SupabaseGuard)
-  @Get('me/skills')
-  getMySkills(@GetUser() user: User) {
-    return this.usersService.getUserSkills(user.id)
   }
 
   @UseGuards(SupabaseGuard)

@@ -4,12 +4,11 @@ import {
 } from '@/features/reports/constants'
 import type {
   CommandResult,
-  CommandSummary,
   ExecutionOutput,
 } from '@/features/reports/types'
 
 export interface ExecutionView {
-  displayedPhases: (CommandResult | CommandSummary)[]
+  displayedPhases: CommandResult[]
   hasResults: boolean
   noTests: boolean
   installFailed: boolean

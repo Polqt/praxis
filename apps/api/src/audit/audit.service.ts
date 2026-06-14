@@ -16,11 +16,6 @@ export type AuditEventType =
   | 'submission_retried'
   | 'submission_commit_updated'
 
-type AuditContext = {
-  ipAddress?: string
-  userAgent?: string
-}
-
 @Injectable()
 export class AuditService {
   private readonly logger = new Logger(AuditService.name)
@@ -35,7 +30,6 @@ export class AuditService {
     userId: string | null,
     eventType: AuditEventType,
     metadata?: Record<string, unknown>,
-    context?: AuditContext,
   ): void {
     this.db.db
       .insert(auditLogs)
@@ -43,8 +37,8 @@ export class AuditService {
         userId,
         eventType,
         metadata: metadata ?? null,
-        ipAddress: context?.ipAddress ?? null,
-        userAgent: context?.userAgent ?? null,
+        ipAddress: null,
+        userAgent: null,
       })
       .catch((err: unknown) => {
         this.logger.error('audit log insert failed', { eventType, userId, err })

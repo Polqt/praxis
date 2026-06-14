@@ -136,10 +136,6 @@ export function buildSecurityNarrative(s: SecuritySignals, context: 'security' |
   return parts.join(' ')
 }
 
-export function buildApiDesignNarrative(s: SecuritySignals): string {
-  return buildSecurityNarrative(s, 'api-design')
-}
-
 export function buildAuthenticationNarrative(s: AuthenticationSignals): string {
   if (!s.hasAuthFiles && !s.hasJwtLibrary && !s.hasSessionOrTokenPattern) {
     return 'No authentication implementation was detected — no auth files, JWT libraries, or token patterns were found. Authentication is required for this verification standard.'

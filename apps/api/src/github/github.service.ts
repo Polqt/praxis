@@ -5,7 +5,6 @@ import { DatabaseService } from '../database/database.service'
 import { githubAccounts, users } from '../database/schema'
 import { GitHubApiService } from './github-api.service'
 import { GitHubTokenService } from './github-token.service'
-import { SyncedGitHubAccount } from './github.types'
 import { AuditService } from '../audit/audit.service'
 import { UsersService } from '../users/users.service'
 
@@ -75,10 +74,13 @@ export class GitHubService {
       .limit(1)
 
     const githubLogin = viewer.login.toLowerCase()
-    if (currentUser[0] && currentUser[0].username === null && !UsersService.RESERVED_USERNAMES.has(githubLogin)) {
+    if (currentUser[0] && currentUser[0].username === null
+      && !UsersService.RESERVED_USERNAMES.has(githubLogin)
+      && /^[a-z0-9_-]{3,24}$/.test(githubLogin)
+    ) {
       await this.db.db
         .update(users)
-        .set({ username: viewer.login })
+        .set({ username: githubLogin })
         .where(eq(users.id, userId))
     }
   }
@@ -154,15 +156,4 @@ export class GitHubService {
     }
   }
 
-  toPublicAccount(account: SyncedGitHubAccount) {
-    return {
-      id: account.id,
-      userId: account.userId,
-      githubUserId: account.githubUserId,
-      githubUsername: account.githubUsername,
-      githubEmail: account.githubEmail,
-      connectedAt: account.connectedAt,
-      lastSyncedAt: account.lastSyncedAt,
-    }
-  }
 }

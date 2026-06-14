@@ -1,5 +1,4 @@
 import type { Verdict } from '@praxis/shared'
-import { deriveStrengths, deriveImprovements } from '../scoring/derive-report-highlights'
 import type { RepositoryIngestionData } from '../verification/ingestion/repository-ingestion.types'
 import { TestingScorer } from '../scoring/categories/testing.scorer'
 import { DocumentationScorer } from '../scoring/categories/documentation.scorer'
@@ -147,17 +146,9 @@ export function scoreReport(
   const compositeScore = Math.round(weighted / 10)
   const verdict: Verdict = floorFailed || compositeScore < passingThreshold ? 'insufficient' : 'verified'
 
-  const strengths = deriveStrengths(categoryScores)
-  const improvements = deriveImprovements(categoryScores)
-
   return {
     compositeScore,
     verdict,
     categoryScores,
-    strengths,
-    improvements,
-    publicSummary: verdict === 'verified'
-      ? 'This project meets the deterministic Praxis verification threshold.'
-      : 'This project does not yet meet the deterministic Praxis verification threshold.',
   }
 }

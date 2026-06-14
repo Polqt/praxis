@@ -9,9 +9,16 @@ import { GitHubService } from '../github/github.service'
 import { VerificationQueueService } from '../verification/queue/queue.service'
 import { SubmissionStatusService } from './submission-status.service'
 import { CreateSubmissionDto } from './dto/create-submission.dto'
-import { parseRepoFullName } from './submissions.util'
 import { AuditService } from '../audit/audit.service'
 import type { SubmissionStatus } from '@praxis/shared'
+
+function parseRepoFullName(repoFullName: string) {
+  const parts = repoFullName.split('/')
+  if (parts.length !== 2 || !parts[0] || !parts[1]) {
+    throw new BadRequestException('Repository must be in owner/repo format')
+  }
+  return { owner: parts[0], repo: parts[1] }
+}
 
 const IN_PROGRESS_STATUSES: SubmissionStatus[] = ['created', 'queued', 'ingesting', 'analyzing', 'generating_report']
 const RETRYABLE_STATUSES: SubmissionStatus[] = ['ingestion_failed', 'analysis_failed', 'report_generation_failed']
@@ -143,29 +150,31 @@ export class SubmissionsService {
     return submission
   }
 
-  listForUser(userId: string): Promise<(typeof projectSubmissions.$inferSelect)[]> {
+  listForUser(userId: string, limit = 50, offset = 0): Promise<(typeof projectSubmissions.$inferSelect)[]> {
     return this.db.db
       .select()
       .from(projectSubmissions)
       .where(eq(projectSubmissions.userId, userId))
       .orderBy(desc(projectSubmissions.submittedAt))
+      .limit(Math.min(limit, 100))
+      .offset(offset)
   }
 
   async getStats(userId: string) {
-    const REPORT_GENERATED: SubmissionStatus[] = ['verified', 'insufficient', 'failed']
+    const rows = await this.db.db
+      .select({ status: projectSubmissions.status, value: count() })
+      .from(projectSubmissions)
+      .where(eq(projectSubmissions.userId, userId))
+      .groupBy(projectSubmissions.status)
 
-    const [totalRows, verifiedRows, inProgressRows, reportsRows] = await Promise.all([
-      this.db.db.select({ value: count() }).from(projectSubmissions).where(eq(projectSubmissions.userId, userId)),
-      this.db.db.select({ value: count() }).from(projectSubmissions).where(and(eq(projectSubmissions.userId, userId), eq(projectSubmissions.status, 'verified'))),
-      this.db.db.select({ value: count() }).from(projectSubmissions).where(and(eq(projectSubmissions.userId, userId), inArray(projectSubmissions.status, IN_PROGRESS_STATUSES))),
-      this.db.db.select({ value: count() }).from(projectSubmissions).where(and(eq(projectSubmissions.userId, userId), inArray(projectSubmissions.status, REPORT_GENERATED))),
-    ])
+    const byStatus = new Map(rows.map((r) => [r.status, r.value]))
+    const sum = (...statuses: SubmissionStatus[]) => statuses.reduce((acc, s) => acc + (byStatus.get(s) ?? 0), 0)
 
     return {
-      totalSubmissions: totalRows[0]?.value ?? 0,
-      verifiedCount: verifiedRows[0]?.value ?? 0,
-      inProgressCount: inProgressRows[0]?.value ?? 0,
-      reportsGenerated: reportsRows[0]?.value ?? 0,
+      totalSubmissions: rows.reduce((acc, r) => acc + r.value, 0),
+      verifiedCount: byStatus.get('verified') ?? 0,
+      inProgressCount: sum(...IN_PROGRESS_STATUSES),
+      reportsGenerated: sum('verified', 'insufficient', 'failed'),
     }
   }
 
@@ -254,10 +263,6 @@ export class SubmissionsService {
 
   async cancelSubmission(userId: string, submissionId: string) {
     const submission = await this.getForUser(userId, submissionId)
-
-    if (submission.status !== 'queued') {
-      throw new ConflictException('Only queued submissions can be cancelled')
-    }
 
     const updated = await this.statusService.transition({
       submissionId,

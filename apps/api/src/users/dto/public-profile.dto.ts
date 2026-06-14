@@ -1,4 +1,4 @@
-export class ProfileReportDto {
+export interface ProfileReportDto {
   id: string
   submissionId: string
   repositoryName: string
@@ -11,13 +11,13 @@ export class ProfileReportDto {
   compositeScore: number | null
 }
 
-export class VerifiedSkillDto {
+export interface VerifiedSkillDto {
   name: string
   awardedAt: string
   sourceReport: ProfileReportDto | null
 }
 
-export class PublicProfileDto {
+export interface PublicProfileDto {
   username: string
   bio: string | null
   verifiedSkills: VerifiedSkillDto[]

@@ -9,20 +9,7 @@ import { TestExecutionOutput } from '@/features/reports/components/test-executio
 import { toReport } from '@/features/reports/utils/to-report'
 import type { VerificationReport, ProjectSubmission, ProjectChallenge } from '@praxis/shared'
 
-type PhaseResult = { phase: string; label: string; exitCode: number; durationMs?: number | null; timedOut: boolean; stdout?: string; stderr?: string }
-type ExecutionOutput = {
-  language: string; framework?: string | null; testCommand: string; publicSummary?: string | null
-  commandSummary?: { phase: string; label: string; exitCode: number; timedOut: boolean }[]
-  exitCode: number
-  passed: number; failed: number; skipped: number
-  durationMs: number | null; stdout: string | null; stderr: string | null; timedOut: boolean
-  installResult?: PhaseResult | null
-  testResult?: PhaseResult | null
-  buildResult?: PhaseResult | null
-  lintResult?: PhaseResult | null
-  typecheckResult?: PhaseResult | null
-  doctorResult?: PhaseResult | null
-}
+import type { ExecutionOutput } from '@/features/reports/types'
 
 type Props = {
   params: Promise<{ submissionId: string }>

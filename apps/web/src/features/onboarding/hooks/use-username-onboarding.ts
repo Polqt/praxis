@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiClient, ApiError } from '@/lib/api'
 import { validateUsername } from '@/features/user/utils/validate-username'
+import { useDebounceCallback } from '@/hooks/use-debounce-callback'
 import type { UsernameCheckResult } from '@/features/onboarding/types'
 
 type CheckState =
@@ -29,31 +30,20 @@ export function useUsernameOnboarding(): UseUsernameOnboardingReturn {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (debounceTimer.current) clearTimeout(debounceTimer.current)
-    }
-  }, [])
+  const scheduleCheck = useDebounceCallback((next) => void checkAvailability(next), 500)
 
   function handleChange(raw: string) {
     const next = raw.toLowerCase()
     setValue(next)
     setSaveError(null)
 
-    if (debounceTimer.current) clearTimeout(debounceTimer.current)
-
-    // Skip check: empty or format invalid
     if (!next || validateUsername(next) !== null) {
       setCheckState({ type: 'idle' })
       return
     }
 
     setCheckState({ type: 'checking' })
-    debounceTimer.current = setTimeout(() => {
-      void checkAvailability(next)
-    }, 500)
+    scheduleCheck(next)
   }
 
   async function checkAvailability(username: string) {

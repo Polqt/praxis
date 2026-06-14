@@ -26,16 +26,13 @@ const allowedTransitions: Record<SubmissionStatus, SubmissionStatus[]> = {
     'expired',
   ],
   report_generation_failed: ['queued', 'failed', 'expired'],
-  // Terminal statuses only allow re-queue for user-initiated retry/resubmit flows
+  // verified is intentionally locked — a verified submission is a permanent proof record.
+  // Users who want to re-verify with a new commit must create a new submission.
   verified: [],
   insufficient: ['queued'],
   failed: ['queued'],
   expired: ['queued'],
   cancelled: ['queued'],
-}
-
-export function isTerminalSubmissionStatus(status: SubmissionStatus) {
-  return terminalStatuses.has(status)
 }
 
 export function canTransition(from: SubmissionStatus, to: SubmissionStatus) {

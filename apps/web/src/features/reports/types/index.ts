@@ -26,19 +26,12 @@ export interface CommandResult {
   stderr?: string
 }
 
-export interface CommandSummary {
-  phase: string
-  label: string
-  exitCode: number
-  timedOut: boolean
-}
-
 export interface ExecutionOutput {
   language: string
   framework?: string | null
   testCommand: string
   publicSummary?: string | null
-  commandSummary?: CommandSummary[]
+  commandSummary?: CommandResult[]
   exitCode: number
   passed: number
   failed: number

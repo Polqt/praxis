@@ -16,10 +16,7 @@ import {
 } from '@/features/submissions/constants'
 import { StatusBadge } from '@/features/submissions/components/status-badge'
 import { FormattedDate } from '@/components/ui/formatted-date'
-import {
-  countSubmissions,
-  filterSubmissions,
-} from '@/features/submissions/utils/filter-submissions'
+import { filterSubmissions } from '@/features/submissions/utils/filter-submissions'
 import type { ProjectSubmission } from '@praxis/shared'
 import type { SubmissionFilter } from '@/features/submissions/types'
 
@@ -91,7 +88,7 @@ export function SubmissionsClient({ submissions }: { submissions: ProjectSubmiss
       <Tabs value={tab} onValueChange={(value) => setTab(value as SubmissionFilter)}>
         <TabsList className="bg-transparent p-0 h-auto gap-0 border-0">
           {SUBMISSION_FILTERS.map(({ value, label }) => {
-            const count = countSubmissions(submissions, value)
+            const count = filterSubmissions(submissions, value).length
             return (
               <TabsTrigger
                 key={value}

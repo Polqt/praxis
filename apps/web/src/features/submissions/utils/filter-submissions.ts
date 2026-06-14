@@ -28,9 +28,3 @@ export function filterSubmissions(
   return submissions
 }
 
-export function countSubmissions(
-  submissions: ProjectSubmission[],
-  filter: SubmissionFilter,
-): number {
-  return filterSubmissions(submissions, filter).length
-}

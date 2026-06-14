@@ -1,5 +1,5 @@
-const STRENGTH_THRESHOLD = 8
-const IMPROVEMENT_THRESHOLD = 6
+export const STRENGTH_THRESHOLD = 8
+export const IMPROVEMENT_THRESHOLD = 6
 
 export function deriveStrengths(scores: Record<string, { score: number }>): string[] {
   return Object.entries(scores)

@@ -5,7 +5,6 @@ import { DatabaseService } from '../../database/database.service'
 import { projectSubmissions, repositoryIngestions } from '../../database/schema'
 import { GitHubApiService } from '../../github/github-api.service'
 import { GitHubService } from '../../github/github.service'
-import { parseRepoFullName } from '../../submissions/submissions.util'
 import { selectRepositoryFiles } from './repository-file-selector'
 import { RepositoryIngestionData } from './repository-ingestion.types'
 
@@ -24,7 +23,9 @@ export class RepositoryIngestionService {
     if (cached) return cached
 
     const { accessToken } = await this.githubService.getActiveToken(submission.userId)
-    const { owner, repo } = parseRepoFullName(submission.githubRepoFullName)
+    const parts = submission.githubRepoFullName.split('/')
+    const owner = parts[0]
+    const repo = parts[1]
     const repository = await this.githubApi.getRepository(accessToken, owner, repo)
     if (!repository) throw new Error('GitHub repository not found during ingestion')
 

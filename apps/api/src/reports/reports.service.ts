@@ -169,8 +169,10 @@ export class ReportsService implements OnModuleInit {
   async getPrivateReport(userId: string, submissionId: string) {
     const submission = await this.getSubmission(submissionId)
     if (submission.userId !== userId) throw new NotFoundException('Report not found')
-    const report = await this.getReportBySubmission(submissionId)
-    const challenge = await this.getChallenge(submission.challengeId)
+    const [report, challenge] = await Promise.all([
+      this.getReportBySubmission(submissionId),
+      this.getChallenge(submission.challengeId),
+    ])
     return {
       ...this.toSafeReport(report, submission, challenge),
       ...await this.buildReportExtras(userId, report, submission, challenge),
@@ -222,46 +224,45 @@ export class ReportsService implements OnModuleInit {
 
     const [updated] = await this.db.db
       .update(projectVerificationReports)
-      .set({ viewCount: (reports[0].viewCount ?? 0) + 1 })
+      .set({ viewCount: sql`coalesce(${projectVerificationReports.viewCount}, 0) + 1` })
       .where(eq(projectVerificationReports.id, reports[0].id))
       .returning()
 
     const submission = await this.getSubmission(reports[0].submissionId)
-    const challenge = await this.getChallenge(submission.challengeId)
+    const reportRow = updated ?? reports[0]
 
-    // Fetch execution summary for public display (test counts + language)
-    const execRows = await this.db.db
-      .select({
-        passed: repositoryExecutions.passed,
-        failed: repositoryExecutions.failed,
-        skipped: repositoryExecutions.skipped,
-        language: repositoryExecutions.language,
-        framework: repositoryExecutions.framework,
-        durationMs: repositoryExecutions.durationMs,
-        timedOut: repositoryExecutions.timedOut,
-      })
-      .from(repositoryExecutions)
-      .innerJoin(repositoryIngestions, eq(repositoryExecutions.repositoryIngestionId, repositoryIngestions.id))
-      .where(eq(repositoryIngestions.commitSha, submission.commitSha))
-      .limit(1)
+    const [challenge, execRows, awardedSkillRows, userRows] = await Promise.all([
+      this.getChallenge(submission.challengeId),
+      // Fetch execution summary for public display (test counts + language)
+      this.db.db
+        .select({
+          passed: repositoryExecutions.passed,
+          failed: repositoryExecutions.failed,
+          skipped: repositoryExecutions.skipped,
+          language: repositoryExecutions.language,
+          framework: repositoryExecutions.framework,
+          durationMs: repositoryExecutions.durationMs,
+          timedOut: repositoryExecutions.timedOut,
+        })
+        .from(repositoryExecutions)
+        .innerJoin(repositoryIngestions, eq(repositoryExecutions.repositoryIngestionId, repositoryIngestions.id))
+        .where(eq(repositoryIngestions.commitSha, submission.commitSha))
+        .limit(1),
+      // Fetch awarded skill names for this submission's report
+      this.db.db
+        .select({ name: skills.name })
+        .from(userSkills)
+        .innerJoin(skills, eq(skills.id, userSkills.skillId))
+        .where(eq(userSkills.sourceReportId, reportRow.id)),
+      this.db.db
+        .select({ username: users.username })
+        .from(users)
+        .where(eq(users.id, submission.userId))
+        .limit(1),
+    ])
 
     const executionSummary = execRows[0] ?? null
-
-    // Fetch awarded skill names for this submission's report
-    const reportRow = updated ?? reports[0]
-    const awardedSkillRows = await this.db.db
-      .select({ name: skills.name })
-      .from(userSkills)
-      .innerJoin(skills, eq(skills.id, userSkills.skillId))
-      .where(eq(userSkills.sourceReportId, reportRow.id))
-
     const awardedSkills = awardedSkillRows.map((r) => r.name)
-
-    const userRows = await this.db.db
-      .select({ username: users.username })
-      .from(users)
-      .where(eq(users.id, submission.userId))
-      .limit(1)
     const submitterUsername = userRows[0]?.username ?? null
 
     return this.toPublicProof(
@@ -361,11 +362,10 @@ export class ReportsService implements OnModuleInit {
 
     // Fetch only skills matching eligible category names (case-insensitive via lower())
     const eligibleLower = new Set(eligibleNames.map((n) => n.toLowerCase()))
-    const candidateSkills = await this.db.db
+    const matchedSkills = await this.db.db
       .select()
       .from(skills)
       .where(inArray(sql`lower(${skills.name})`, [...eligibleLower]))
-    const matchedSkills = candidateSkills.filter((s) => eligibleLower.has(s.name.toLowerCase()))
 
     if (matchedSkills.length === 0) {
       this.logger.warn(`awardSkillsForSubmission: no skills matched for categories [${eligibleNames.join(', ')}]`)
@@ -405,12 +405,6 @@ export class ReportsService implements OnModuleInit {
 
     const submission = await this.getSubmission(report.submissionId)
     const challenge = await this.getChallenge(submission.challengeId)
-    const ingestionRows = await this.db.db
-      .select()
-      .from(repositoryIngestions)
-      .where(eq(repositoryIngestions.commitSha, submission.commitSha))
-      .limit(1)
-    if (!ingestionRows[0]) return
 
     const enriched = await this.enrichment.enrich({
       categoryScores: report.categoryScores as Record<string, { score: number; narrative: string; citations: string[]; status: string; minimumScore: number; weight: number; signals: Record<string, unknown> }>,

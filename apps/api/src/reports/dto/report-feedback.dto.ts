@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsOptional, IsString, Max, Min } from 'class-validator'
+import { IsBoolean, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator'
 
 export class ReportFeedbackDto {
   @IsInt()
@@ -8,10 +8,12 @@ export class ReportFeedbackDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   missedEvidence?: string
 
   @IsOptional()
   @IsString()
+  @MaxLength(1000)
   notes?: string
 
   @IsOptional()

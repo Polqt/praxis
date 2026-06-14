@@ -11,7 +11,6 @@ import {
   LEADERBOARD_PERIOD_LABELS,
   LEADERBOARD_PERIODS,
 } from '@/features/profile/constants'
-import { formatLeaderboardDate } from '@/features/profile/utils/format-leaderboard-date'
 import type { LeaderboardEntry } from '@/lib/api'
 
 type Props = {
@@ -56,7 +55,9 @@ function RankIcon({ rank }: { rank: number }) {
 
 function LeaderboardRow({ entry }: { entry: LeaderboardEntry }) {
   const isTopThree = entry.rank <= 3
-  const lastVerified = formatLeaderboardDate(entry.lastVerifiedAt)
+  const lastVerified = entry.lastVerifiedAt
+    ? new Date(entry.lastVerifiedAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+    : null
 
   return (
     <motion.div variants={fadeUp}>

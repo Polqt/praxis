@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
-import { and, count, desc, eq, gte, inArray, max, sql } from 'drizzle-orm'
+import { and, count, desc, eq, gte, inArray, isNotNull, max, sql } from 'drizzle-orm'
 import { DatabaseService } from '../database/database.service'
 import {
   projectChallenges,
@@ -15,20 +15,10 @@ export class UsersService {
   private static readonly USERNAME_CHANGE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000
 
   static readonly RESERVED_USERNAMES = new Set([
-    // Generic reserved words
-    'admin', 'administrator', 'api', 'app', 'auth',
-    'billing', 'blog', 'cdn', 'dashboard', 'dev',
-    'docs', 'email', 'ftp', 'git', 'github',
-    'help', 'home', 'hostname', 'legal', 'mail',
-    'marketing', 'me', 'mobile', 'null', 'ops',
-    'portal', 'praxis', 'privacy', 'root', 'sales',
-    'security', 'server', 'settings', 'signup', 'signin',
-    'status', 'support', 'system', 'team', 'terms',
-    'undefined', 'user', 'username', 'www', 'www1', 'www2',
-    // App route paths — claiming these creates /p/<route> which looks official
+    'admin', 'api', 'auth',
     'onboarding', 'challenges', 'studio', 'submissions', 'reports',
     'proof', 'leaderboard', 'submit', 'sign-in', 'sign-up',
-    'example-report', 'account', 'profile',
+    'settings', 'account', 'example-report', 'p',
   ])
 
   constructor(private db: DatabaseService) {}
@@ -72,11 +62,17 @@ export class UsersService {
   }
 
   async updateUser(userId: string, data: { username: string }) {
-    if (UsersService.RESERVED_USERNAMES.has(data.username.toLowerCase())) {
-      throw new ConflictException('This username is not available.')
+    const normalized = data.username.toLowerCase()
+    if (UsersService.RESERVED_USERNAMES.has(normalized)) {
+      throw new ConflictException('This username is already taken.')
     }
     const current = await this.getMe(userId)
     if (current.username === data.username) return current
+
+    const existing = await this.findByUsername(normalized)
+    if (existing && existing.id !== userId) {
+      throw new ConflictException('This username is already taken.')
+    }
 
     if (current.username && current.usernameUpdatedAt) {
       const nextChangeAt = new Date(
@@ -108,26 +104,6 @@ export class UsersService {
       }
       throw err
     }
-  }
-
-  async getUserSkills(userId: string) {
-    return this.db.db
-      .select({
-        id: userSkills.id,
-        userId: userSkills.userId,
-        skill: {
-          id: skills.id,
-          trackId: skills.trackId,
-          name: skills.name,
-          category: skills.category,
-          createdAt: skills.createdAt,
-        },
-        sourceType: userSkills.sourceType,
-        awardedAt: userSkills.awardedAt,
-      })
-      .from(userSkills)
-      .innerJoin(skills, eq(userSkills.skillId, skills.id))
-      .where(eq(userSkills.userId, userId))
   }
 
   async getDashboardStats(userId: string) {
@@ -177,8 +153,8 @@ export class UsersService {
         : null
 
     const whereClause = periodStart
-      ? and(eq(projectSubmissions.status, 'verified'), gte(projectSubmissions.completedAt, periodStart))
-      : eq(projectSubmissions.status, 'verified')
+      ? and(eq(projectSubmissions.status, 'verified'), gte(projectSubmissions.completedAt, periodStart), isNotNull(users.username))
+      : and(eq(projectSubmissions.status, 'verified'), isNotNull(users.username))
 
     // totalPoints = sum of passingThreshold across verified submissions — advanced challenges
     // (threshold 70) outweigh beginner ones (threshold 50), giving a difficulty-weighted rank.
@@ -206,9 +182,7 @@ export class UsersService {
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
 
-    return rows
-      .filter((r) => r.username !== null)
-      .map((r, i) => ({
+    return rows.map((r, i) => ({
         rank: offset + i + 1,
         username: r.username as string,
         verifiedCount: r.verifiedCount,
@@ -279,12 +253,11 @@ export class UsersService {
         eq(projectSubmissions.userId, userId),
         inArray(projectSubmissions.status, ['verified', 'insufficient']),
       ))
-      .orderBy(desc(projectSubmissions.completedAt))
+      .orderBy(projectSubmissions.completedAt)
       .limit(50)
 
-    // Group by challenge, ordered by date asc per challenge
     const byChallenge = new Map<string, { title: string; scores: { score: number; completedAt: string }[] }>()
-    for (const row of rows.reverse()) {
+    for (const row of rows) {
       if (!byChallenge.has(row.challengeId)) {
         byChallenge.set(row.challengeId, { title: row.challengeTitle, scores: [] })
       }
@@ -295,7 +268,6 @@ export class UsersService {
     }
 
     return Array.from(byChallenge.entries())
-      .filter(([, v]) => v.scores.length > 1)
       .map(([challengeId, v]) => ({ challengeId, title: v.title, scores: v.scores }))
   }
 
@@ -310,22 +282,35 @@ export class UsersService {
     if (!user) return null
 
     const earnedSkills = await this.db.db
-      .select({ name: skills.name, awardedAt: userSkills.awardedAt, sourceReportId: userSkills.sourceReportId })
+      .select({
+        name: skills.name,
+        awardedAt: userSkills.awardedAt,
+        sourceReportId: userSkills.sourceReportId,
+        sourceReportCompositeScore: projectVerificationReports.compositeScore,
+        sourceReportVerdict: projectVerificationReports.verdict,
+        sourceReportGeneratedAt: projectVerificationReports.generatedAt,
+        sourceReportPublicToken: projectVerificationReports.publicToken,
+        sourceReportSubmissionId: projectVerificationReports.submissionId,
+        sourceSubmissionGithubRepoFullName: projectSubmissions.githubRepoFullName,
+        sourceSubmissionCompletedAt: projectSubmissions.completedAt,
+        sourceSubmissionStatus: projectSubmissions.status,
+        sourceChallengeTitle: projectChallenges.title,
+        sourceChallengeCategory: projectChallenges.projectType,
+      })
       .from(userSkills)
       .innerJoin(skills, eq(userSkills.skillId, skills.id))
+      .leftJoin(projectVerificationReports, eq(projectVerificationReports.id, userSkills.sourceReportId))
+      .leftJoin(projectSubmissions, eq(projectSubmissions.id, projectVerificationReports.submissionId))
+      .leftJoin(projectChallenges, eq(projectChallenges.id, projectSubmissions.challengeId))
       .where(eq(userSkills.userId, user.id))
       .orderBy(desc(userSkills.awardedAt))
 
-    // Count submission stats in parallel — no dependency between these queries
-    const [verifiedCountRows, insufficientCountRows, publishedCountRows] = await Promise.all([
+    const [statusCountRows, publishedCountRows] = await Promise.all([
       this.db.db
-        .select({ value: count(projectSubmissions.id) })
+        .select({ status: projectSubmissions.status, value: count(projectSubmissions.id) })
         .from(projectSubmissions)
-        .where(and(eq(projectSubmissions.userId, user.id), eq(projectSubmissions.status, 'verified'))),
-      this.db.db
-        .select({ value: count(projectSubmissions.id) })
-        .from(projectSubmissions)
-        .where(and(eq(projectSubmissions.userId, user.id), eq(projectSubmissions.status, 'insufficient'))),
+        .where(and(eq(projectSubmissions.userId, user.id), inArray(projectSubmissions.status, ['verified', 'insufficient'])))
+        .groupBy(projectSubmissions.status),
       this.db.db
         .select({ value: count(projectVerificationReports.id) })
         .from(projectVerificationReports)
@@ -333,8 +318,8 @@ export class UsersService {
         .where(and(eq(projectSubmissions.userId, user.id), eq(projectVerificationReports.isPublic, true))),
     ])
 
-    const verifiedCount = verifiedCountRows[0]?.value ?? 0
-    const insufficientCount = insufficientCountRows[0]?.value ?? 0
+    const verifiedCount = statusCountRows.find((r) => r.status === 'verified')?.value ?? 0
+    const insufficientCount = statusCountRows.find((r) => r.status === 'insufficient')?.value ?? 0
     const publishedCount = publishedCountRows[0]?.value ?? 0
 
     const reportsWithDetails = await this.db.db
@@ -376,51 +361,24 @@ export class UsersService {
       compositeScore: row.compositeScore ?? null,
     }))
 
-    const sourceReportIds = Array.from(new Set(
-      earnedSkills
-        .map((skill) => skill.sourceReportId)
-        .filter((id): id is string => Boolean(id)),
-    ))
-
-    const sourceReports = sourceReportIds.length === 0 ? [] : await this.db.db
-      .select({
-        id: projectVerificationReports.id,
-        submissionId: projectVerificationReports.submissionId,
-        compositeScore: projectVerificationReports.compositeScore,
-        verdict: projectVerificationReports.verdict,
-        generatedAt: projectVerificationReports.generatedAt,
-        publicToken: projectVerificationReports.publicToken,
-        githubRepoFullName: projectSubmissions.githubRepoFullName,
-        completedAt: projectSubmissions.completedAt,
-        submissionStatus: projectSubmissions.status,
-        challengeTitle: projectChallenges.title,
-        challengeCategory: projectChallenges.projectType,
-      })
-      .from(projectVerificationReports)
-      .innerJoin(projectSubmissions, eq(projectVerificationReports.submissionId, projectSubmissions.id))
-      .innerJoin(projectChallenges, eq(projectChallenges.id, projectSubmissions.challengeId))
-      .where(inArray(projectVerificationReports.id, sourceReportIds))
-
-    const sourceReportById = new Map(sourceReports.map((row) => [row.id, {
-      id: row.id,
-      submissionId: row.submissionId,
-      repositoryName: row.githubRepoFullName,
-      challengeTitle: row.challengeTitle,
-      challengeCategory: row.challengeCategory,
-      verdict: row.verdict,
-      submissionStatus: row.submissionStatus,
-      verifiedAt: (row.completedAt ?? row.generatedAt).toISOString(),
-      publicToken: row.publicToken ?? null,
-      compositeScore: row.compositeScore ?? null,
-    }]))
-
     return {
       username: user.username as string,
       bio: user.bio ?? null,
       verifiedSkills: earnedSkills.map((s) => ({
         name: s.name,
         awardedAt: s.awardedAt.toISOString(),
-        sourceReport: s.sourceReportId ? sourceReportById.get(s.sourceReportId) ?? null : null,
+        sourceReport: s.sourceReportId && s.sourceReportSubmissionId ? {
+          id: s.sourceReportId,
+          submissionId: s.sourceReportSubmissionId,
+          repositoryName: s.sourceSubmissionGithubRepoFullName ?? '',
+          challengeTitle: s.sourceChallengeTitle ?? '',
+          challengeCategory: s.sourceChallengeCategory ?? '',
+          verdict: s.sourceReportVerdict ?? '',
+          submissionStatus: s.sourceSubmissionStatus ?? '',
+          verifiedAt: (s.sourceSubmissionCompletedAt ?? s.sourceReportGeneratedAt ?? new Date()).toISOString(),
+          publicToken: s.sourceReportPublicToken ?? null,
+          compositeScore: s.sourceReportCompositeScore ?? null,
+        } : null,
       })),
       reportsCount: verifiedCount,
       verifiedProjectsCount: verifiedCount,

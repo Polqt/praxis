@@ -48,7 +48,8 @@ export const REPORT_DISCLAIMER_LINK_LABEL = 'Learn about our methodology'
 export const REPORT_DISCLAIMER_LINK_HREF =
   'https://github.com/Polqt/praxis/blob/main/docs/LIMITATIONS.md'
 
-export { SCORE_HIGH_THRESHOLD, SCORE_MID_THRESHOLD } from '@/features/reports/utils/score-color'
+export const SCORE_HIGH_THRESHOLD = 8
+export const SCORE_MID_THRESHOLD = 6
 
 export const STATUS_CONFIG: Record<ReportStatus, { label: string; className: string }> = {
   verified: { label: 'Verified', className: 'bg-green-100 text-green-800 border-green-200' },

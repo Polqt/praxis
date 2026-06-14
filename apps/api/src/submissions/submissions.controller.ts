@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import { User } from '@praxis/shared'
 import { SupabaseGuard } from '../auth/supabase.guard'
 import { GetUser } from '../auth/get-user.decorator'
@@ -12,8 +12,16 @@ export class SubmissionsController {
   constructor(private readonly submissionsService: SubmissionsService) {}
 
   @Get()
-  listForUser(@GetUser() user: User) {
-    return this.submissionsService.listForUser(user.id)
+  listForUser(
+    @GetUser() user: User,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    return this.submissionsService.listForUser(
+      user.id,
+      parseInt(limit ?? '50', 10) || 50,
+      parseInt(offset ?? '0', 10) || 0,
+    )
   }
 
   @Get('stats')
