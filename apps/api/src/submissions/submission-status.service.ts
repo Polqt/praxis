@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 import type { SubmissionStatus } from '@praxis/shared'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { DatabaseService } from '../database/database.service'
 import { projectSubmissionEvents, projectSubmissions } from '../database/schema'
 import { AuditService } from '../audit/audit.service'
@@ -56,11 +56,22 @@ export class SubmissionStatusService {
     if (input.toStatus === 'generating_report') updates.analyzedAt = now
     if (COMPLETION_STATUSES.includes(input.toStatus)) updates.completedAt = now
 
+    // Guard on the status we validated against so a concurrent transition
+    // (e.g. user cancel racing the worker) can't be silently overwritten.
     const updated = await this.db.db
       .update(projectSubmissions)
       .set(updates)
-      .where(eq(projectSubmissions.id, input.submissionId))
+      .where(and(
+        eq(projectSubmissions.id, input.submissionId),
+        eq(projectSubmissions.status, fromStatus),
+      ))
       .returning()
+
+    if (!updated[0]) {
+      throw new ConflictException(
+        `Submission status changed concurrently while transitioning from ${fromStatus} to ${input.toStatus}`,
+      )
+    }
 
     await this.db.db.insert(projectSubmissionEvents).values({
       submissionId: input.submissionId,

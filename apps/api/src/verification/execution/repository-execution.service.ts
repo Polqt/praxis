@@ -43,7 +43,7 @@ export interface ExecutionResult {
 
 interface ParsedCounts { passed: number; failed: number; skipped: number }
 
-function parseTestOutput(stdout: string, language: string, exitCode: number): ParsedCounts {
+export function parseTestOutput(stdout: string, language: string, exitCode: number): ParsedCounts {
   let passed = 0
   let failed = 0
   let skipped = 0
@@ -73,11 +73,15 @@ function parseTestOutput(stdout: string, language: string, exitCode: number): Pa
       }
     }
   } else if (language === 'python') {
-    const pytestMatch = stdout.match(/(\d+)\s+passed(?:,\s+(\d+)\s+failed)?(?:,\s+(\d+)\s+(?:skipped|warning))?/)
-    if (pytestMatch) {
-      passed = parseInt(pytestMatch[1] ?? '0', 10)
-      failed = parseInt(pytestMatch[2] ?? '0', 10)
-      skipped = parseInt(pytestMatch[3] ?? '0', 10)
+    // pytest prints counts in variable order ("1 failed, 2 passed in 0.5s"),
+    // so match each count independently instead of assuming a fixed order.
+    const passedMatch = stdout.match(/(\d+)\s+passed/)
+    const failedMatch = stdout.match(/(\d+)\s+failed/)
+    const skippedMatch = stdout.match(/(\d+)\s+skipped/)
+    if (passedMatch || failedMatch) {
+      passed = passedMatch ? parseInt(passedMatch[1], 10) : 0
+      failed = failedMatch ? parseInt(failedMatch[1], 10) : 0
+      skipped = skippedMatch ? parseInt(skippedMatch[1], 10) : 0
       parsed = true
     }
     const djangoMatch = stdout.match(/Ran\s+(\d+)\s+tests?/i)
@@ -339,10 +343,12 @@ export class RepositoryExecutionService {
         doctorResult: resultForPhase(results, 'doctor'),
       }
 
+      // onConflictDoNothing: a concurrent worker may have already stored a result
+      // for this ingestion (unique index on repository_ingestion_id)
       await this.db.db.insert(repositoryExecutions).values({
         repositoryIngestionId: ingestionId,
         ...result,
-      })
+      }).onConflictDoNothing()
 
       this.logger.log(`E2B: ${repoFullName} - ${passed} passed, ${failed} failed in ${durationMs}ms`)
       return result

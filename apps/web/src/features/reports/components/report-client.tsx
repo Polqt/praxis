@@ -33,7 +33,6 @@ type Props = {
   backLabel?: string
   submissionActions?: React.ReactNode
   proofActions?: React.ReactNode
-  challengeId?: string
   language?: string | null
   passingThreshold?: number | null
   executionSlot?: React.ReactNode

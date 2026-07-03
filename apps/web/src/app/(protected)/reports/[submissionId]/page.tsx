@@ -49,7 +49,6 @@ export default async function PrivateReportPage({ params }: Props) {
   return (
     <ReportClient
       report={toReport(raw)}
-      challengeId={submission?.challengeId}
       language={execution?.language ?? null}
       passingThreshold={challenge?.passingThreshold ?? null}
       submissionActions={raw.verdict === 'insufficient' ? (

@@ -2,6 +2,7 @@ import 'reflect-metadata'
 import { NestFactory, HttpAdapterHost } from '@nestjs/core'
 import { ValidationPipe, Logger } from '@nestjs/common'
 import { randomUUID } from 'node:crypto'
+import helmet from 'helmet'
 import { AppModule } from './app.module'
 import { GlobalExceptionFilter } from './common/global-exception.filter'
 import { WorkerHealthService } from './verification/worker/worker-health.service'
@@ -15,6 +16,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true })
   const logger = new Logger('Bootstrap')
 
+  app.use(helmet())
   app.setGlobalPrefix('api')
   app.enableCors({ origin: corsOrigin })
 

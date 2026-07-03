@@ -31,13 +31,24 @@ export interface SubmissionFailedPayload {
   submissionUrl: string
 }
 
+// Escape user-influenced values (username, repo name, failure reasons) before
+// interpolating them into email HTML to prevent markup injection.
+function esc(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+}
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name)
   private readonly fromEmail: string
   private readonly resend: Resend | null
 
-  constructor(private readonly config: ConfigService) {
+  constructor(config: ConfigService) {
     const apiKey = config.get<string>('notifications.resendApiKey') ?? ''
     this.fromEmail = config.get<string>('notifications.fromEmail') ?? 'onboarding@resend.dev'
     this.resend = apiKey ? new Resend(apiKey) : null
@@ -57,7 +68,10 @@ export class NotificationsService {
   }
 
   async sendReportReady(payload: ReportReadyPayload): Promise<void> {
-    const { toEmail, username, repositoryName, challengeTitle, compositeScore, verdict, reportUrl, floorFailures } = payload
+    const { toEmail, compositeScore, verdict, reportUrl, floorFailures } = payload
+    const username = esc(payload.username)
+    const repositoryName = esc(payload.repositoryName)
+    const challengeTitle = esc(payload.challengeTitle)
 
     const verdictLabel = verdict === 'verified' ? 'Verified ✓' : verdict === 'insufficient' ? 'Insufficient' : 'Failed'
     const subject = `${repositoryName} scored ${compositeScore}/100 — ${verdictLabel} | Praxis`
@@ -66,7 +80,7 @@ export class NotificationsService {
       ? `
         <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#92400e;">Categories that missed the floor:</p>
         <ul style="margin:0 0 24px;padding-left:20px;">
-          ${floorFailures.map((f) => `<li style="font-size:13px;color:#78350f;margin-bottom:4px;">${f.category}: scored ${f.score}/10, minimum required is ${f.minimumScore}/10</li>`).join('')}
+          ${floorFailures.map((f) => `<li style="font-size:13px;color:#78350f;margin-bottom:4px;">${esc(f.category)}: scored ${f.score}/10, minimum required is ${f.minimumScore}/10</li>`).join('')}
         </ul>
       `
       : ''
@@ -113,7 +127,10 @@ export class NotificationsService {
   }
 
   async sendSubmissionExpired(payload: SubmissionExpiredPayload): Promise<void> {
-    const { toEmail, username, repositoryName, challengeTitle, resubmitUrl } = payload
+    const { toEmail, resubmitUrl } = payload
+    const username = esc(payload.username)
+    const repositoryName = esc(payload.repositoryName)
+    const challengeTitle = esc(payload.challengeTitle)
     const subject = `Your submission for ${repositoryName} expired | Praxis`
 
     const html = `
@@ -144,15 +161,12 @@ export class NotificationsService {
   }
 
   async sendSubmissionFailed(payload: SubmissionFailedPayload): Promise<void> {
-    const {
-      toEmail,
-      username,
-      repositoryName,
-      challengeTitle,
-      failureStage,
-      failureReason,
-      submissionUrl,
-    } = payload
+    const { toEmail, submissionUrl } = payload
+    const username = esc(payload.username)
+    const repositoryName = esc(payload.repositoryName)
+    const challengeTitle = esc(payload.challengeTitle)
+    const failureStage = esc(payload.failureStage)
+    const failureReason = esc(payload.failureReason)
     const subject = `Verification failed for ${repositoryName} | Praxis`
     const html = `
       <!DOCTYPE html>

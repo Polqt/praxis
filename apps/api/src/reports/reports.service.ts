@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common'
 import { randomBytes } from 'node:crypto'
-import { and, avg, count, desc, eq, gte, inArray, isNotNull, ne, sql } from 'drizzle-orm'
+import { and, avg, count, desc, eq, gte, inArray, ne, sql } from 'drizzle-orm'
 import { SCORING_ANALYZER_VERSION, REPORT_GENERATOR_VERSION, SCORING_VERSION } from '../scoring/versions'
 import { RepositoryIngestionData } from '../verification/ingestion/repository-ingestion.types'
 import type { RepositoryAnalysisData } from '../verification/analysis/repository-analysis.types'
@@ -378,9 +378,9 @@ export class ReportsService implements OnModuleInit {
       .values(matchedSkills.map((skill) => ({
         userId: submission.userId,
         skillId: skill.id,
-      sourceType: 'project' as const,
-      sourceReportId: report.id,
-    })))
+        sourceType: 'project' as const,
+        sourceReportId: report.id,
+      })))
       .onConflictDoUpdate({
         target: [userSkills.userId, userSkills.skillId],
         set: { sourceReportId: report.id },

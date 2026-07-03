@@ -127,6 +127,13 @@
       "when": 1780900001000,
       "tag": "0018_challenge_difficulty",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1781617811092,
+      "tag": "0019_demonic_thor",
+      "breakpoints": true
     }
   ]
 }

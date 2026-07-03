@@ -32,17 +32,29 @@ export class RepositoryIngestionService {
     const tree = await this.githubApi.getTree(accessToken, owner, repo, submission.commitSha)
     const limits = this.limits()
     const selected = selectRepositoryFiles(tree.tree.slice(0, limits.maxTreeFiles), limits)
-    let totalBytes = 0
 
+    // Fetch file contents in parallel batches instead of one request at a time.
+    // The total byte cap is still applied in selection order after each batch.
+    const FETCH_CONCURRENCY = 8
+    let totalBytes = 0
     const files = []
-    for (const file of selected.files) {
-      if (totalBytes + file.size > limits.maxTotalBytes) {
-        selected.skipped.push({ path: file.path, reason: 'total_byte_limit_reached' })
-        continue
+    for (let i = 0; i < selected.files.length; i += FETCH_CONCURRENCY) {
+      const batch = selected.files.slice(i, i + FETCH_CONCURRENCY)
+      const contents = await Promise.all(batch.map((file) =>
+        totalBytes > limits.maxTotalBytes
+          ? Promise.resolve(null)
+          : this.githubApi.getFileContent(accessToken, owner, repo, file.path, submission.commitSha),
+      ))
+      for (let j = 0; j < batch.length; j++) {
+        const file = batch[j]
+        const content = contents[j]
+        if (content === null || totalBytes + Buffer.byteLength(content) > limits.maxTotalBytes) {
+          selected.skipped.push({ path: file.path, reason: 'total_byte_limit_reached' })
+          continue
+        }
+        totalBytes += Buffer.byteLength(content)
+        files.push({ path: file.path, kind: file.kind, size: file.size, content })
       }
-      const content = await this.githubApi.getFileContent(accessToken, owner, repo, file.path, submission.commitSha)
-      totalBytes += Buffer.byteLength(content)
-      files.push({ path: file.path, kind: file.kind, size: file.size, content })
     }
 
     const ingestedData: RepositoryIngestionData = {

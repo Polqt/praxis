@@ -82,7 +82,7 @@ function scoreCategoryByName(
   if (name.includes('authentication')) {
     return authenticationScorer.score(extractAuthenticationSignals(ingestionData))
   }
-  if (name.includes('database design') || name.includes('database')) {
+  if (name.includes('database')) {
     return databaseScorer.score(extractDatabaseSignals(ingestionData))
   }
   if (name.includes('security')) {
